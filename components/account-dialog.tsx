@@ -44,7 +44,9 @@ export function AccountDialog({ user }: { user: AccountUser }) {
     setDeleting(true)
     try {
       const response = await fetch("/api/account", { method: "DELETE" })
-      const result = await response.json()
+      const body = await response.text()
+      let result: { error?: string } = {}
+      try { result = body ? JSON.parse(body) : {} } catch { /* Vercel timeout/error page */ }
       if (!response.ok) return toast.error(result.error || "탈퇴 처리에 실패했습니다.")
       window.location.replace("/login")
     } catch {
