@@ -21,8 +21,11 @@ export async function updateSession(request: NextRequest) {
 
   const { data } = await supabase.auth.getClaims()
   const isPublic = request.nextUrl.pathname.startsWith("/login") || request.nextUrl.pathname.startsWith("/auth")
+  const isApi = request.nextUrl.pathname.startsWith("/api/")
 
-  if (!data?.claims && !isPublic && !request.nextUrl.pathname.startsWith("/api/events")) {
+  // API Route Handler는 자체적으로 인증하고 JSON 401을 반환한다. 여기서 /login으로
+  // 리디렉션하면 POST/DELETE 메서드가 유지되어 /login에서 405가 발생한다.
+  if (!data?.claims && !isPublic && !isApi) {
     const url = request.nextUrl.clone()
     url.pathname = "/login"
     return NextResponse.redirect(url)
