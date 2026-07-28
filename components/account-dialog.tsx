@@ -42,10 +42,16 @@ export function AccountDialog({ user }: { user: AccountUser }) {
 
   const deleteAccount = async () => {
     setDeleting(true)
-    const response = await fetch("/api/account", { method: "DELETE" })
-    const result = await response.json()
-    if (!response.ok) { setDeleting(false); return toast.error(result.error || "탈퇴 처리에 실패했습니다.") }
-    window.location.href = "/login"
+    try {
+      const response = await fetch("/api/account", { method: "DELETE" })
+      const result = await response.json()
+      if (!response.ok) return toast.error(result.error || "탈퇴 처리에 실패했습니다.")
+      window.location.replace("/login")
+    } catch {
+      toast.error("탈퇴 요청을 완료하지 못했습니다. 네트워크 상태를 확인해 주세요.")
+    } finally {
+      setDeleting(false)
+    }
   }
 
   return (
@@ -62,7 +68,7 @@ export function AccountDialog({ user }: { user: AccountUser }) {
         </div>
         <Button render={<Link href="/auth/signout" />} nativeButton={false} variant="outline" className="w-full"><LogOut className="size-4" />로그아웃</Button>
         <div className="rounded-xl border border-destructive/30 p-4">
-          {!confirmDelete ? <Button type="button" variant="destructive" className="w-full" onClick={() => setConfirmDelete(true)}><Trash2 className="size-4" />회원 탈퇴</Button> : <div className="space-y-3"><p className="text-sm text-destructive">계정과 모든 풀이·친구·스터디 데이터가 삭제되며 복구할 수 없습니다.</p><div className="flex gap-2"><Button type="button" variant="outline" className="flex-1" onClick={() => setConfirmDelete(false)}>취소</Button><Button type="button" variant="destructive" className="flex-1" onClick={deleteAccount} disabled={deleting}>{deleting ? "삭제 중..." : "영구 삭제"}</Button></div></div>}
+          {!confirmDelete ? <Button type="button" variant="destructive" className="w-full" onClick={() => setConfirmDelete(true)}><Trash2 className="size-4" />회원 탈퇴</Button> : <div className="space-y-3"><p className="text-sm text-destructive">계정과 모든 풀이·친구·스터디 데이터가 삭제되며 복구할 수 없습니다.</p><div className="flex gap-2"><Button type="button" variant="outline" className="flex-1" onClick={() => setConfirmDelete(false)} disabled={deleting}>취소</Button><Button type="button" variant="destructive" className="flex-1" onClick={deleteAccount} disabled={deleting}>{deleting ? "삭제 중..." : "영구 삭제"}</Button></div></div>}
         </div>
       </DialogContent>
     </Dialog>
