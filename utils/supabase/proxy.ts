@@ -3,6 +3,15 @@ import { NextResponse, type NextRequest } from "next/server"
 import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, authCookieOptions } from "@/lib/auth-cookies"
 
 export async function updateSession(request: NextRequest) {
+  const oauthCode = request.nextUrl.searchParams.get("code")
+  if (oauthCode && request.nextUrl.pathname !== "/auth/callback") {
+    const callbackUrl = request.nextUrl.clone()
+    callbackUrl.pathname = "/auth/callback"
+    callbackUrl.search = ""
+    callbackUrl.searchParams.set("code", oauthCode)
+    return NextResponse.redirect(callbackUrl)
+  }
+
   let response = NextResponse.next({ request })
 
   const supabase = createServerClient(
