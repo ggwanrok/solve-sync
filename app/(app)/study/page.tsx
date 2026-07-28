@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { createClient } from "@/utils/supabase/server"
+import { redirect } from "next/navigation"
+import { getViewer } from "@/lib/server/viewer"
 
 type SearchField = "title" | "description" | "owner"
 type OwnerProfile = { handle: string; nickname: string }
@@ -20,8 +21,8 @@ export default async function StudyListPage({
     ? params.field as SearchField
     : "title"
   const query = (params.query || "").trim().toLocaleLowerCase("ko-KR")
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getViewer()
+  if (!user) redirect("/login")
   const [{ data: rooms }, { data: memberships }] = await Promise.all([
     supabase
       .from("study_rooms")

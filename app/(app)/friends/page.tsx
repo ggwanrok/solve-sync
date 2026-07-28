@@ -5,16 +5,17 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { createClient } from "@/utils/supabase/server"
+import { redirect } from "next/navigation"
+import { getViewer } from "@/lib/server/viewer"
 
 type Profile = { id: string; handle: string; nickname: string; avatar_url: string | null }
 
 export default async function FriendsPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getViewer()
+  if (!user) redirect("/login")
   const [{ data: relations }, { data: incoming }] = await Promise.all([
-    supabase.from("friendships").select("friend_id, friend:profiles!friendships_friend_id_fkey(id,handle,nickname,avatar_url)").eq("user_id", user!.id),
-    supabase.from("friend_requests").select("id, sender:profiles!friend_requests_sender_id_fkey(id,handle,nickname,avatar_url)").eq("receiver_id", user!.id).eq("status", "pending"),
+    supabase.from("friendships").select("friend_id, friend:profiles!friendships_friend_id_fkey(id,handle,nickname,avatar_url)").eq("user_id", user.id),
+    supabase.from("friend_requests").select("id, sender:profiles!friend_requests_sender_id_fkey(id,handle,nickname,avatar_url)").eq("receiver_id", user.id).eq("status", "pending"),
   ])
   const friends = (relations || []).map((row) => row.friend as unknown as Profile).filter(Boolean)
   const requests = (incoming || []).map((row) => ({ id: row.id, profile: row.sender as unknown as Profile })).filter((row) => row.profile)

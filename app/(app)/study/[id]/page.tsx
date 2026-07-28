@@ -10,14 +10,13 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { createClient } from "@/utils/supabase/server"
+import { getViewer } from "@/lib/server/viewer"
 
 type Profile = { handle: string; nickname: string; avatar_url: string | null }
 
 export default async function StudyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getViewer()
   const [{ data: room }, { data: members }, { data: comments }] = await Promise.all([
     supabase.from("study_rooms").select("id,owner_id,name,description,goal_period,goal_count,is_private").eq("id", id).maybeSingle(),
     supabase.from("study_members").select("user_id,role,joined_at,profile:profiles!study_members_user_id_fkey(handle,nickname,avatar_url)").eq("study_id", id),

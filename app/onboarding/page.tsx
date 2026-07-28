@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { ArrowRight, Check, LoaderCircle, Search } from "lucide-react"
 import { toast } from "sonner"
 import { Logo } from "@/components/logo"
@@ -10,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { createClient } from "@/utils/supabase/client"
 
 export default function OnboardingPage() {
+  const router = useRouter()
   const [handle, setHandle] = useState("")
   const [checkedHandle, setCheckedHandle] = useState<string | null>(null)
   const [availabilityMessage, setAvailabilityMessage] = useState("")
@@ -62,7 +64,7 @@ export default function OnboardingPage() {
       toast.error(error.message)
       return
     }
-    window.location.replace("/")
+    router.replace("/")
   }
 
   return (

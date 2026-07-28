@@ -6,7 +6,7 @@ import { GettingStartedGuide } from "@/components/getting-started-guide"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
-import { createClient } from "@/utils/supabase/server"
+import { getViewer, getViewerExtension, getViewerProfile } from "@/lib/server/viewer"
 
 type SolveEvent = { id: string; title: string; language: string | null; accepted_at: string; problem_id: string }
 const dayKey = (date: Date) => date.toISOString().slice(0, 10)
@@ -21,19 +21,29 @@ function currentStreak(events: SolveEvent[]) {
 }
 
 export default async function DashboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getViewer()
   if (!user) redirect("/login")
-  const [{ data: extension }, { data: solvesData }, { data: profile }] = await Promise.all([
-    supabase.from("extension_connections").select("last_seen_at").eq("user_id", user.id).maybeSingle(),
-    supabase.from("solve_events").select("id,title,language,accepted_at,problem_id").eq("user_id", user.id).order("accepted_at", { ascending: false }),
-    supabase.from("profiles").select("guide_completed_at").eq("id", user.id).maybeSingle(),
+  const [extension, profile, { data: solvesData }] = await Promise.all([
+    getViewerExtension(),
+    getViewerProfile(),
+    supabase
+      .from("solve_events")
+      .select("id,title,language,accepted_at,problem_id")
+      .eq("user_id", user.id)
+      .order("accepted_at", { ascending: false }),
   ])
   const solves = (solvesData || []) as SolveEvent[]
+  const problemsByDay = new Map<string, ContributionDay["problems"]>()
+  solves.forEach((event) => {
+    const date = dayKey(new Date(event.accepted_at))
+    const problems = problemsByDay.get(date) || []
+    problems.push({ title: event.title || `문제 ${event.problem_id}`, language: event.language })
+    problemsByDay.set(date, problems)
+  })
   const contributions: ContributionDay[] = Array.from({ length: 364 }, (_, offset) => {
     const date = new Date(); date.setDate(date.getDate() - (363 - offset))
     const dateString = dayKey(date)
-    return { date: dateString, problems: solves.filter((event) => dayKey(new Date(event.accepted_at)) === dateString).map((event) => ({ title: event.title || `문제 ${event.problem_id}`, language: event.language })) }
+    return { date: dateString, problems: problemsByDay.get(dateString) || [] }
   })
   const streak = currentStreak(solves)
   const stats = [
