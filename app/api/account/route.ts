@@ -3,8 +3,8 @@ import { NextResponse } from "next/server"
 import { createRequestClient } from "@/utils/supabase/request"
 
 export async function DELETE(request: Request) {
-  const supabase = await createRequestClient(request)
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  const { supabase, accessToken } = await createRequestClient(request)
+  const { data: { user }, error: userError } = await supabase.auth.getUser(accessToken)
   if (userError || !user) {
     const cookieStore = await cookies()
     console.error("account auth failed", { code: userError?.code, message: userError?.message, cookieNames: cookieStore.getAll().map(({ name }) => name) })

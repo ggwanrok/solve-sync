@@ -6,8 +6,8 @@ import { createRequestClient } from "@/utils/supabase/request"
 const hash = (value: string) => createHash("sha256").update(value).digest("base64url")
 
 export async function POST(request: Request) {
-  const supabase = await createRequestClient(request)
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  const { supabase, accessToken } = await createRequestClient(request)
+  const { data: { user }, error: userError } = await supabase.auth.getUser(accessToken)
   if (!user) {
     const cookieStore = await cookies()
     console.error("extension token auth failed", { code: userError?.code, message: userError?.message, cookieNames: cookieStore.getAll().map(({ name }) => name) })
@@ -20,8 +20,8 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const supabase = await createRequestClient(request)
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  const { supabase, accessToken } = await createRequestClient(request)
+  const { data: { user }, error: userError } = await supabase.auth.getUser(accessToken)
   if (!user) {
     const cookieStore = await cookies()
     console.error("extension disconnect auth failed", { code: userError?.code, message: userError?.message, cookieNames: cookieStore.getAll().map(({ name }) => name) })
