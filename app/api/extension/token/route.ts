@@ -1,12 +1,12 @@
 import { createHash, randomBytes } from "node:crypto"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
-import { createClient } from "@/utils/supabase/server"
+import { createRequestClient } from "@/utils/supabase/request"
 
 const hash = (value: string) => createHash("sha256").update(value).digest("base64url")
 
-export async function POST() {
-  const supabase = await createClient()
+export async function POST(request: Request) {
+  const supabase = await createRequestClient(request)
   const { data: { user }, error: userError } = await supabase.auth.getUser()
   if (!user) {
     const cookieStore = await cookies()
@@ -19,8 +19,8 @@ export async function POST() {
   return NextResponse.json({ token })
 }
 
-export async function DELETE() {
-  const supabase = await createClient()
+export async function DELETE(request: Request) {
+  const supabase = await createRequestClient(request)
   const { data: { user }, error: userError } = await supabase.auth.getUser()
   if (!user) {
     const cookieStore = await cookies()

@@ -1,9 +1,9 @@
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
-import { createClient } from "@/utils/supabase/server"
+import { createRequestClient } from "@/utils/supabase/request"
 
-export async function DELETE() {
-  const supabase = await createClient()
+export async function DELETE(request: Request) {
+  const supabase = await createRequestClient(request)
   const { data: { user }, error: userError } = await supabase.auth.getUser()
   if (userError || !user) {
     const cookieStore = await cookies()

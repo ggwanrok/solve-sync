@@ -4,6 +4,7 @@ import { Check, Puzzle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { toast } from "sonner"
+import { authenticatedFetch } from "@/lib/authenticated-fetch"
 import { Button } from "@/components/ui/button"
 
 export function ExtensionStatus({ connected, tokenIssued, lastSeenAt }: { connected: boolean; tokenIssued: boolean; lastSeenAt: string | null }) {
@@ -13,7 +14,7 @@ export function ExtensionStatus({ connected, tokenIssued, lastSeenAt }: { connec
 
   const issueToken = async () => {
     setPending(true)
-    const response = await fetch("/api/extension/token", { method: "POST", credentials: "include", cache: "no-store" })
+    const response = await authenticatedFetch("/api/extension/token", { method: "POST" })
     const result = await response.json()
     setPending(false)
     if (!response.ok) return toast.error(result.error || "토큰을 만들지 못했습니다.")

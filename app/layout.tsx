@@ -9,6 +9,10 @@ export const metadata: Metadata = {
   description:
     '프로그래머스와 연동해 알고리즘 풀이 진행도를 추적하고, 친구들과 스터디룸을 만들어 함께 성장하는 알고리즘 스터디 플랫폼',
   generator: 'v0.app',
+  icons: {
+    icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
+    apple: '/apple-icon.png',
+  },
 }
 
 export const viewport: Viewport = {

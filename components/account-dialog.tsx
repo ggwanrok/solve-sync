@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { toast } from "sonner"
+import { authenticatedFetch } from "@/lib/authenticated-fetch"
 import { UserAvatar } from "@/components/user-avatar"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -26,7 +27,7 @@ export function AccountDialog({ user }: { user: AccountUser }) {
 
   const issueToken = async () => {
     setIssuing(true)
-    const response = await fetch("/api/extension/token", { method: "POST", credentials: "include", cache: "no-store" })
+    const response = await authenticatedFetch("/api/extension/token", { method: "POST" })
     const result = await response.json()
     setIssuing(false)
     if (!response.ok) return toast.error(result.error || "토큰을 발급하지 못했습니다.")
@@ -43,7 +44,7 @@ export function AccountDialog({ user }: { user: AccountUser }) {
   const deleteAccount = async () => {
     setDeleting(true)
     try {
-      const response = await fetch("/api/account", { method: "DELETE", credentials: "include", cache: "no-store" })
+      const response = await authenticatedFetch("/api/account", { method: "DELETE" })
       const body = await response.text()
       let result: { error?: string } = {}
       try { result = body ? JSON.parse(body) : {} } catch { /* Vercel timeout/error page */ }
