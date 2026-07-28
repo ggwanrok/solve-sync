@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
+import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, authCookieOptions } from "@/lib/auth-cookies"
 
 type PendingCookie = {
   name: string
@@ -48,6 +49,17 @@ export async function GET(request: NextRequest) {
   pendingCookies.forEach(({ name, value, options }) => {
     response.cookies.set(name, value, options)
   })
+
+  if (data.session) {
+    response.cookies.set(ACCESS_TOKEN_COOKIE, data.session.access_token, {
+      ...authCookieOptions,
+      maxAge: data.session.expires_in,
+    })
+    response.cookies.set(REFRESH_TOKEN_COOKIE, data.session.refresh_token, {
+      ...authCookieOptions,
+      maxAge: 60 * 60 * 24 * 30,
+    })
+  }
 
   return response
 }

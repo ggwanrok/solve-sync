@@ -1,5 +1,6 @@
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
+import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from "@/lib/auth-cookies"
 import { createRequestClient } from "@/utils/supabase/request"
 
 export async function DELETE(request: Request) {
@@ -24,5 +25,7 @@ export async function DELETE(request: Request) {
       response.cookies.delete(cookie.name)
     }
   }
+  response.cookies.delete(ACCESS_TOKEN_COOKIE)
+  response.cookies.delete(REFRESH_TOKEN_COOKIE)
   return response
 }

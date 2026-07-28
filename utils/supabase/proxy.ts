@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
+import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, authCookieOptions } from "@/lib/auth-cookies"
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })
@@ -19,7 +20,28 @@ export async function updateSession(request: NextRequest) {
     },
   )
 
-  const { data } = await supabase.auth.getClaims()
+  const accessToken = request.cookies.get(ACCESS_TOKEN_COOKIE)?.value
+  const refreshToken = request.cookies.get(REFRESH_TOKEN_COOKIE)?.value
+  const hasSupabaseSession = request.cookies.getAll().some(({ name }) => name.startsWith("sb-") && name.includes("auth-token"))
+
+  if (!hasSupabaseSession && accessToken && refreshToken) {
+    const { data: restored } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    })
+    if (restored.session) {
+      response.cookies.set(ACCESS_TOKEN_COOKIE, restored.session.access_token, {
+        ...authCookieOptions,
+        maxAge: restored.session.expires_in,
+      })
+      response.cookies.set(REFRESH_TOKEN_COOKIE, restored.session.refresh_token, {
+        ...authCookieOptions,
+        maxAge: 60 * 60 * 24 * 30,
+      })
+    }
+  }
+
+  const { data } = await supabase.auth.getClaims(accessToken)
   const isPublic = request.nextUrl.pathname.startsWith("/login") || request.nextUrl.pathname.startsWith("/auth")
   const isApi = request.nextUrl.pathname.startsWith("/api/")
 
