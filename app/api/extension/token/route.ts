@@ -10,7 +10,15 @@ export async function POST(request: Request) {
   const { data: { user }, error: userError } = await supabase.auth.getUser(accessToken)
   if (!user) {
     const cookieStore = await cookies()
-    console.error("extension token auth failed", { code: userError?.code, message: userError?.message, cookieNames: cookieStore.getAll().map(({ name }) => name) })
+    console.error("extension token auth failed", {
+      code: userError?.code,
+      message: userError?.message,
+      cookieNames: cookieStore.getAll().map(({ name }) => name),
+      hasAuthorization: request.headers.has("authorization"),
+      host: request.headers.get("host"),
+      forwardedHost: request.headers.get("x-forwarded-host"),
+      referer: request.headers.get("referer"),
+    })
     return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 })
   }
   const token = randomBytes(32).toString("base64url")

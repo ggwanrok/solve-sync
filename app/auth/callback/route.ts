@@ -61,5 +61,13 @@ export async function GET(request: NextRequest) {
     })
   }
 
+  console.info("OAuth callback session issued", {
+    requestHost: request.headers.get("host"),
+    forwardedHost: request.headers.get("x-forwarded-host"),
+    redirectHost: new URL(response.headers.get("location") || request.url).host,
+    supabaseCookieNames: pendingCookies.map(({ name }) => name),
+    hasFallbackSession: Boolean(data.session),
+  })
+
   return response
 }
