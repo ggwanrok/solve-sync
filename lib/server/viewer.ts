@@ -3,7 +3,8 @@ import { createClient } from "@/utils/supabase/server"
 
 export const getViewer = cache(async () => {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data } = await supabase.auth.getClaims()
+  const user = data?.claims.sub ? { id: data.claims.sub } : null
   return { supabase, user }
 })
 
