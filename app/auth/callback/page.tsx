@@ -32,6 +32,21 @@ export default function AuthCallbackPage() {
         return
       }
 
+      const sessionResponse = await fetch("/auth/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+        }),
+      })
+
+      if (!sessionResponse.ok) {
+        window.location.replace("/login?error=server_session_failed")
+        return
+      }
+
       const { data: profile } = await supabase
         .from("profiles")
         .select("handle")
