@@ -26,7 +26,7 @@ export function AccountDialog({ user }: { user: AccountUser }) {
 
   const issueToken = async () => {
     setIssuing(true)
-    const response = await fetch("/api/extension/token", { method: "POST" })
+    const response = await fetch("/api/extension/token", { method: "POST", credentials: "include", cache: "no-store" })
     const result = await response.json()
     setIssuing(false)
     if (!response.ok) return toast.error(result.error || "토큰을 발급하지 못했습니다.")
@@ -43,7 +43,7 @@ export function AccountDialog({ user }: { user: AccountUser }) {
   const deleteAccount = async () => {
     setDeleting(true)
     try {
-      const response = await fetch("/api/account", { method: "DELETE" })
+      const response = await fetch("/api/account", { method: "DELETE", credentials: "include", cache: "no-store" })
       const body = await response.text()
       let result: { error?: string } = {}
       try { result = body ? JSON.parse(body) : {} } catch { /* Vercel timeout/error page */ }

@@ -22,7 +22,7 @@ export function GettingStartedGuide({ tokenIssued }: { tokenIssued: boolean }) {
   async function issueToken() {
     setPending(true)
     try {
-      const response = await fetch("/api/extension/token", { method: "POST" })
+      const response = await fetch("/api/extension/token", { method: "POST", credentials: "include", cache: "no-store" })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || "토큰을 발급하지 못했습니다.")
       await navigator.clipboard.writeText(result.token)

@@ -1,6 +1,7 @@
 begin;
 
-create extension if not exists pgcrypto;
+create schema if not exists extensions;
+create extension if not exists pgcrypto with schema extensions;
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -15,7 +16,6 @@ create table if not exists public.profiles (
 alter table public.profiles add column if not exists guide_completed_at timestamptz;
 
 alter table public.profiles drop constraint if exists profiles_handle_format;
-update public.profiles set handle = regexp_replace(handle, '^@+', ''), nickname = regexp_replace(nickname, '^@+', '') where handle like '@%';
 alter table public.profiles add constraint profiles_handle_format check (handle is null or handle ~ '^[a-z0-9_]{3,20}$');
 
 create table if not exists public.friend_requests (
@@ -199,6 +199,7 @@ create or replace function public.verify_study_room_password(target_study uuid, 
 returns boolean language plpgsql security definer set search_path = public, extensions as $$
 declare stored_hash text;
 begin
+  if auth.uid() is null then raise exception '로그인이 필요합니다.' using errcode = '42501'; end if;
   select password_hash into stored_hash from study_rooms where id = target_study and is_private;
   if stored_hash is null or extensions.crypt(provided_password, stored_hash) <> stored_hash then return false; end if;
   insert into study_room_access(study_id, user_id, verified_at) values(target_study, auth.uid(), now())
@@ -211,6 +212,7 @@ create or replace function public.join_study_room(target_study uuid)
 returns void language plpgsql security definer set search_path = public as $$
 declare target_room study_rooms;
 begin
+  if auth.uid() is null then raise exception '로그인이 필요합니다.' using errcode = '42501'; end if;
   select * into target_room from study_rooms where id = target_study;
   if target_room.id is null then raise exception '존재하지 않는 스터디룸입니다.'; end if;
   if target_room.is_private and not public.has_study_room_access(target_study) then raise exception '비밀번호 확인이 필요합니다.'; end if;
@@ -221,6 +223,7 @@ $$;
 create or replace function public.delete_study_room(target_study uuid)
 returns void language plpgsql security definer set search_path = public as $$
 begin
+  if auth.uid() is null then raise exception '로그인이 필요합니다.' using errcode = '42501'; end if;
   if not exists(select 1 from study_rooms where id = target_study and owner_id = auth.uid()) then raise exception '방장만 스터디룸을 삭제할 수 있습니다.'; end if;
   delete from study_rooms where id = target_study and owner_id = auth.uid();
 end;
@@ -229,7 +232,9 @@ $$;
 create or replace function public.leave_study_room(target_study uuid)
 returns void language plpgsql security definer set search_path = public as $$
 begin
+  if auth.uid() is null then raise exception '로그인이 필요합니다.' using errcode = '42501'; end if;
   if exists(select 1 from study_rooms where id = target_study and owner_id = auth.uid()) then raise exception '방장은 방을 나갈 수 없습니다. 스터디룸을 삭제해주세요.'; end if;
+  if not exists(select 1 from study_members where study_id = target_study and user_id = auth.uid()) then raise exception '참여 중인 스터디룸이 아닙니다.'; end if;
   delete from study_members where study_id = target_study and user_id = auth.uid();
 end;
 $$;
@@ -255,7 +260,8 @@ end;
 $$;
 
 drop function if exists public.create_study_room(text, text, integer, text);
-create or replace function public.create_study_room(room_name text, room_description text, room_goal_count integer, room_password text default null, room_goal_period text default 'weekly')
+drop function if exists public.create_study_room(text, text, integer, text, text);
+create function public.create_study_room(room_name text, room_description text, room_goal_count integer, room_password text default null, room_goal_period text default 'weekly')
 returns uuid language plpgsql security definer set search_path = public as $$
 declare room_id uuid;
 begin

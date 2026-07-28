@@ -5,7 +5,11 @@ import { createClient } from "@/utils/supabase/server"
 export async function DELETE() {
   const supabase = await createClient()
   const { data: { user }, error: userError } = await supabase.auth.getUser()
-  if (userError || !user) return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 })
+  if (userError || !user) {
+    const cookieStore = await cookies()
+    console.error("account auth failed", { code: userError?.code, message: userError?.message, cookieNames: cookieStore.getAll().map(({ name }) => name) })
+    return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 })
+  }
 
   const { error } = await supabase.rpc("delete_own_account")
   if (error) {

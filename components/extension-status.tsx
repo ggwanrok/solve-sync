@@ -13,7 +13,7 @@ export function ExtensionStatus({ connected, tokenIssued, lastSeenAt }: { connec
 
   const issueToken = async () => {
     setPending(true)
-    const response = await fetch("/api/extension/token", { method: "POST" })
+    const response = await fetch("/api/extension/token", { method: "POST", credentials: "include", cache: "no-store" })
     const result = await response.json()
     setPending(false)
     if (!response.ok) return toast.error(result.error || "토큰을 만들지 못했습니다.")
