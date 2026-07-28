@@ -7,9 +7,23 @@ function problemId() {
   return location.pathname.match(/\/lessons\/(\d+)/)?.[1] || location.pathname.match(/\/challenges\/(\d+)/)?.[1] || null;
 }
 function text(node = document.body) { return node?.innerText?.replace(/\s+/g, ' ').trim() || ''; }
+function normalizedProblemTitle(value = '') {
+  return value
+    .replace(/\s*\|\s*프로그래머스(?:\s*스쿨)?\s*$/, '')
+    .replace(/^코딩테스트\s*연습\s*-\s*/, '')
+    .trim();
+}
 function title() {
+  const score = /^\d[\d,]*(?:\.\d+)?\s*\(\s*[+-]\d+\s*\)$/;
+  const breadcrumb = text(document.querySelector('.breadcrumb li.active, .breadcrumb .active'));
+  if (breadcrumb && !score.test(breadcrumb)) return breadcrumb;
+
+  const metadata = document.querySelector('meta[property="og:title"]')?.content || document.title;
+  const metadataTitle = normalizedProblemTitle(metadata);
+  if (metadataTitle && !score.test(metadataTitle) && !/^(?:코딩테스트\s*연습|연습문제)$/.test(metadataTitle)) return metadataTitle;
+
   const headings = [...document.querySelectorAll('h1,h2')].map((node) => text(node)).filter(Boolean);
-  return headings.find((item) => !/코딩테스트|연습문제|제출|실행/.test(item)) || document.title.replace(/\s*[-|].*$/, '').trim();
+  return headings.find((item) => !score.test(item) && !/코딩테스트|연습문제|제출|실행/.test(item)) || `문제 ${problemId()}`;
 }
 function language() {
   const selected = document.querySelector('[aria-selected="true"], .language-selector .selected, select');
