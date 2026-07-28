@@ -1,0 +1,136 @@
+"use client"
+
+import { LayoutDashboard, Users, BookOpen, Menu, Puzzle } from "lucide-react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { useState } from "react"
+import { Logo } from "@/components/logo"
+import { ThemeToggle } from "@/components/theme-toggle"
+import { AccountDialog, type AccountUser } from "@/components/account-dialog"
+import { UserAvatar } from "@/components/user-avatar"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+
+export type ShellUser = AccountUser
+
+const nav = [
+  { href: "/", label: "대시보드", icon: LayoutDashboard },
+  { href: "/friends", label: "친구", icon: Users },
+  { href: "/study", label: "스터디룸", icon: BookOpen },
+]
+
+function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+  const pathname = usePathname()
+  return (
+    <nav className="flex flex-col gap-1">
+      {nav.map((item) => {
+        const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href)
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={onNavigate}
+            className={cn(
+              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              active
+                ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
+            )}
+          >
+            <item.icon className="size-4.5" />
+            {item.label}
+          </Link>
+        )
+      })}
+    </nav>
+  )
+}
+
+function SidebarContent({ user, onNavigate }: { user: ShellUser; onNavigate?: () => void }) {
+  return (
+    <div className="flex h-full flex-col gap-6 p-4">
+      <div className="px-2 pt-2">
+        <Link href="/" onClick={onNavigate}>
+          <Logo />
+        </Link>
+      </div>
+
+      <NavLinks onNavigate={onNavigate} />
+
+      <div className="mt-auto flex flex-col gap-3">
+        <div className="rounded-xl border border-sidebar-border bg-sidebar-accent/40 p-3">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <span className={cn("size-2 rounded-full", user.extensionConnected ? "bg-primary" : "bg-muted-foreground")} />
+            익스텐션 {user.extensionConnected ? "연동됨" : "미연동"}
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            프로그래머스 자동 기록
+          </p>
+        </div>
+        <div className="flex items-center gap-3 rounded-xl px-2 py-1.5">
+          <UserAvatar name={user.name} className="size-9" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium">{user.name}</p>
+            <p className="truncate text-xs text-muted-foreground">{user.handle}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function AppShell({ children, user }: { children: React.ReactNode; user: ShellUser }) {
+  const [mobileOpen, setMobileOpen] = useState(false)
+
+  return (
+    <div className="flex min-h-screen bg-background">
+      {/* Desktop sidebar */}
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-r border-sidebar-border bg-sidebar lg:block">
+        <SidebarContent user={user} />
+      </aside>
+
+      {/* Mobile drawer */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div
+            className="absolute inset-0 bg-foreground/40 backdrop-blur-sm"
+            onClick={() => setMobileOpen(false)}
+          />
+          <div className="absolute left-0 top-0 h-full w-72 border-r border-sidebar-border bg-sidebar">
+            <SidebarContent user={user} onNavigate={() => setMobileOpen(false)} />
+          </div>
+        </div>
+      )}
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur-md md:px-6">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden"
+            aria-label="메뉴 열기"
+            onClick={() => setMobileOpen(true)}
+          >
+            <Menu className="size-5" />
+          </Button>
+
+          <div className="flex items-center gap-2 lg:hidden">
+            <Logo showText={false} />
+          </div>
+
+          <div className="ml-auto flex items-center gap-2 md:gap-3">
+            <Badge variant="outline" className="hidden gap-1.5 md:flex">
+              <Puzzle className={cn("size-3.5", user.extensionConnected ? "text-primary" : "text-muted-foreground")} />
+              프로그래머스 {user.extensionConnected ? "연동" : "미연동"}
+            </Badge>
+            <ThemeToggle />
+            <AccountDialog user={user} />
+          </div>
+        </header>
+
+        <main className="flex-1 px-4 py-6 md:px-6 lg:px-8">{children}</main>
+      </div>
+    </div>
+  )
+}
