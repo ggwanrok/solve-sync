@@ -13,7 +13,7 @@ npm run dev
 
 ## Supabase 설정
 
-1. 새 프로젝트는 Supabase Dashboard의 **SQL Editor**에서 `supabase/schema.sql` 전체를 실행합니다. 기존 프로젝트에는 기능 SQL 적용 후 `supabase/security-hardening.sql`을 마지막으로 실행합니다.
+1. 새 프로젝트는 Supabase Dashboard의 **SQL Editor**에서 `supabase/schema.sql` 전체를 실행합니다. 기존 프로젝트에는 기능 SQL(친구 요청 중복 처리는 `supabase/friend-request-idempotency.sql`) 적용 후 `supabase/security-hardening.sql`을 마지막으로 실행합니다.
 2. **Authentication → Providers → Google**에서 Google 공급자를 활성화하고 Google OAuth Client ID와 Client Secret을 등록합니다.
 3. Google Cloud Console의 승인된 리디렉션 URI에 아래 주소를 추가합니다.
 

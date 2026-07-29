@@ -14,10 +14,30 @@ async function userClient() {
 export async function sendFriendRequest(formData: FormData) {
   const { supabase } = await userClient()
   const raw = String(formData.get("handle") || "").trim().toLowerCase()
-  if (!raw) return
-  const { error } = await supabase.rpc("send_friend_request", { target_handle: raw.replace(/^@+/, "") })
-  if (error) throw new Error(error.message)
+  if (!raw) return { status: "invalid" as const, message: "닉네임을 입력해 주세요." }
+
+  const { data, error } = await supabase.rpc("send_friend_request", { target_handle: raw.replace(/^@+/, "") })
+  if (error) return { status: "error" as const, message: error.message }
+
   revalidatePath("/friends")
+
+  const status = data && typeof data === "object" && "status" in data ? data.status : null
+  switch (status) {
+    case "sent":
+      return { status, message: "친구 요청을 보냈습니다." }
+    case "already_sent":
+      return { status, message: "이미 친구 요청을 보낸 사용자입니다." }
+    case "incoming_pending":
+      return { status, message: "이미 이 사용자에게 받은 요청이 있습니다. 받은 요청에서 수락해 주세요." }
+    case "already_friends":
+      return { status, message: "이미 친구인 사용자입니다." }
+    case "self":
+      return { status, message: "자기 자신에게는 친구 요청을 보낼 수 없습니다." }
+    case "not_found":
+      return { status, message: "해당 닉네임의 사용자를 찾을 수 없습니다." }
+    default:
+      return { status: "error" as const, message: "친구 요청 상태를 확인하지 못했습니다." }
+  }
 }
 
 export async function respondFriendRequest(formData: FormData) {

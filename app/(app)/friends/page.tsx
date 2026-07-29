@@ -1,10 +1,10 @@
-import { Check, Search, UserPlus, X } from "lucide-react"
-import { sendFriendRequest, respondFriendRequest } from "@/app/actions"
+import { Check, X } from "lucide-react"
+import { respondFriendRequest } from "@/app/actions"
+import { FriendRequestForm } from "@/components/friend-request-form"
 import { UserAvatar } from "@/components/user-avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { redirect } from "next/navigation"
 import { getViewer } from "@/lib/server/viewer"
 
@@ -23,10 +23,7 @@ export default async function FriendsPage() {
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
       <div><h1 className="text-2xl font-bold tracking-tight">친구</h1><p className="mt-1 text-sm text-muted-foreground">고유한 닉네임으로 친구를 찾고 함께 성장하세요.</p></div>
-      <form action={sendFriendRequest} className="flex gap-2">
-        <div className="relative flex-1"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input name="handle" placeholder="닉네임으로 친구 검색" className="pl-9" required /></div>
-        <Button type="submit" className="gap-2"><UserPlus className="size-4" />친구 추가</Button>
-      </form>
+      <FriendRequestForm />
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader className="flex-row items-center justify-between"><CardTitle className="text-base">내 친구</CardTitle><Badge variant="secondary">{friends.length}명</Badge></CardHeader>
