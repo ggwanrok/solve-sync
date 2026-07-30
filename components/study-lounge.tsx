@@ -12,14 +12,20 @@ import { createClient } from "@/utils/supabase/client"
 
 export type LoungeComment = {
   id: string
+  study_id: string
+  author_id: string
   message: string
   created_at: string
-  profile: {
-    handle: string
-    nickname: string
-    avatar_url: string | null
-  } | null
+  profile: LoungeProfile | null
 }
+
+export type LoungeProfile = {
+  handle: string
+  nickname: string
+  avatar_url: string | null
+}
+
+type InsertedComment = Omit<LoungeComment, "profile">
 
 function formatTime(value: string) {
   return new Intl.DateTimeFormat("ko-KR", {
@@ -30,7 +36,30 @@ function formatTime(value: string) {
   }).format(new Date(value))
 }
 
-export function StudyLounge({ studyId, initialComments }: { studyId: string; initialComments: LoungeComment[] }) {
+function appendComment(comments: LoungeComment[], comment: LoungeComment) {
+  if (comments.some((item) => item.id === comment.id)) return comments
+
+  const optimisticIndex = comments.findIndex(
+    (item) => item.id.startsWith("optimistic-") && item.author_id === comment.author_id && item.message === comment.message,
+  )
+  if (optimisticIndex === -1) return [...comments, comment]
+
+  const next = [...comments]
+  next[optimisticIndex] = comment
+  return next
+}
+
+export function StudyLounge({
+  studyId,
+  currentUserId,
+  initialComments,
+  memberProfiles,
+}: {
+  studyId: string
+  currentUserId: string
+  initialComments: LoungeComment[]
+  memberProfiles: Record<string, LoungeProfile | null>
+}) {
   const [comments, setComments] = useState(initialComments)
   const [message, setMessage] = useState("")
   const [pending, setPending] = useState(false)
@@ -40,11 +69,15 @@ export function StudyLounge({ studyId, initialComments }: { studyId: string; ini
   const loadComments = useCallback(async () => {
     const { data, error } = await supabaseRef.current
       .from("study_comments")
-      .select("id,message,created_at,profile:profiles!study_comments_author_id_fkey(handle,nickname,avatar_url)")
+      .select("id,study_id,author_id,message,created_at,profile:profiles!study_comments_author_id_fkey(handle,nickname,avatar_url)")
       .eq("study_id", studyId)
       .order("created_at")
 
-    if (!error && data) setComments(data as unknown as LoungeComment[])
+    if (!error && data) {
+      setComments((current) =>
+        (data as unknown as LoungeComment[]).reduce(appendComment, current),
+      )
+    }
   }, [studyId])
 
   useEffect(() => {
@@ -54,20 +87,28 @@ export function StudyLounge({ studyId, initialComments }: { studyId: string; ini
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "study_comments", filter: `study_id=eq.${studyId}` },
-        () => void loadComments(),
+        (payload) => {
+          const inserted = payload.new as InsertedComment
+          if (!inserted.id || inserted.study_id !== studyId) return
+
+          setComments((current) =>
+            appendComment(current, {
+              ...inserted,
+              profile: memberProfiles[inserted.author_id] ?? null,
+            }),
+          )
+        },
       )
       .subscribe()
-    const interval = window.setInterval(loadComments, 3000)
     const handleVisibility = () => {
       if (document.visibilityState === "visible") void loadComments()
     }
     document.addEventListener("visibilitychange", handleVisibility)
     return () => {
       void supabase.removeChannel(channel)
-      window.clearInterval(interval)
       document.removeEventListener("visibilitychange", handleVisibility)
     }
-  }, [loadComments, studyId])
+  }, [loadComments, memberProfiles, studyId])
 
   useEffect(() => {
     const element = scrollAreaRef.current
@@ -79,12 +120,31 @@ export function StudyLounge({ studyId, initialComments }: { studyId: string; ini
     const nextMessage = message.trim()
     if (!nextMessage || pending) return
 
+    const optimisticId = `optimistic-${crypto.randomUUID()}`
+    const optimisticComment: LoungeComment = {
+      id: optimisticId,
+      study_id: studyId,
+      author_id: currentUserId,
+      message: nextMessage,
+      created_at: new Date().toISOString(),
+      profile: memberProfiles[currentUserId] ?? null,
+    }
+
+    setComments((current) => [...current, optimisticComment])
+    setMessage("")
     setPending(true)
     try {
-      await addStudyComment(studyId, nextMessage)
-      setMessage("")
-      await loadComments()
+      const inserted = await addStudyComment(studyId, nextMessage)
+      setComments((current) => {
+        const withoutOptimistic = current.filter((comment) => comment.id !== optimisticId)
+        return appendComment(withoutOptimistic, {
+          ...inserted,
+          profile: memberProfiles[inserted.author_id] ?? null,
+        })
+      })
     } catch (error) {
+      setComments((current) => current.filter((comment) => comment.id !== optimisticId))
+      setMessage(nextMessage)
       toast.error(error instanceof Error ? error.message : "메시지를 보내지 못했어요.")
     } finally {
       setPending(false)

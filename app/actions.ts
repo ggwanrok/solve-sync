@@ -65,9 +65,13 @@ export async function createStudyRoom(input: { name: string; description: string
 
 export async function addStudyComment(studyId: string, message: string) {
   const { supabase, user } = await userClient()
-  const { error } = await supabase.from("study_comments").insert({ study_id: studyId, author_id: user.id, message: message.trim() })
+  const { data, error } = await supabase
+    .from("study_comments")
+    .insert({ study_id: studyId, author_id: user.id, message: message.trim() })
+    .select("id,study_id,author_id,message,created_at")
+    .single()
   if (error) throw new Error(error.message)
-  revalidatePath(`/study/${studyId}`)
+  return data
 }
 
 export async function verifyStudyRoomPassword(studyId: string, password: string) {
