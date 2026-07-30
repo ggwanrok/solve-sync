@@ -11,6 +11,7 @@ grant select(id, owner_id, name, description, emoji, weekly_goal, max_members, i
 
 revoke all on public.study_members from authenticated;
 grant select on public.study_members to authenticated;
+revoke all on public.study_membership_history from anon, authenticated;
 
 -- 핸들은 claim_handle RPC로만 최초 설정하고 일반 프로필 수정에서 제외한다.
 revoke all on public.profiles from authenticated;
@@ -31,6 +32,7 @@ revoke execute on function public.join_study_room(uuid) from public, anon;
 revoke execute on function public.delete_study_room(uuid) from public, anon;
 revoke execute on function public.leave_study_room(uuid) from public, anon;
 revoke execute on function public.study_member_goal_progress(uuid) from public, anon;
+revoke execute on function public.study_goal_history(uuid) from public, anon;
 
 -- 풀이 기록은 Vercel 서버의 Secret Key 경로만 사용한다.
 revoke execute on function public.record_programmers_event(text, text, text, text, text, timestamptz, integer, timestamptz)
