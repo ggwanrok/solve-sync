@@ -53,7 +53,7 @@ export function ContributionGraph({ data }: { data: ContributionDay[] }) {
                     />
                     <TooltipContent side="top" className="max-w-72 text-xs">
                       <p className="font-medium">{new Date(`${day.date}T00:00:00`).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" })}</p>
-                      {day.problems.length ? <ul className="mt-1.5 space-y-1">{day.problems.map((problem, index) => <li key={`${problem.title}-${index}`} className="flex gap-2"><span className="max-w-48 truncate">{problem.title}</span><span className="text-muted-foreground">{problem.language || "언어 미상"}</span></li>)}</ul> : <p className="mt-1 text-muted-foreground">푼 문제 없음</p>}
+                      {day.problems.length ? <ul className="mt-1.5 space-y-1">{day.problems.map((problem, index) => <li key={`${problem.title}-${index}`} className="flex gap-2"><span className="max-w-48 truncate">{problem.title}</span>{problem.language && <span className="text-muted-foreground">{problem.language}</span>}</li>)}</ul> : <p className="mt-1 text-muted-foreground">푼 문제 없음</p>}
                     </TooltipContent>
                   </Tooltip>
                 })}
