@@ -2,7 +2,7 @@ import { ArrowLeft, Crown, Users } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { StudyLounge, type LoungeComment, type LoungeProfile } from "@/components/study-lounge"
-import { StudyProgress, type StudyProgressHistoryEntry } from "@/components/study-progress"
+import { StudyProgress, type StudyProgressHistoryEntry, type StudyProgressProblem } from "@/components/study-progress"
 import { JoinStudyRoomButton } from "@/components/join-study-room-button"
 import { StudyRoomPasswordForm } from "@/components/study-room-password-form"
 import { StudyRoomMembershipActions } from "@/components/study-room-membership-actions"
@@ -12,6 +12,23 @@ import { Card, CardContent } from "@/components/ui/card"
 import { getViewer } from "@/lib/server/viewer"
 
 type Profile = LoungeProfile
+type SolveDetailRow = {
+  period_start: string
+  period_end: string
+  is_current: boolean
+  user_id: string
+  problem_id: string
+  title: string
+  url: string
+  language: string | null
+  accepted_at: string
+}
+
+function addProblem(problemsByKey: Map<string, StudyProgressProblem[]>, key: string, problem: StudyProgressProblem) {
+  const problems = problemsByKey.get(key) || []
+  if (!problems.some((item) => item.problemId === problem.problemId)) problems.push(problem)
+  problemsByKey.set(key, problems)
+}
 
 export default async function StudyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -28,13 +45,28 @@ export default async function StudyDetailPage({ params }: { params: Promise<{ id
     const { data } = await supabase.rpc("has_study_room_access", { target_study: id })
     canView = Boolean(data)
   }
-  const [{ data: progressData }, { data: historyData }] = isMember
+  const [{ data: progressData }, { data: historyData }, { data: solveDetailData }] = isMember
     ? await Promise.all([
       supabase.rpc("study_member_goal_progress", { target_study: id }),
       supabase.rpc("study_goal_history", { target_study: id }),
+      supabase.rpc("study_member_solve_events", { target_study: id }),
     ])
-    : [{ data: [] }, { data: [] }]
+    : [{ data: [] }, { data: [] }, { data: [] }]
   const progressByUser = new Map<string, number>((progressData || []).map((item: { user_id: string; solved_count: number }) => [item.user_id, Number(item.solved_count)]))
+  const currentProblemsByUser = new Map<string, StudyProgressProblem[]>()
+  const historyProblemsByMemberPeriod = new Map<string, StudyProgressProblem[]>()
+  const solveDetails = (solveDetailData || []) as SolveDetailRow[]
+  solveDetails.forEach((detail) => {
+    const problem: StudyProgressProblem = {
+      problemId: detail.problem_id,
+      title: detail.title,
+      url: detail.url,
+      language: detail.language,
+      acceptedAt: detail.accepted_at,
+    }
+    addProblem(historyProblemsByMemberPeriod, `${detail.period_start}:${detail.user_id}`, problem)
+    if (detail.is_current) addProblem(currentProblemsByUser, detail.user_id, problem)
+  })
   const memberProfiles: Record<string, LoungeProfile | null> = Object.fromEntries(
     (members || []).map((member) => [member.user_id, member.profile as unknown as LoungeProfile | null]),
   )
@@ -44,6 +76,7 @@ export default async function StudyDetailPage({ params }: { params: Promise<{ id
     role: member.role,
     profile: member.profile as unknown as Profile | null,
     solvedCount: progressByUser.get(member.user_id) || 0,
+    problems: currentProblemsByUser.get(member.user_id) || [],
   }))
   const progressHistory: StudyProgressHistoryEntry[] = (historyData || []).map((entry: {
     period_start: string
@@ -63,6 +96,7 @@ export default async function StudyDetailPage({ params }: { params: Promise<{ id
     role: entry.role,
     profile: { handle: entry.handle, nickname: entry.nickname, avatar_url: entry.avatar_url },
     solvedCount: Number(entry.solved_count),
+    problems: historyProblemsByMemberPeriod.get(`${entry.period_start}:${entry.user_id}`) || [],
   }))
 
   if (!canView) {

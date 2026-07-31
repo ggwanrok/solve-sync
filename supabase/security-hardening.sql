@@ -33,6 +33,7 @@ revoke execute on function public.delete_study_room(uuid) from public, anon;
 revoke execute on function public.leave_study_room(uuid) from public, anon;
 revoke execute on function public.study_member_goal_progress(uuid) from public, anon;
 revoke execute on function public.study_goal_history(uuid) from public, anon;
+revoke execute on function public.study_member_solve_events(uuid) from public, anon;
 
 -- 풀이 기록은 Vercel 서버의 Secret Key 경로만 사용한다.
 revoke execute on function public.record_programmers_event(text, text, text, text, text, timestamptz, integer, timestamptz)
