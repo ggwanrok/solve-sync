@@ -190,11 +190,20 @@ function MemberProgressCard({
   )
 }
 
-function HistoryMemberRow({ member, goalCount }: { member: StudyProgressHistoryEntry; goalCount: number }) {
+function HistoryMemberRow({
+  member,
+  goalCount,
+  open,
+  onToggle,
+}: {
+  member: StudyProgressHistoryEntry
+  goalCount: number
+  open: boolean
+  onToggle: () => void
+}) {
   const name = displayName(member.profile)
   const percent = Math.min(100, Math.round((member.solvedCount / goalCount) * 100))
   const achieved = member.solvedCount >= goalCount
-  const [open, setOpen] = useState(false)
   const problemsId = useId()
 
   return (
@@ -203,7 +212,7 @@ function HistoryMemberRow({ member, goalCount }: { member: StudyProgressHistoryE
         type="button"
         aria-expanded={open}
         aria-controls={problemsId}
-        onClick={() => setOpen((value) => !value)}
+        onClick={onToggle}
         className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 px-4 py-3 text-left transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
       >
         <div className="flex min-w-0 items-center gap-2.5">
@@ -231,10 +240,14 @@ function HistoryCard({
   period,
   goalPeriod,
   goalCount,
+  openMemberKey,
+  onToggleMember,
 }: {
   period: HistoryPeriod
   goalPeriod: "daily" | "weekly"
   goalCount: number
+  openMemberKey: string | null
+  onToggleMember: (memberKey: string) => void
 }) {
   const unit = goalPeriod === "daily" ? "일차" : "주차"
 
@@ -252,9 +265,18 @@ function HistoryCard({
           <Badge variant="secondary">{period.members.length}명</Badge>
         </div>
         <div className="divide-y">
-          {period.members.map((member) => (
-            <HistoryMemberRow key={`${period.periodStart}-${member.userId}`} member={member} goalCount={goalCount} />
-          ))}
+          {period.members.map((member) => {
+            const memberKey = `${period.periodStart}:${member.userId}`
+            return (
+              <HistoryMemberRow
+                key={memberKey}
+                member={member}
+                goalCount={goalCount}
+                open={openMemberKey === memberKey}
+                onToggle={() => onToggleMember(memberKey)}
+              />
+            )
+          })}
         </div>
       </CardContent>
     </Card>
@@ -275,6 +297,7 @@ export function StudyProgress({
   canViewProgress: boolean
 }) {
   const [historyOrder, setHistoryOrder] = useState<HistoryOrder>("newest")
+  const [openHistoryMember, setOpenHistoryMember] = useState<string | null>(null)
   const historyPeriods = Array.from(
     history.reduce((periods, entry) => {
       const existing = periods.get(entry.periodStart)
@@ -349,7 +372,14 @@ export function StudyProgress({
           ) : (
             <div className="flex flex-col gap-3">
               {historyPeriods.map((period) => (
-                <HistoryCard key={period.periodStart} period={period} goalPeriod={goalPeriod} goalCount={goalCount} />
+                <HistoryCard
+                  key={period.periodStart}
+                  period={period}
+                  goalPeriod={goalPeriod}
+                  goalCount={goalCount}
+                  openMemberKey={openHistoryMember}
+                  onToggleMember={(memberKey) => setOpenHistoryMember((current) => current === memberKey ? null : memberKey)}
+                />
               ))}
             </div>
           )}
