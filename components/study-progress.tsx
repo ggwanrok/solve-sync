@@ -129,15 +129,18 @@ function MemberProgressCard({
   goalCount,
   progressLabel,
   showProgress,
+  open,
+  onToggle,
 }: {
   member: CurrentStudyProgressMember
   goalCount: number
   progressLabel: string
   showProgress: boolean
+  open: boolean
+  onToggle: () => void
 }) {
   const name = displayName(member.profile)
   const percent = Math.min(100, Math.round((member.solvedCount / goalCount) * 100))
-  const [open, setOpen] = useState(false)
   const problemsId = useId()
   const memberSummary = (
     <>
@@ -176,7 +179,7 @@ function MemberProgressCard({
             type="button"
             aria-expanded={open}
             aria-controls={problemsId}
-            onClick={() => setOpen((value) => !value)}
+            onClick={onToggle}
             className="flex w-full flex-col gap-3 p-4 text-left transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
           >
             {memberSummary}
@@ -297,6 +300,7 @@ export function StudyProgress({
   canViewProgress: boolean
 }) {
   const [historyOrder, setHistoryOrder] = useState<HistoryOrder>("newest")
+  const [openCurrentMember, setOpenCurrentMember] = useState<string | null>(null)
   const [openHistoryMember, setOpenHistoryMember] = useState<string | null>(null)
   const historyPeriods = Array.from(
     history.reduce((periods, entry) => {
@@ -333,7 +337,7 @@ export function StudyProgress({
       </div>
 
       <TabsContent value="current">
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid items-start gap-3 sm:grid-cols-2">
           {currentMembers.map((member) => (
             <MemberProgressCard
               key={member.userId}
@@ -341,6 +345,8 @@ export function StudyProgress({
               goalCount={goalCount}
               progressLabel={`${currentLabel} 풀이`}
               showProgress={canViewProgress}
+              open={openCurrentMember === member.userId}
+              onToggle={() => setOpenCurrentMember((current) => current === member.userId ? null : member.userId)}
             />
           ))}
         </div>
