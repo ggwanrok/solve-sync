@@ -5,9 +5,13 @@ import { APP_TIME_ZONE } from "@/lib/calendar"
 import { cn } from "@/lib/utils"
 
 const levelClass = ["bg-grass-0", "bg-grass-1", "bg-grass-2", "bg-grass-3", "bg-grass-4"]
-const weekdayLabels = ["월", "", "수", "", "금", "", ""]
+const weekdayLabels = ["월", "화", "수", "목", "금", "토", "일"]
 
-export type ContributionDay = { date: string; problems: Array<{ title: string; language: string | null }> }
+export type ContributionDay = {
+  date: string
+  problems: Array<{ title: string; language: string | null }>
+  isFuture?: boolean
+}
 
 function calendarDate(date: string) {
   return new Date(`${date}T12:00:00Z`)
@@ -66,7 +70,7 @@ export function ContributionGraph({ data }: { data: ContributionDay[] }) {
             ))}
           </div>
           <div className="flex gap-[3px]">
-            <div className="mr-1 grid w-5 shrink-0 grid-rows-7 gap-[3px] text-[10px] text-muted-foreground">
+            <div className="mr-1 grid w-5 shrink-0 grid-rows-7 gap-[3px] text-[9px] text-muted-foreground">
               {weekdayLabels.map((label, index) => (
                 <span key={index} className="h-[13px] leading-[13px]">{label}</span>
               ))}
@@ -75,6 +79,16 @@ export function ContributionGraph({ data }: { data: ContributionDay[] }) {
               <div key={weekIndex} className="flex flex-col gap-[3px]">
                 {week.map((day, dayIndex) => {
                   if (!day) return <div key={`empty-${dayIndex}`} aria-hidden className="size-[13px]" />
+                  if (day.isFuture) {
+                    return (
+                      <div
+                        key={day.date}
+                        data-date={day.date}
+                        aria-hidden
+                        className="size-[13px] rounded-[3px] bg-muted/35 ring-1 ring-inset ring-border/25"
+                      />
+                    )
+                  }
                   const level = Math.min(day.problems.length, 4)
                   return <Tooltip key={day.date}>
                     <TooltipTrigger
