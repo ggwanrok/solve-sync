@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { MessageSquare, Send } from "lucide-react"
+import { LoaderCircle, MessageSquare, Send } from "lucide-react"
 import { toast } from "sonner"
 import { addStudyComment } from "@/app/actions"
 import { UserAvatar } from "@/components/user-avatar"
@@ -49,36 +49,64 @@ function appendComment(comments: LoungeComment[], comment: LoungeComment) {
   return next
 }
 
+const COMMENTS_PAGE_SIZE = 50
+
+function mergeComments(current: LoungeComment[], incoming: LoungeComment[]) {
+  const comments = new Map(current.map((comment) => [comment.id, comment]))
+  incoming.forEach((comment) => comments.set(comment.id, comment))
+  return Array.from(comments.values()).sort((first, second) => {
+    const timeDifference = Date.parse(first.created_at) - Date.parse(second.created_at)
+    return timeDifference || first.id.localeCompare(second.id)
+  })
+}
+
 export function StudyLounge({
   studyId,
   currentUserId,
-  initialComments,
   memberProfiles,
 }: {
   studyId: string
   currentUserId: string
-  initialComments: LoungeComment[]
   memberProfiles: Record<string, LoungeProfile | null>
 }) {
-  const [comments, setComments] = useState(initialComments)
+  const [comments, setComments] = useState<LoungeComment[]>([])
   const [message, setMessage] = useState("")
   const [pending, setPending] = useState(false)
+  const [loadingInitial, setLoadingInitial] = useState(true)
+  const [loadingOlder, setLoadingOlder] = useState(false)
+  const [hasOlder, setHasOlder] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const preserveScrollHeightRef = useRef<number | null>(null)
+  const initialLoadStartedRef = useRef(false)
   const supabaseRef = useRef(createClient())
 
-  const loadComments = useCallback(async () => {
-    const { data, error } = await supabaseRef.current
+  const fetchCommentPage = useCallback(async (before?: string) => {
+    let query = supabaseRef.current
       .from("study_comments")
       .select("id,study_id,author_id,message,created_at,profile:profiles!study_comments_author_id_fkey(handle,nickname,avatar_url)")
       .eq("study_id", studyId)
-      .order("created_at")
+      .order("created_at", { ascending: false })
+      .limit(COMMENTS_PAGE_SIZE + 1)
 
-    if (!error && data) {
-      setComments((current) =>
-        (data as unknown as LoungeComment[]).reduce(appendComment, current),
-      )
+    if (before) query = query.lt("created_at", before)
+    const { data, error } = await query
+    if (error) throw error
+
+    const rows = (data || []) as unknown as LoungeComment[]
+    return {
+      comments: rows.slice(0, COMMENTS_PAGE_SIZE).reverse(),
+      hasMore: rows.length > COMMENTS_PAGE_SIZE,
     }
   }, [studyId])
+
+  const loadRecentComments = useCallback(async () => {
+    try {
+      const page = await fetchCommentPage()
+      setComments((current) => mergeComments(current, page.comments))
+    } catch {
+      // Realtime will continue retrying through visibility changes.
+    }
+  }, [fetchCommentPage])
 
   useEffect(() => {
     const supabase = supabaseRef.current
@@ -100,20 +128,55 @@ export function StudyLounge({
         },
       )
       .subscribe()
+
+    if (!initialLoadStartedRef.current) {
+      initialLoadStartedRef.current = true
+      void fetchCommentPage()
+        .then((page) => {
+          setComments((current) => mergeComments(current, page.comments))
+          setHasOlder(page.hasMore)
+        })
+        .catch((error) => toast.error(error instanceof Error ? error.message : "라운지 메시지를 불러오지 못했습니다."))
+        .finally(() => setLoadingInitial(false))
+    }
+
     const handleVisibility = () => {
-      if (document.visibilityState === "visible") void loadComments()
+      if (document.visibilityState === "visible") void loadRecentComments()
     }
     document.addEventListener("visibilitychange", handleVisibility)
     return () => {
       void supabase.removeChannel(channel)
       document.removeEventListener("visibilitychange", handleVisibility)
     }
-  }, [loadComments, memberProfiles, studyId])
+  }, [fetchCommentPage, loadRecentComments, memberProfiles, studyId])
 
   useEffect(() => {
     const element = scrollAreaRef.current
-    if (element) element.scrollTop = element.scrollHeight
+    if (!element) return
+    if (preserveScrollHeightRef.current != null) {
+      element.scrollTop += element.scrollHeight - preserveScrollHeightRef.current
+      preserveScrollHeightRef.current = null
+    } else {
+      element.scrollTop = element.scrollHeight
+    }
   }, [comments])
+
+  async function loadOlderComments() {
+    const oldest = comments[0]
+    if (!oldest || loadingOlder) return
+    setLoadingOlder(true)
+    preserveScrollHeightRef.current = scrollAreaRef.current?.scrollHeight ?? null
+    try {
+      const page = await fetchCommentPage(oldest.created_at)
+      setComments((current) => mergeComments(current, page.comments))
+      setHasOlder(page.hasMore)
+    } catch (error) {
+      preserveScrollHeightRef.current = null
+      toast.error(error instanceof Error ? error.message : "이전 메시지를 불러오지 못했습니다.")
+    } finally {
+      setLoadingOlder(false)
+    }
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -160,13 +223,17 @@ export function StudyLounge({
       </CardHeader>
       <CardContent>
         <div ref={scrollAreaRef} className="flex h-72 flex-col gap-4 overflow-y-auto overscroll-contain pr-2 sm:h-80" aria-live="polite">
-          {comments.length === 0 ? (
+          {loadingInitial ? (
+            <div className="flex h-full shrink-0 items-center justify-center gap-2 text-xs text-muted-foreground"><LoaderCircle className="size-4 animate-spin" />메시지를 불러오는 중...</div>
+          ) : comments.length === 0 ? (
             <div className="flex h-full shrink-0 flex-col items-center justify-center text-center">
               <MessageSquare className="mb-2 size-7 text-muted-foreground/50" />
               <p className="text-sm font-medium">첫 메시지를 남겨보세요</p>
               <p className="mt-1 text-xs text-muted-foreground">스터디원들과 목표와 진행 상황을 나눌 수 있어요.</p>
             </div>
-          ) : comments.map((comment) => {
+          ) : <>
+            {hasOlder && <Button type="button" variant="ghost" size="sm" className="mx-auto shrink-0" onClick={loadOlderComments} disabled={loadingOlder}>{loadingOlder && <LoaderCircle className="size-3.5 animate-spin" />}{loadingOlder ? "불러오는 중..." : "이전 메시지 불러오기"}</Button>}
+            {comments.map((comment) => {
             const name = comment.profile?.nickname || comment.profile?.handle || "멤버"
             return (
               <div key={comment.id} className="flex gap-2">
@@ -180,7 +247,8 @@ export function StudyLounge({
                 </div>
               </div>
             )
-          })}
+            })}
+          </>}
         </div>
         <form className="mt-4 flex gap-2" onSubmit={handleSubmit}>
           <Input value={message} onChange={(event) => setMessage(event.target.value)} placeholder="스터디원들에게 메시지 보내기" maxLength={500} disabled={pending} />

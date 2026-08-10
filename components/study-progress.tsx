@@ -1,14 +1,18 @@
 "use client"
 
-import { useId, useState } from "react"
-import { CalendarDays, ChevronDown, Clock, ExternalLink, History } from "lucide-react"
+import { useId, useRef, useState } from "react"
+import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Clock, ExternalLink, History, LoaderCircle } from "lucide-react"
+import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { UserAvatar } from "@/components/user-avatar"
 import { cn } from "@/lib/utils"
+import type { StudyHistoryPageData, StudyPeriodProblemRow } from "@/lib/study-room-data"
+import { createClient } from "@/utils/supabase/client"
 
 export type StudyProgressProfile = {
   handle: string
@@ -29,7 +33,6 @@ export type CurrentStudyProgressMember = {
   role: string
   profile: StudyProgressProfile | null
   solvedCount: number
-  problems: StudyProgressProblem[]
 }
 
 export type StudyProgressHistoryEntry = {
@@ -40,7 +43,6 @@ export type StudyProgressHistoryEntry = {
   role: string
   profile: StudyProgressProfile | null
   solvedCount: number
-  problems: StudyProgressProblem[]
 }
 
 type HistoryPeriod = {
@@ -78,7 +80,7 @@ function periodDateLabel(period: HistoryPeriod, goalPeriod: "daily" | "weekly") 
   return `${dateFormatter.format(start)} – ${dateFormatter.format(inclusiveEnd)}`
 }
 
-function ProblemList({ id, problems, open }: { id: string; problems: StudyProgressProblem[]; open: boolean }) {
+function ProblemList({ id, problems, open, loading }: { id: string; problems: StudyProgressProblem[]; open: boolean; loading: boolean }) {
   return (
     <div
       id={id}
@@ -92,7 +94,9 @@ function ProblemList({ id, problems, open }: { id: string; problems: StudyProgre
       <div className="overflow-hidden">
         <div className="border-t bg-muted/30 px-4 py-3">
           <p className="mb-2 text-xs font-medium text-muted-foreground">카운트된 문제</p>
-          {problems.length ? (
+          {loading ? (
+            <div className="flex items-center justify-center gap-2 py-4 text-xs text-muted-foreground"><LoaderCircle className="size-4 animate-spin" />문제 목록을 불러오는 중...</div>
+          ) : problems.length ? (
             <ul className="space-y-1.5">
               {problems.map((problem) => (
                 <li key={problem.problemId}>
@@ -130,6 +134,8 @@ function MemberProgressCard({
   progressLabel,
   showProgress,
   open,
+  problems,
+  loadingProblems,
   onToggle,
 }: {
   member: CurrentStudyProgressMember
@@ -137,6 +143,8 @@ function MemberProgressCard({
   progressLabel: string
   showProgress: boolean
   open: boolean
+  problems: StudyProgressProblem[]
+  loadingProblems: boolean
   onToggle: () => void
 }) {
   const name = displayName(member.profile)
@@ -187,7 +195,7 @@ function MemberProgressCard({
         ) : (
           <div className="flex flex-col gap-3 p-4">{memberSummary}</div>
         )}
-        {showProgress && <ProblemList id={problemsId} problems={member.problems} open={open} />}
+        {showProgress && <ProblemList id={problemsId} problems={problems} open={open} loading={loadingProblems} />}
       </CardContent>
     </Card>
   )
@@ -197,11 +205,15 @@ function HistoryMemberRow({
   member,
   goalCount,
   open,
+  problems,
+  loadingProblems,
   onToggle,
 }: {
   member: StudyProgressHistoryEntry
   goalCount: number
   open: boolean
+  problems: StudyProgressProblem[]
+  loadingProblems: boolean
   onToggle: () => void
 }) {
   const name = displayName(member.profile)
@@ -234,7 +246,7 @@ function HistoryMemberRow({
         </div>
         <Progress value={percent} className="col-span-2 h-1.5" />
       </button>
-      <ProblemList id={problemsId} problems={member.problems} open={open} />
+      <ProblemList id={problemsId} problems={problems} open={open} loading={loadingProblems} />
     </div>
   )
 }
@@ -244,13 +256,17 @@ function HistoryCard({
   goalPeriod,
   goalCount,
   openMemberKey,
+  problemsByKey,
+  loadingProblemKeys,
   onToggleMember,
 }: {
   period: HistoryPeriod
   goalPeriod: "daily" | "weekly"
   goalCount: number
   openMemberKey: string | null
-  onToggleMember: (memberKey: string) => void
+  problemsByKey: Record<string, StudyProgressProblem[]>
+  loadingProblemKeys: Record<string, boolean>
+  onToggleMember: (member: StudyProgressHistoryEntry) => void
 }) {
   const unit = goalPeriod === "daily" ? "일차" : "주차"
 
@@ -276,7 +292,9 @@ function HistoryCard({
                 member={member}
                 goalCount={goalCount}
                 open={openMemberKey === memberKey}
-                onToggle={() => onToggleMember(memberKey)}
+                problems={problemsByKey[memberKey] || []}
+                loadingProblems={Boolean(loadingProblemKeys[memberKey])}
+                onToggle={() => onToggleMember(member)}
               />
             )
           })}
@@ -287,21 +305,109 @@ function HistoryCard({
 }
 
 export function StudyProgress({
+  studyId,
   goalPeriod,
   goalCount,
   currentMembers,
-  history,
+  currentPeriod,
   canViewProgress,
 }: {
+  studyId: string
   goalPeriod: "daily" | "weekly"
   goalCount: number
   currentMembers: CurrentStudyProgressMember[]
-  history: StudyProgressHistoryEntry[]
+  currentPeriod: { start: string; end: string } | null
   canViewProgress: boolean
 }) {
+  const supabaseRef = useRef(createClient())
   const [historyOrder, setHistoryOrder] = useState<HistoryOrder>("newest")
+  const [history, setHistory] = useState<StudyProgressHistoryEntry[]>([])
+  const [historyPage, setHistoryPage] = useState(1)
+  const [historyTotalPages, setHistoryTotalPages] = useState(0)
+  const [historyLoaded, setHistoryLoaded] = useState(false)
+  const [loadingHistory, setLoadingHistory] = useState(false)
   const [openCurrentMember, setOpenCurrentMember] = useState<string | null>(null)
   const [openHistoryMember, setOpenHistoryMember] = useState<string | null>(null)
+  const [problemsByKey, setProblemsByKey] = useState<Record<string, StudyProgressProblem[]>>({})
+  const [loadingProblemKeys, setLoadingProblemKeys] = useState<Record<string, boolean>>({})
+
+  async function loadHistoryPage(page: number, order: HistoryOrder) {
+    setLoadingHistory(true)
+    try {
+      const { data, error } = await supabaseRef.current.rpc("study_goal_history_page", {
+        target_study: studyId,
+        page_number: page,
+        page_size: 5,
+        history_order: order,
+      })
+      if (error) throw error
+
+      const payload = data as unknown as StudyHistoryPageData
+      setHistory((payload?.entries || []).map((entry) => ({
+        periodStart: entry.period_start,
+        periodEnd: entry.period_end,
+        periodNumber: Number(entry.period_number),
+        userId: entry.user_id,
+        role: entry.role,
+        profile: { handle: entry.handle, nickname: entry.nickname, avatar_url: entry.avatar_url },
+        solvedCount: Number(entry.solved_count),
+      })))
+      setHistoryPage(Number(payload?.page || page))
+      setHistoryTotalPages(Number(payload?.totalPages || 0))
+      setHistoryLoaded(true)
+      setOpenHistoryMember(null)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "지난 기록을 불러오지 못했습니다.")
+    } finally {
+      setLoadingHistory(false)
+    }
+  }
+
+  async function loadProblems(userId: string, periodStart: string, key: string) {
+    if (Object.prototype.hasOwnProperty.call(problemsByKey, key) || loadingProblemKeys[key]) return
+    setLoadingProblemKeys((current) => ({ ...current, [key]: true }))
+    try {
+      const { data, error } = await supabaseRef.current.rpc("study_member_period_solve_events", {
+        target_study: studyId,
+        target_user: userId,
+        target_period_start: periodStart,
+      })
+      if (error) throw error
+
+      const problems = ((data || []) as unknown as StudyPeriodProblemRow[]).map((problem) => ({
+        problemId: problem.problem_id,
+        title: problem.title,
+        url: problem.url,
+        language: problem.language,
+        acceptedAt: problem.accepted_at,
+      }))
+      setProblemsByKey((current) => ({ ...current, [key]: problems }))
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "문제 목록을 불러오지 못했습니다.")
+    } finally {
+      setLoadingProblemKeys((current) => ({ ...current, [key]: false }))
+    }
+  }
+
+  function toggleCurrentMember(member: CurrentStudyProgressMember) {
+    if (openCurrentMember === member.userId) {
+      setOpenCurrentMember(null)
+      return
+    }
+    setOpenCurrentMember(member.userId)
+    if (currentPeriod) void loadProblems(member.userId, currentPeriod.start, `${currentPeriod.start}:${member.userId}`)
+  }
+
+  function toggleHistoryMember(member: StudyProgressHistoryEntry) {
+    const key = `${member.periodStart}:${member.userId}`
+    if (openHistoryMember === key) {
+      setOpenHistoryMember(null)
+      return
+    }
+    setOpenHistoryMember(key)
+    void loadProblems(member.userId, member.periodStart, key)
+  }
+
   const historyPeriods = Array.from(
     history.reduce((periods, entry) => {
       const existing = periods.get(entry.periodStart)
@@ -321,7 +427,9 @@ export function StudyProgress({
   const currentLabel = goalPeriod === "daily" ? "오늘" : "이번 주"
 
   return (
-    <Tabs defaultValue="current">
+    <Tabs defaultValue="current" onValueChange={(value) => {
+      if (value === "history" && !historyLoaded && !loadingHistory) void loadHistoryPage(1, historyOrder)
+    }}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Clock className="size-4 text-primary" />
@@ -338,25 +446,34 @@ export function StudyProgress({
 
       <TabsContent value="current">
         <div className="grid items-start gap-3 sm:grid-cols-2">
-          {currentMembers.map((member) => (
-            <MemberProgressCard
-              key={member.userId}
-              member={member}
-              goalCount={goalCount}
-              progressLabel={`${currentLabel} 풀이`}
-              showProgress={canViewProgress}
-              open={openCurrentMember === member.userId}
-              onToggle={() => setOpenCurrentMember((current) => current === member.userId ? null : member.userId)}
-            />
-          ))}
+          {currentMembers.map((member) => {
+            const problemKey = `${currentPeriod?.start || "current"}:${member.userId}`
+            return (
+              <MemberProgressCard
+                key={member.userId}
+                member={member}
+                goalCount={goalCount}
+                progressLabel={`${currentLabel} 풀이`}
+                showProgress={canViewProgress}
+                open={openCurrentMember === member.userId}
+                problems={problemsByKey[problemKey] || []}
+                loadingProblems={Boolean(loadingProblemKeys[problemKey])}
+                onToggle={() => toggleCurrentMember(member)}
+              />
+            )
+          })}
         </div>
       </TabsContent>
 
       {canViewProgress && (
         <TabsContent value="history">
           <div className="mb-3 flex justify-end">
-            <Select value={historyOrder} onValueChange={(value) => setHistoryOrder(value as HistoryOrder)}>
-              <SelectTrigger size="sm" aria-label="지난 기록 정렬 순서">
+            <Select value={historyOrder} onValueChange={(value) => {
+              const nextOrder = value as HistoryOrder
+              setHistoryOrder(nextOrder)
+              void loadHistoryPage(1, nextOrder)
+            }}>
+              <SelectTrigger size="sm" aria-label="지난 기록 정렬 순서" disabled={loadingHistory}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent align="end">
@@ -365,7 +482,9 @@ export function StudyProgress({
               </SelectContent>
             </Select>
           </div>
-          {historyPeriods.length === 0 ? (
+          {loadingHistory ? (
+            <Card><CardContent className="flex min-h-48 items-center justify-center gap-2 p-6 text-sm text-muted-foreground"><LoaderCircle className="size-5 animate-spin" />지난 기록을 불러오는 중...</CardContent></Card>
+          ) : historyLoaded && historyPeriods.length === 0 ? (
             <Card>
               <CardContent className="flex min-h-48 flex-col items-center justify-center p-6 text-center">
                 <History className="mb-3 size-7 text-muted-foreground/50" />
@@ -384,9 +503,18 @@ export function StudyProgress({
                   goalPeriod={goalPeriod}
                   goalCount={goalCount}
                   openMemberKey={openHistoryMember}
-                  onToggleMember={(memberKey) => setOpenHistoryMember((current) => current === memberKey ? null : memberKey)}
+                  problemsByKey={problemsByKey}
+                  loadingProblemKeys={loadingProblemKeys}
+                  onToggleMember={toggleHistoryMember}
                 />
               ))}
+              {historyTotalPages > 1 && (
+                <div className="flex items-center justify-center gap-3 pt-2">
+                  <Button type="button" variant="outline" size="sm" disabled={historyPage <= 1 || loadingHistory} onClick={() => void loadHistoryPage(historyPage - 1, historyOrder)}><ChevronLeft className="size-4" />이전</Button>
+                  <span className="text-xs text-muted-foreground">{historyPage} / {historyTotalPages} 페이지</span>
+                  <Button type="button" variant="outline" size="sm" disabled={historyPage >= historyTotalPages || loadingHistory} onClick={() => void loadHistoryPage(historyPage + 1, historyOrder)}>다음<ChevronRight className="size-4" /></Button>
+                </div>
+              )}
             </div>
           )}
         </TabsContent>
