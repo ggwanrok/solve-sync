@@ -60,15 +60,6 @@ function SidebarContent({ user, onNavigate }: { user: ShellUser; onNavigate?: ()
       <NavLinks onNavigate={onNavigate} />
 
       <div className="mt-auto flex flex-col gap-3">
-        <div className="rounded-xl border border-sidebar-border bg-sidebar-accent/40 p-3">
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <span className={cn("size-2 rounded-full", user.extensionConnected ? "bg-primary" : "bg-muted-foreground")} />
-            익스텐션 {user.extensionConnected ? "연동됨" : "미연동"}
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            프로그래머스 자동 기록
-          </p>
-        </div>
         <div className="flex items-center gap-3 rounded-xl px-2 py-1.5">
           <UserAvatar name={user.name} className="size-9" />
           <div className="min-w-0 flex-1">
