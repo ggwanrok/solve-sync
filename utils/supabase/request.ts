@@ -1,6 +1,4 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js"
-import { cookies } from "next/headers"
-import { ACCESS_TOKEN_COOKIE } from "@/lib/auth-cookies"
 import { createClient as createServerClient } from "@/utils/supabase/server"
 
 export async function createRequestClient(request: Request) {
@@ -8,20 +6,18 @@ export async function createRequestClient(request: Request) {
   const headerAccessToken = authorization?.startsWith("Bearer ")
     ? authorization.slice("Bearer ".length)
     : undefined
-  const cookieStore = await cookies()
-  const accessToken = headerAccessToken || cookieStore.get(ACCESS_TOKEN_COOKIE)?.value
 
-  if (accessToken) {
+  if (headerAccessToken) {
     return {
       supabase: createSupabaseClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
         {
           auth: { autoRefreshToken: false, persistSession: false },
-          global: { headers: { Authorization: `Bearer ${accessToken}` } },
+          global: { headers: { Authorization: `Bearer ${headerAccessToken}` } },
         },
       ),
-      accessToken,
+      accessToken: headerAccessToken,
     }
   }
 

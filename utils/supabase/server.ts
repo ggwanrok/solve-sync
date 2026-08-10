@@ -1,6 +1,5 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
-import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from "@/lib/auth-cookies"
 
 export async function createClient() {
   const cookieStore = await cookies()
@@ -23,14 +22,6 @@ export async function createClient() {
       },
     },
   )
-
-  const accessToken = cookieStore.get(ACCESS_TOKEN_COOKIE)?.value
-  const refreshToken = cookieStore.get(REFRESH_TOKEN_COOKIE)?.value
-  const hasSupabaseSession = cookieStore.getAll().some(({ name }) => name.startsWith("sb-") && name.includes("auth-token"))
-
-  if (!hasSupabaseSession && accessToken && refreshToken) {
-    await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
-  }
 
   return supabase
 }

@@ -1,6 +1,14 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
-import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, authCookieOptions } from "@/lib/auth-cookies"
+import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from "@/lib/auth-cookies"
+
+function redirectWithCookies(request: NextRequest, pathname: string, response: NextResponse) {
+  const url = request.nextUrl.clone()
+  url.pathname = pathname
+  const redirect = NextResponse.redirect(url)
+  response.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie))
+  return redirect
+}
 
 export async function updateSession(request: NextRequest) {
   const oauthCode = request.nextUrl.searchParams.get("code")
@@ -29,43 +37,33 @@ export async function updateSession(request: NextRequest) {
     },
   )
 
-  const accessToken = request.cookies.get(ACCESS_TOKEN_COOKIE)?.value
-  const refreshToken = request.cookies.get(REFRESH_TOKEN_COOKIE)?.value
-  const hasSupabaseSession = request.cookies.getAll().some(({ name }) => name.startsWith("sb-") && name.includes("auth-token"))
+  const legacyAccessToken = request.cookies.get(ACCESS_TOKEN_COOKIE)?.value
+  const legacyRefreshToken = request.cookies.get(REFRESH_TOKEN_COOKIE)?.value
+  let { data } = await supabase.auth.getClaims()
 
-  if (!hasSupabaseSession && accessToken && refreshToken) {
+  // 이전 버전의 이중 저장 세션은 SSR 쿠키로 한 번 이관한 뒤 제거합니다.
+  if (!data?.claims && legacyAccessToken && legacyRefreshToken) {
     const { data: restored } = await supabase.auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken,
+      access_token: legacyAccessToken,
+      refresh_token: legacyRefreshToken,
     })
-    if (restored.session) {
-      response.cookies.set(ACCESS_TOKEN_COOKIE, restored.session.access_token, {
-        ...authCookieOptions,
-        maxAge: restored.session.expires_in,
-      })
-      response.cookies.set(REFRESH_TOKEN_COOKIE, restored.session.refresh_token, {
-        ...authCookieOptions,
-        maxAge: 60 * 60 * 24 * 30,
-      })
-    }
+    if (restored.session) ({ data } = await supabase.auth.getClaims())
   }
 
-  const { data } = await supabase.auth.getClaims(accessToken)
+  if (legacyAccessToken) response.cookies.delete(ACCESS_TOKEN_COOKIE)
+  if (legacyRefreshToken) response.cookies.delete(REFRESH_TOKEN_COOKIE)
+
   const isPublic = request.nextUrl.pathname.startsWith("/login") || request.nextUrl.pathname.startsWith("/auth")
   const isApi = request.nextUrl.pathname.startsWith("/api/")
 
   // API Route Handler는 자체적으로 인증하고 JSON 401을 반환한다. 여기서 /login으로
   // 리디렉션하면 POST/DELETE 메서드가 유지되어 /login에서 405가 발생한다.
   if (!data?.claims && !isPublic && !isApi) {
-    const url = request.nextUrl.clone()
-    url.pathname = "/login"
-    return NextResponse.redirect(url)
+    return redirectWithCookies(request, "/login", response)
   }
 
   if (data?.claims && request.nextUrl.pathname === "/login") {
-    const url = request.nextUrl.clone()
-    url.pathname = "/"
-    return NextResponse.redirect(url)
+    return redirectWithCookies(request, "/", response)
   }
 
   return response
