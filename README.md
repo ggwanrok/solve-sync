@@ -127,9 +127,10 @@ http://localhost:3000/auth/callback
 NEXT_PUBLIC_SUPABASE_URL=https://<your-project-ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_your-key
 SUPABASE_SECRET_KEY=
+PRIVACY_CONTACT_EMAIL=privacy@example.com
 ```
 
-`NEXT_PUBLIC_*` 변수는 브라우저에서 사용하는 공개 설정입니다. `SUPABASE_SECRET_KEY`, 데이터베이스 비밀번호, Google Client Secret에는 절대 `NEXT_PUBLIC_` 접두사를 붙이지 말고 Git에도 커밋하지 마세요.
+`NEXT_PUBLIC_*` 변수는 브라우저에서 사용하는 공개 설정입니다. `SUPABASE_SECRET_KEY`, 데이터베이스 비밀번호, Google Client Secret에는 절대 `NEXT_PUBLIC_` 접두사를 붙이지 말고 Git에도 커밋하지 마세요. `PRIVACY_CONTACT_EMAIL`은 `/about` 개인정보 처리방침에 표시할 운영자 문의 주소입니다.
 
 ### 5. 개발 서버 실행
 

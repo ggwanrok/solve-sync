@@ -122,6 +122,11 @@ export function AppShell({ children, user }: { children: React.ReactNode; user: 
         </header>
 
         <main className="flex-1 px-4 py-6 md:px-6 lg:px-8">{children}</main>
+        <footer className="px-4 pb-6 text-center text-xs text-muted-foreground md:px-6 lg:px-8">
+          <Link href="/about" className="underline-offset-4 hover:text-foreground hover:underline">
+            서비스 소개 · 개인정보 처리방침
+          </Link>
+        </footer>
       </div>
     </div>
   )

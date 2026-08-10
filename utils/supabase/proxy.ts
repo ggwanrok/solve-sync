@@ -53,7 +53,7 @@ export async function updateSession(request: NextRequest) {
   if (legacyAccessToken) response.cookies.delete(ACCESS_TOKEN_COOKIE)
   if (legacyRefreshToken) response.cookies.delete(REFRESH_TOKEN_COOKIE)
 
-  const isPublic = request.nextUrl.pathname.startsWith("/login") || request.nextUrl.pathname.startsWith("/auth")
+  const isPublic = request.nextUrl.pathname === "/about" || request.nextUrl.pathname.startsWith("/login") || request.nextUrl.pathname.startsWith("/auth")
   const isApi = request.nextUrl.pathname.startsWith("/api/")
 
   // API Route Handler는 자체적으로 인증하고 JSON 401을 반환한다. 여기서 /login으로

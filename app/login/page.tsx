@@ -1,6 +1,7 @@
 "use client"
 
 import { Check } from "lucide-react"
+import Link from "next/link"
 import { useState } from "react"
 import { toast } from "sonner"
 import { Logo } from "@/components/logo"
@@ -124,6 +125,13 @@ export default function LoginPage() {
                 {pending ? "Google로 연결 중..." : "Google로 계속하기"}
               </Button>
             </div>
+            <p className="mt-6 text-center text-xs leading-5 text-muted-foreground">
+              로그인하기 전에 개인정보 처리 내용을 확인해 주세요.
+              <br />
+              <Link href="/about" className="font-medium text-foreground underline underline-offset-4">
+                개인정보 처리방침 보기
+              </Link>
+            </p>
           </div>
         </div>
       </div>
