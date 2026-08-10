@@ -99,7 +99,7 @@ npm install
 
 새 Supabase 프로젝트를 만든 뒤 Dashboard의 **SQL Editor**에서 `supabase/schema.sql` 전체를 실행합니다. 이 파일에는 테이블, 함수, 트리거, RLS 정책과 권한 설정이 포함되어 있습니다.
 
-기존 데이터베이스를 업데이트하는 경우 필요한 기능 SQL을 적용한 다음 `supabase/security-hardening.sql`을 마지막에 실행합니다.
+기존 데이터베이스를 업데이트하는 경우 필요한 기능 SQL을 적용한 다음 `supabase/security-hardening.sql`을 마지막에 실행합니다. 스터디룸 디렉터리 페이지네이션을 추가하려면 `supabase/study-room-directory-pagination.sql`을 실행합니다.
 
 ### 3. Google 로그인 구성
 

@@ -1,4 +1,4 @@
-import { ArrowRight, Crown, Lock, Search, Users } from "lucide-react"
+import { ArrowRight, ChevronLeft, ChevronRight, Crown, Lock, Search, Users } from "lucide-react"
 import Link from "next/link"
 import { CreateStudyDialog } from "@/components/create-study-dialog"
 import { Badge } from "@/components/ui/badge"
@@ -9,46 +9,81 @@ import { redirect } from "next/navigation"
 import { getViewer } from "@/lib/server/viewer"
 
 type SearchField = "title" | "description" | "owner"
-type OwnerProfile = { handle: string; nickname: string }
+type StudyRoomDirectoryItem = {
+  id: string
+  owner_id: string
+  name: string
+  description: string
+  goal_period: "daily" | "weekly"
+  goal_count: number
+  is_private: boolean
+  created_at: string
+  owner_handle: string
+  owner_nickname: string
+  member_count: number
+  is_joined: boolean
+}
+
+type StudyRoomDirectory = {
+  rooms: StudyRoomDirectoryItem[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+const PAGE_SIZE = 12
+
+function studyPageHref(field: SearchField, query: string, page: number) {
+  const search = new URLSearchParams()
+  if (query) {
+    search.set("field", field)
+    search.set("query", query)
+  }
+  if (page > 1) search.set("page", String(page))
+  const queryString = search.toString()
+  return queryString ? `/study?${queryString}` : "/study"
+}
 
 export default async function StudyListPage({
   searchParams,
 }: {
-  searchParams: Promise<{ field?: string; query?: string }>
+  searchParams: Promise<{ field?: string; query?: string; page?: string }>
 }) {
   const params = await searchParams
   const field: SearchField = ["title", "description", "owner"].includes(params.field || "")
     ? params.field as SearchField
     : "title"
-  const query = (params.query || "").trim().toLocaleLowerCase("ko-KR")
+  const query = (params.query || "").trim()
+  const parsedPage = Number.parseInt(params.page || "1", 10)
+  const page = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1
   const { supabase, user } = await getViewer()
   if (!user) redirect("/login")
-  const [{ data: rooms }, { data: memberships }] = await Promise.all([
-    supabase
-      .from("study_rooms")
-      .select("id,owner_id,name,description,goal_period,goal_count,is_private,created_at,owner:profiles!study_rooms_owner_id_fkey(handle,nickname)")
-      .order("created_at", { ascending: false }),
-    supabase.from("study_members").select("study_id,user_id,role"),
-  ])
-  const studyRooms = rooms || []
-  const filteredRooms = query
-    ? studyRooms.filter((room) => {
-        const owner = room.owner as unknown as OwnerProfile | null
-        const target = field === "title"
-          ? room.name
-          : field === "description"
-            ? room.description
-            : `${owner?.nickname || ""} ${owner?.handle || ""}`
-        return target.toLocaleLowerCase("ko-KR").includes(query)
-      })
-    : studyRooms
+  const { data, error } = await supabase.rpc("study_room_directory", {
+    directory_field: field,
+    directory_query: query,
+    page_number: page,
+    page_size: PAGE_SIZE,
+  })
+  if (error) throw new Error(`스터디룸 목록을 불러오지 못했습니다: ${error.message}`)
+
+  const directory = data as unknown as StudyRoomDirectory | null
+  const studyRooms = directory?.rooms || []
+  const total = Number(directory?.total || 0)
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+  if (page > totalPages) redirect(studyPageHref(field, query, totalPages))
+
+  const firstVisiblePage = Math.max(1, Math.min(page - 2, totalPages - 4))
+  const visiblePages = Array.from(
+    { length: Math.min(5, totalPages) },
+    (_, index) => firstVisiblePage + index,
+  )
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">스터디룸</h1>
-          <p className="mt-1 text-sm text-muted-foreground">전체 스터디룸 {studyRooms.length}개 · 함께 공부할 방을 찾아보세요.</p>
+          <p className="mt-1 text-sm text-muted-foreground">{query ? `검색 결과 ${total}개` : `전체 스터디룸 ${total}개`} · 함께 공부할 방을 찾아보세요.</p>
         </div>
         <CreateStudyDialog />
       </div>
@@ -72,15 +107,13 @@ export default async function StudyListPage({
         {query && <Button render={<Link href="/study" />} nativeButton={false} type="button" variant="outline" className="h-9 px-4">초기화</Button>}
       </form>
 
-      {query && <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">‘{params.query?.trim()}’</span> 검색 결과 {filteredRooms.length}개</p>}
+      {query && <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">‘{query}’</span>에 해당하는 스터디룸입니다.</p>}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {filteredRooms.map((room) => {
-          const members = (memberships || []).filter((item) => item.study_id === room.id)
+        {studyRooms.map((room) => {
           const leader = room.owner_id === user?.id
-          const joined = members.some((item) => item.user_id === user?.id)
-          const owner = room.owner as unknown as OwnerProfile | null
-          const ownerName = owner?.nickname || owner?.handle || "방장"
+          const joined = room.is_joined
+          const ownerName = room.owner_nickname || room.owner_handle || "방장"
           return (
             <Card key={room.id} className="group transition-colors hover:border-primary/40">
               <CardContent className="flex h-full flex-col gap-4 p-5">
@@ -100,7 +133,7 @@ export default async function StudyListPage({
                 </div>
                 <div className="mt-auto flex flex-col gap-3">
                   <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground"><Users className="size-3.5" />{members.length}명</span>
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground"><Users className="size-3.5" />{room.member_count}명</span>
                     <Button render={<Link href={`/study/${room.id}`} />} nativeButton={false} variant="ghost" size="sm" className="h-8 gap-1 text-xs">{joined ? "입장" : "둘러보기"}<ArrowRight className="size-3.5" /></Button>
                   </div>
                 </div>
@@ -110,12 +143,40 @@ export default async function StudyListPage({
         })}
       </div>
 
-      {filteredRooms.length === 0 && (
+      {studyRooms.length === 0 && (
         <div className="rounded-xl border border-dashed py-16 text-center">
           <Search className="mx-auto mb-3 size-8 text-muted-foreground/50" />
           <p className="text-sm font-medium">검색 결과가 없습니다.</p>
           <p className="mt-1 text-xs text-muted-foreground">다른 검색어나 검색 기준을 사용해보세요.</p>
         </div>
+      )}
+
+      {totalPages > 1 && (
+        <nav className="flex items-center justify-center gap-1" aria-label="스터디룸 페이지">
+          {page > 1 ? (
+            <Button render={<Link href={studyPageHref(field, query, page - 1)} />} nativeButton={false} variant="outline" size="icon" aria-label="이전 페이지"><ChevronLeft className="size-4" /></Button>
+          ) : (
+            <Button type="button" variant="outline" size="icon" aria-label="이전 페이지" disabled><ChevronLeft className="size-4" /></Button>
+          )}
+          {visiblePages.map((pageNumber) => (
+            <Button
+              key={pageNumber}
+              render={<Link href={studyPageHref(field, query, pageNumber)} />}
+              nativeButton={false}
+              variant={pageNumber === page ? "default" : "outline"}
+              size="icon"
+              aria-label={`${pageNumber}페이지`}
+              aria-current={pageNumber === page ? "page" : undefined}
+            >
+              {pageNumber}
+            </Button>
+          ))}
+          {page < totalPages ? (
+            <Button render={<Link href={studyPageHref(field, query, page + 1)} />} nativeButton={false} variant="outline" size="icon" aria-label="다음 페이지"><ChevronRight className="size-4" /></Button>
+          ) : (
+            <Button type="button" variant="outline" size="icon" aria-label="다음 페이지" disabled><ChevronRight className="size-4" /></Button>
+          )}
+        </nav>
       )}
     </div>
   )

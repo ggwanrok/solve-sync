@@ -2,11 +2,10 @@
 
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-import { createClient } from "@/utils/supabase/server"
+import { getViewer } from "@/lib/server/viewer"
 
 async function userClient() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getViewer()
   if (!user) redirect("/login")
   return { supabase, user }
 }
@@ -19,9 +18,9 @@ export async function sendFriendRequest(formData: FormData) {
   const { data, error } = await supabase.rpc("send_friend_request", { target_handle: raw.replace(/^@+/, "") })
   if (error) return { status: "error" as const, message: error.message }
 
-  revalidatePath("/friends")
-
   const status = data && typeof data === "object" && "status" in data ? data.status : null
+  if (status === "incoming_pending") revalidatePath("/friends")
+
   switch (status) {
     case "sent":
       return { status, message: "친구 요청을 보냈습니다." }

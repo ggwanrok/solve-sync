@@ -17,7 +17,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createStudyRoom } from "@/app/actions"
-import { useRouter } from "next/navigation"
 
 export function CreateStudyDialog() {
   const [open, setOpen] = useState(false)
@@ -28,7 +27,6 @@ export function CreateStudyDialog() {
   const [isPrivate, setIsPrivate] = useState(false)
   const [password, setPassword] = useState("")
   const [pending, setPending] = useState(false)
-  const router = useRouter()
 
   const handleCreate = async () => {
     if (!name.trim()) {
@@ -49,7 +47,7 @@ export function CreateStudyDialog() {
         password: isPrivate ? password : null,
       })
       toast.success(`'${name.trim()}' 스터디룸을 만들었어요!`)
-      setOpen(false); setName(""); setDescription(""); setCount(5); setUnit("주"); setIsPrivate(false); setPassword(""); router.refresh()
+      setOpen(false); setName(""); setDescription(""); setCount(5); setUnit("주"); setIsPrivate(false); setPassword("")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "스터디룸을 만들지 못했어요.")
     } finally { setPending(false) }
