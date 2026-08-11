@@ -474,7 +474,7 @@ export function StudyProgress({
               void loadHistoryPage(1, nextOrder)
             }}>
               <SelectTrigger size="sm" aria-label="지난 기록 정렬 순서" disabled={loadingHistory}>
-                <SelectValue />
+                <SelectValue>{historyOrder === "newest" ? "최신순" : "오래된순"}</SelectValue>
               </SelectTrigger>
               <SelectContent align="end">
                 <SelectItem value="newest">최신순</SelectItem>
