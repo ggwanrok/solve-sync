@@ -1,6 +1,7 @@
-import { ArrowRight, ChevronLeft, ChevronRight, Crown, Lock, Search, Users } from "lucide-react"
+import { ChevronLeft, ChevronRight, Crown, Lock, Search, Users } from "lucide-react"
 import Link from "next/link"
 import { CreateStudyDialog } from "@/components/create-study-dialog"
+import { StudyRoomEntryButton } from "@/components/study-room-entry-button"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -134,7 +135,7 @@ export default async function StudyListPage({
                 <div className="mt-auto flex flex-col gap-3">
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-1 text-xs text-muted-foreground"><Users className="size-3.5" />{room.member_count}명</span>
-                    <Button render={<Link href={`/study/${room.id}`} />} nativeButton={false} variant="ghost" size="sm" className="h-8 gap-1 text-xs">{joined ? "입장" : "둘러보기"}<ArrowRight className="size-3.5" /></Button>
+                    <StudyRoomEntryButton studyId={room.id} joined={joined} />
                   </div>
                 </div>
               </CardContent>
