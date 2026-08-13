@@ -1,7 +1,8 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { LoaderCircle, MessageSquare, Send } from "lucide-react"
+import type { RealtimeChannel } from "@supabase/supabase-js"
+import { LoaderCircle, MessageSquare, RefreshCw, Send, WifiOff } from "lucide-react"
 import { toast } from "sonner"
 import { addStudyComment } from "@/app/actions"
 import { UserAvatar } from "@/components/user-avatar"
@@ -94,11 +95,14 @@ export function StudyLounge({
   const [loadingOlder, setLoadingOlder] = useState(false)
   const [hasOlder, setHasOlder] = useState(false)
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting")
+  const [manualReconnectPending, setManualReconnectPending] = useState(false)
+  const [channelGeneration, setChannelGeneration] = useState(0)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const preserveScrollHeightRef = useRef<number | null>(null)
   const initialLoadStartedRef = useRef(false)
   const realtimeHealthyRef = useRef(false)
   const recentSyncInFlightRef = useRef(false)
+  const realtimeChannelRef = useRef<RealtimeChannel | null>(null)
   const supabaseRef = useRef(createClient())
 
   const fetchCommentPage = useCallback(async (before?: string) => {
@@ -191,6 +195,7 @@ export function StudyLounge({
         if (status === "SUBSCRIBED") {
           realtimeHealthyRef.current = true
           setRealtimeStatus("connected")
+          setManualReconnectPending(false)
           // Postgres Changes does not replay events missed while reconnecting.
           void loadRecentComments("realtime-subscribed")
           return
@@ -199,15 +204,17 @@ export function StudyLounge({
         realtimeHealthyRef.current = false
         if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
           setRealtimeStatus("degraded")
+          setManualReconnectPending(false)
           console.error("study lounge realtime subscription failed", {
             studyId,
             status,
             error: error ? describeSyncError(error) : undefined,
           })
         } else if (status === "CLOSED") {
-          setRealtimeStatus("connecting")
+          setRealtimeStatus("degraded")
         }
       })
+    realtimeChannelRef.current = channel
 
     if (!initialLoadStartedRef.current) {
       initialLoadStartedRef.current = true
@@ -242,10 +249,13 @@ export function StudyLounge({
       active = false
       realtimeHealthyRef.current = false
       window.clearInterval(fallbackSync)
-      void supabase.removeChannel(channel)
+      if (realtimeChannelRef.current === channel) {
+        realtimeChannelRef.current = null
+        void supabase.removeChannel(channel)
+      }
       document.removeEventListener("visibilitychange", handleVisibility)
     }
-  }, [fetchCommentPage, loadRecentComments, memberProfiles, studyId])
+  }, [channelGeneration, fetchCommentPage, loadRecentComments, memberProfiles, studyId])
 
   useEffect(() => {
     const element = scrollAreaRef.current
@@ -272,6 +282,33 @@ export function StudyLounge({
       toast.error(error instanceof Error ? error.message : "이전 메시지를 불러오지 못했습니다.")
     } finally {
       setLoadingOlder(false)
+    }
+  }
+
+  async function handleRealtimeReconnect() {
+    if (manualReconnectPending) return
+
+    const supabase = supabaseRef.current
+    const currentChannel = realtimeChannelRef.current
+    realtimeHealthyRef.current = false
+    setRealtimeStatus("connecting")
+    setManualReconnectPending(true)
+    console.info("study lounge manual reconnect started", { studyId })
+
+    try {
+      if (currentChannel) {
+        const result = await supabase.removeChannel(currentChannel)
+        if (realtimeChannelRef.current === currentChannel) realtimeChannelRef.current = null
+        console.info("study lounge previous realtime channel removed", { studyId, result })
+      }
+    } catch (error) {
+      console.error("study lounge previous realtime channel removal failed", {
+        studyId,
+        error: describeSyncError(error),
+      })
+    } finally {
+      setRealtimeStatus("connecting")
+      setChannelGeneration((current) => current + 1)
     }
   }
 
@@ -316,11 +353,31 @@ export function StudyLounge({
       <CardHeader className="flex-row items-center gap-2">
         <MessageSquare className="size-4 text-primary" />
         <CardTitle className="text-base">스터디 라운지</CardTitle>
-        <span className="ml-auto text-xs text-muted-foreground">
-          {realtimeStatus === "connected" ? "실시간 동기화" : realtimeStatus === "degraded" ? "자동 동기화" : "연결 중"}
+        <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground" aria-live="polite">
+          {realtimeStatus === "connecting" && <LoaderCircle className="size-3 animate-spin" />}
+          {realtimeStatus === "connected" ? "실시간 연결됨" : realtimeStatus === "degraded" ? "연결 끊김" : manualReconnectPending ? "재연결 중" : "연결 중"}
         </span>
       </CardHeader>
       <CardContent>
+        {(realtimeStatus === "degraded" || manualReconnectPending) && (
+          <div className="mb-4 flex items-center gap-3 rounded-lg border border-destructive/20 bg-destructive/5 p-3" role="status">
+            {manualReconnectPending
+              ? <LoaderCircle className="size-4 shrink-0 animate-spin text-muted-foreground" />
+              : <WifiOff className="size-4 shrink-0 text-destructive" />}
+            <div className="min-w-0 flex-1">
+              <p className={manualReconnectPending ? "text-xs font-medium" : "text-xs font-medium text-destructive"}>
+                {manualReconnectPending ? "실시간 채팅을 재연결하는 중입니다." : "실시간 연결이 끊어졌습니다."}
+              </p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                {manualReconnectPending ? "기존 채팅 목록과 입력은 계속 사용할 수 있습니다." : "5초마다 새 메시지를 동기화하고 있습니다."}
+              </p>
+            </div>
+            <Button type="button" variant="outline" size="xs" onClick={handleRealtimeReconnect} disabled={manualReconnectPending}>
+              <RefreshCw className={manualReconnectPending ? "animate-spin" : undefined} />
+              {manualReconnectPending ? "연결 중" : "재연결"}
+            </Button>
+          </div>
+        )}
         <div ref={scrollAreaRef} className="flex h-72 flex-col gap-4 overflow-y-auto overscroll-contain pr-2 sm:h-80" aria-live="polite">
           {loadingInitial ? (
             <div className="flex h-full shrink-0 items-center justify-center gap-2 text-xs text-muted-foreground"><LoaderCircle className="size-4 animate-spin" />메시지를 불러오는 중...</div>
