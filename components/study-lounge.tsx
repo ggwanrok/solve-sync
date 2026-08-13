@@ -50,6 +50,9 @@ function appendComment(comments: LoungeComment[], comment: LoungeComment) {
 }
 
 const COMMENTS_PAGE_SIZE = 50
+const DEGRADED_SYNC_INTERVAL_MS = 5_000
+
+type RealtimeStatus = "connecting" | "connected" | "degraded"
 
 function mergeComments(current: LoungeComment[], incoming: LoungeComment[]) {
   const comments = new Map(current.map((comment) => [comment.id, comment]))
@@ -75,9 +78,11 @@ export function StudyLounge({
   const [loadingInitial, setLoadingInitial] = useState(true)
   const [loadingOlder, setLoadingOlder] = useState(false)
   const [hasOlder, setHasOlder] = useState(false)
+  const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting")
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const preserveScrollHeightRef = useRef<number | null>(null)
   const initialLoadStartedRef = useRef(false)
+  const realtimeHealthyRef = useRef(false)
   const supabaseRef = useRef(createClient())
 
   const fetchCommentPage = useCallback(async (before?: string) => {
@@ -110,6 +115,7 @@ export function StudyLounge({
 
   useEffect(() => {
     const supabase = supabaseRef.current
+    let active = true
     const channel = supabase
       .channel(`study-lounge-${studyId}`)
       .on(
@@ -127,7 +133,25 @@ export function StudyLounge({
           )
         },
       )
-      .subscribe()
+      .subscribe((status, error) => {
+        if (!active) return
+
+        if (status === "SUBSCRIBED") {
+          realtimeHealthyRef.current = true
+          setRealtimeStatus("connected")
+          // Postgres Changes does not replay events missed while reconnecting.
+          void loadRecentComments()
+          return
+        }
+
+        realtimeHealthyRef.current = false
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          setRealtimeStatus("degraded")
+          console.error("study lounge realtime subscription failed", { status, error })
+        } else if (status === "CLOSED") {
+          setRealtimeStatus("connecting")
+        }
+      })
 
     if (!initialLoadStartedRef.current) {
       initialLoadStartedRef.current = true
@@ -143,8 +167,17 @@ export function StudyLounge({
     const handleVisibility = () => {
       if (document.visibilityState === "visible") void loadRecentComments()
     }
+    const fallbackSync = window.setInterval(() => {
+      if (!realtimeHealthyRef.current && document.visibilityState === "visible") {
+        void loadRecentComments()
+      }
+    }, DEGRADED_SYNC_INTERVAL_MS)
+
     document.addEventListener("visibilitychange", handleVisibility)
     return () => {
+      active = false
+      realtimeHealthyRef.current = false
+      window.clearInterval(fallbackSync)
       void supabase.removeChannel(channel)
       document.removeEventListener("visibilitychange", handleVisibility)
     }
@@ -219,7 +252,9 @@ export function StudyLounge({
       <CardHeader className="flex-row items-center gap-2">
         <MessageSquare className="size-4 text-primary" />
         <CardTitle className="text-base">스터디 라운지</CardTitle>
-        <span className="ml-auto text-xs text-muted-foreground">자동 동기화</span>
+        <span className="ml-auto text-xs text-muted-foreground">
+          {realtimeStatus === "connected" ? "실시간 동기화" : realtimeStatus === "degraded" ? "자동 동기화" : "연결 중"}
+        </span>
       </CardHeader>
       <CardContent>
         <div ref={scrollAreaRef} className="flex h-72 flex-col gap-4 overflow-y-auto overscroll-contain pr-2 sm:h-80" aria-live="polite">

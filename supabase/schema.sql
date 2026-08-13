@@ -103,6 +103,20 @@ create table if not exists public.study_comments (
 create index if not exists study_comments_study_created_at
   on public.study_comments(study_id, created_at desc);
 
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'study_comments'
+  ) then
+    alter publication supabase_realtime add table public.study_comments;
+  end if;
+end;
+$$;
+
 create table if not exists public.study_room_access (
   study_id uuid not null references public.study_rooms(id) on delete cascade,
   user_id uuid not null references public.profiles(id) on delete cascade,
