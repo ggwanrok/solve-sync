@@ -53,6 +53,21 @@ const COMMENTS_PAGE_SIZE = 50
 const DEGRADED_SYNC_INTERVAL_MS = 5_000
 
 type RealtimeStatus = "connecting" | "connected" | "degraded"
+type RecentSyncTrigger = "polling" | "realtime-subscribed" | "visibility"
+
+function describeSyncError(error: unknown) {
+  if (!error || typeof error !== "object") return { message: String(error) }
+
+  const value = error as Record<string, unknown>
+  return {
+    name: value.name,
+    code: value.code,
+    message: value.message,
+    details: value.details,
+    hint: value.hint,
+    cause: value.cause,
+  }
+}
 
 function mergeComments(current: LoungeComment[], incoming: LoungeComment[]) {
   const comments = new Map(current.map((comment) => [comment.id, comment]))
@@ -83,6 +98,7 @@ export function StudyLounge({
   const preserveScrollHeightRef = useRef<number | null>(null)
   const initialLoadStartedRef = useRef(false)
   const realtimeHealthyRef = useRef(false)
+  const recentSyncInFlightRef = useRef(false)
   const supabaseRef = useRef(createClient())
 
   const fetchCommentPage = useCallback(async (before?: string) => {
@@ -104,14 +120,43 @@ export function StudyLounge({
     }
   }, [studyId])
 
-  const loadRecentComments = useCallback(async () => {
+  const loadRecentComments = useCallback(async (trigger: RecentSyncTrigger) => {
+    if (recentSyncInFlightRef.current) {
+      console.debug("study lounge recent sync skipped", { studyId, trigger, reason: "request-in-flight" })
+      return
+    }
+
+    recentSyncInFlightRef.current = true
+    const startedAt = performance.now()
+    console.info("study lounge recent sync started", {
+      studyId,
+      trigger,
+      visibilityState: document.visibilityState,
+      realtimeHealthy: realtimeHealthyRef.current,
+    })
+
     try {
       const page = await fetchCommentPage()
       setComments((current) => mergeComments(current, page.comments))
-    } catch {
-      // Realtime will continue retrying through visibility changes.
+      console.info("study lounge recent sync completed", {
+        studyId,
+        trigger,
+        fetchedCount: page.comments.length,
+        durationMs: Math.round(performance.now() - startedAt),
+      })
+    } catch (error) {
+      console.error("study lounge recent sync failed", {
+        studyId,
+        trigger,
+        visibilityState: document.visibilityState,
+        realtimeHealthy: realtimeHealthyRef.current,
+        durationMs: Math.round(performance.now() - startedAt),
+        error: describeSyncError(error),
+      })
+    } finally {
+      recentSyncInFlightRef.current = false
     }
-  }, [fetchCommentPage])
+  }, [fetchCommentPage, studyId])
 
   useEffect(() => {
     const supabase = supabaseRef.current
@@ -136,18 +181,29 @@ export function StudyLounge({
       .subscribe((status, error) => {
         if (!active) return
 
+        console.info("study lounge realtime status changed", {
+          studyId,
+          status,
+          visibilityState: document.visibilityState,
+          error: error ? describeSyncError(error) : undefined,
+        })
+
         if (status === "SUBSCRIBED") {
           realtimeHealthyRef.current = true
           setRealtimeStatus("connected")
           // Postgres Changes does not replay events missed while reconnecting.
-          void loadRecentComments()
+          void loadRecentComments("realtime-subscribed")
           return
         }
 
         realtimeHealthyRef.current = false
         if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
           setRealtimeStatus("degraded")
-          console.error("study lounge realtime subscription failed", { status, error })
+          console.error("study lounge realtime subscription failed", {
+            studyId,
+            status,
+            error: error ? describeSyncError(error) : undefined,
+          })
         } else if (status === "CLOSED") {
           setRealtimeStatus("connecting")
         }
@@ -160,16 +216,24 @@ export function StudyLounge({
           setComments((current) => mergeComments(current, page.comments))
           setHasOlder(page.hasMore)
         })
-        .catch((error) => toast.error(error instanceof Error ? error.message : "라운지 메시지를 불러오지 못했습니다."))
+        .catch((error) => {
+          console.error("study lounge initial sync failed", { studyId, error: describeSyncError(error) })
+          toast.error(error instanceof Error ? error.message : "라운지 메시지를 불러오지 못했습니다.")
+        })
         .finally(() => setLoadingInitial(false))
     }
 
     const handleVisibility = () => {
-      if (document.visibilityState === "visible") void loadRecentComments()
+      console.info("study lounge visibility changed", {
+        studyId,
+        visibilityState: document.visibilityState,
+        realtimeHealthy: realtimeHealthyRef.current,
+      })
+      if (document.visibilityState === "visible") void loadRecentComments("visibility")
     }
     const fallbackSync = window.setInterval(() => {
       if (!realtimeHealthyRef.current && document.visibilityState === "visible") {
-        void loadRecentComments()
+        void loadRecentComments("polling")
       }
     }, DEGRADED_SYNC_INTERVAL_MS)
 
