@@ -1,1 +1,29 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SolveSync 설정</title><link rel="stylesheet" href="options.css"></head><body><main><h1>SolveSync 연동</h1><p>플랫폼에서 복사한 연동 토큰을 붙여 넣으세요.</p><form><label>플랫폼 API 주소<input id="apiBase" type="url" readonly aria-describedby="apiBaseHelp"></label><small id="apiBaseHelp">운영자가 설정한 주소이며 변경할 수 없습니다.</small><label>연동 토큰<input id="token" type="password" required autocomplete="off" placeholder="연동 토큰을 붙여 넣어 주세요."></label><button>저장하고 연동하기</button><output></output></form></main><script type="module" src="options.js"></script></body></html>
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>SolveSync 설정</title>
+    <link rel="stylesheet" href="options.css">
+  </head>
+  <body>
+    <main>
+      <div class="brand"><span>⌁</span><strong>SolveSync</strong></div>
+      <h1>계정 연결</h1>
+      <p>토큰을 복사할 필요 없이 SolveSync에 로그인하여 이 기기를 연결할 수 있습니다.</p>
+      <section class="sync-card" aria-live="polite">
+        <strong>동기화 상태</strong>
+        <span id="syncStatus">확인 중...</span>
+        <small id="deviceName"></small>
+      </section>
+      <div class="actions">
+        <button id="connectAccount" type="button">SolveSync 계정 연결</button>
+        <button id="syncNow" class="secondary" type="button">보관 기록 지금 동기화</button>
+        <button id="disconnectAccount" class="secondary danger" type="button" hidden>이 기기 연결 해제</button>
+      </div>
+      <output></output>
+      <p class="help">PC마다 한 번씩 연결하면 같은 계정으로 풀이가 모입니다. 한 기기의 연결을 해제해도 다른 기기는 계속 동기화됩니다.</p>
+    </main>
+    <script type="module" src="options.js"></script>
+  </body>
+</html>

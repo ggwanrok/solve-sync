@@ -68,7 +68,7 @@ export async function POST(request: Request) {
     .maybeSingle()
   if (error) return NextResponse.json({ error: "풀이 기록을 저장하지 못했습니다." }, { status: 500 })
 
-  await supabase.from("extension_connections").update({ last_seen_at: new Date().toISOString() }).eq("user_id", connection.user_id)
+  await supabase.from("extension_connections").update({ last_seen_at: new Date().toISOString() }).eq("token_hash", hash(token))
   const duplicate = !event
   return NextResponse.json({ event: event ? { id: event.id } : null, duplicate }, { status: duplicate ? 200 : 201 })
 }

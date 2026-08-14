@@ -1,6 +1,6 @@
 "use client"
 
-import { KeyRound, LogOut, Trash2 } from "lucide-react"
+import { LogOut, MonitorSmartphone, Trash2, Unplug } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { toast } from "sonner"
@@ -10,35 +10,49 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { createClient } from "@/utils/supabase/client"
 
+export type ExtensionDevice = {
+  installationId: string
+  deviceName: string
+  connectedAt: string
+  lastSeenAt: string | null
+}
+
 export type AccountUser = {
   name: string
   handle: string
   extensionConnected?: boolean
-  extensionTokenCreatedAt?: string | null
-  extensionLastSeenAt?: string | null
+  extensionDevices?: ExtensionDevice[]
+}
+
+function formatDate(value: string) {
+  return new Date(value).toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" })
 }
 
 export function AccountDialog({ user }: { user: AccountUser }) {
   const router = useRouter()
-  const [issuing, setIssuing] = useState(false)
-  const [confirmReissue, setConfirmReissue] = useState(false)
+  const [devices, setDevices] = useState(user.extensionDevices || [])
+  const [revokingDevice, setRevokingDevice] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
-  const issueToken = async () => {
-    setIssuing(true)
-    const response = await authenticatedFetch("/api/extension/token", { method: "POST" })
-    const result = await response.json()
-    setIssuing(false)
-    if (!response.ok) return toast.error(result.error || "토큰을 발급하지 못했습니다.")
+  const revokeDevice = async (installationId: string) => {
+    setRevokingDevice(installationId)
     try {
-      await navigator.clipboard.writeText(result.token)
-      toast.success("새 연동 토큰을 발급하고 복사했습니다.")
+      const response = await authenticatedFetch("/api/extension/devices", {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ installationId }),
+      })
+      const result = await response.json()
+      if (!response.ok) return toast.error(result.error || "기기 연결을 해제하지 못했습니다.")
+      setDevices((current) => current.filter((device) => device.installationId !== installationId))
+      toast.success("선택한 기기의 연결을 해제했습니다.")
+      router.refresh()
     } catch {
-      toast.error("토큰은 발급됐지만 자동 복사하지 못했습니다.")
+      toast.error("기기 연결을 해제하지 못했습니다.")
+    } finally {
+      setRevokingDevice(null)
     }
-    setConfirmReissue(false)
-    router.refresh()
   }
 
   const deleteAccount = async () => {
@@ -68,13 +82,48 @@ export function AccountDialog({ user }: { user: AccountUser }) {
       <DialogTrigger render={<button type="button" className="rounded-full outline-none ring-ring focus-visible:ring-2" aria-label="마이페이지 열기" />}>
         <UserAvatar name={user.name} className="size-9" />
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader><DialogTitle>마이페이지</DialogTitle><DialogDescription>계정과 익스텐션 연동 정보를 관리합니다.</DialogDescription></DialogHeader>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
+        <DialogHeader><DialogTitle>마이페이지</DialogTitle><DialogDescription>계정과 확장 프로그램 연결 기기를 관리합니다.</DialogDescription></DialogHeader>
         <div className="flex items-center gap-3 rounded-xl border p-4"><UserAvatar name={user.name} className="size-11" /><div><p className="font-medium">{user.name}</p><p className="text-xs text-muted-foreground">고유 닉네임 · {user.handle}</p></div></div>
+
         <div className="rounded-xl border p-4">
-          <div className="flex items-center justify-between"><div><p className="text-sm font-medium">익스텐션 {user.extensionConnected ? "연동됨" : "미연동"}</p><p className="mt-1 text-xs text-muted-foreground">{user.extensionLastSeenAt ? `마지막 통신 ${new Date(user.extensionLastSeenAt).toLocaleString("ko-KR")}` : user.extensionTokenCreatedAt ? `토큰 발급 ${new Date(user.extensionTokenCreatedAt).toLocaleString("ko-KR")}` : "발급된 토큰이 없습니다."}</p></div><KeyRound className="size-5 text-muted-foreground" /></div>
-          {confirmReissue ? <div className="mt-3 rounded-lg border border-warning-foreground/30 bg-warning-foreground/10 p-3"><p className="text-xs leading-relaxed">재발급하면 기존 토큰과의 연동이 즉시 끊어집니다. 익스텐션에 새 토큰을 다시 등록해야 합니다.</p><div className="mt-3 flex gap-2"><Button type="button" variant="outline" size="sm" className="flex-1" onClick={() => setConfirmReissue(false)}>취소</Button><Button type="button" size="sm" className="flex-1" onClick={issueToken} disabled={issuing}>{issuing ? "재발급 중..." : "재발급"}</Button></div></div> : <Button type="button" variant="outline" className="mt-3 w-full" onClick={() => user.extensionTokenCreatedAt ? setConfirmReissue(true) : issueToken()} disabled={issuing}>{issuing ? "발급 중..." : user.extensionTokenCreatedAt ? "연동 토큰 재발급" : "연동 토큰 발급"}</Button>}
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium">연결된 기기 {devices.length}대</p>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">각 PC의 SolveSync 확장 프로그램에서 ‘계정 연결’을 누르면 이 목록에 추가됩니다.</p>
+            </div>
+            <MonitorSmartphone className="size-5 shrink-0 text-muted-foreground" />
+          </div>
+
+          {devices.length ? (
+            <div className="mt-3 space-y-2">
+              {devices.map((device) => (
+                <div key={device.installationId} className="flex items-center gap-3 rounded-lg border bg-muted/20 p-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{device.deviceName}</p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                      {device.lastSeenAt ? `마지막 동기화 ${formatDate(device.lastSeenAt)}` : `연결 ${formatDate(device.connectedAt)}`}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="shrink-0 text-destructive hover:text-destructive"
+                    aria-label={`${device.deviceName} 연결 해제`}
+                    onClick={() => revokeDevice(device.installationId)}
+                    disabled={revokingDevice === device.installationId}
+                  >
+                    <Unplug className="size-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-3 rounded-lg bg-muted/40 p-3 text-center text-xs text-muted-foreground">연결된 기기가 없습니다.</p>
+          )}
         </div>
+
         <Button type="button" variant="outline" className="w-full" onClick={logout}><LogOut className="size-4" />로그아웃</Button>
         <div className="rounded-xl border border-destructive/30 p-4">
           {!confirmDelete ? <Button type="button" variant="destructive" className="w-full" onClick={() => setConfirmDelete(true)}><Trash2 className="size-4" />회원 탈퇴</Button> : <div className="space-y-3"><p className="text-sm text-destructive">계정과 모든 풀이·친구·스터디 데이터가 삭제되며 복구할 수 없습니다.</p><div className="flex gap-2"><Button type="button" variant="outline" className="flex-1" onClick={() => setConfirmDelete(false)} disabled={deleting}>취소</Button><Button type="button" variant="destructive" className="flex-1" onClick={deleteAccount} disabled={deleting}>{deleting ? "삭제 중..." : "영구 삭제"}</Button></div></div>}

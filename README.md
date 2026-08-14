@@ -39,13 +39,15 @@ SolveSync에 접속해 **Google로 계속하기**를 누릅니다. 처음 로그
 
 ### 3. SolveSync 계정과 연결하기
 
-1. SolveSync 대시보드에서 **연동 토큰 발급**을 누릅니다.
-2. 계정 전용 토큰이 발급되어 클립보드에 복사됩니다.
-3. Chrome에서 SolveSync 확장 프로그램을 열고 **연동 설정 열기**를 누릅니다.
-4. 복사한 토큰을 붙여 넣고 **저장하고 연동하기**를 누릅니다.
-5. 서버 통신 권한 요청이 나타나면 허용합니다.
+1. Chrome에서 SolveSync 확장 프로그램을 엽니다.
+2. **SolveSync 계정 연결**을 누르고 서버 통신 권한 요청을 허용합니다.
+3. 열린 SolveSync 화면에서 Google로 로그인합니다.
+4. 표시된 기기를 확인하고 **이 기기 연결 승인**을 누릅니다.
+5. 연결 창이 닫히면 확장 프로그램에서 연결 상태를 확인합니다.
 
-토큰 원문은 다시 확인할 수 없습니다. 토큰을 재발급하면 기존 확장 프로그램과의 연결은 즉시 끊어지므로 새 토큰을 다시 등록해야 합니다.
+토큰을 복사하거나 붙여 넣을 필요가 없습니다. Windows 노트북, 데스크톱, Mac 등 각 기기에서 위 과정을 한 번씩 실행하면 모든 풀이가 같은 SolveSync 계정으로 모입니다. 기기마다 별도 토큰을 사용하므로 마이페이지에서 한 기기만 해제해도 다른 기기의 연결은 유지됩니다.
+
+정답 기록은 서버 전송 전에 확장 프로그램의 로컬 대기열에 먼저 보관됩니다. 네트워크 또는 인증 문제로 즉시 전송하지 못한 기록은 자동으로 다시 전송되며, 확장 프로그램 팝업에서 대기 건수와 최근 오류를 확인하거나 **지금 동기화**를 실행할 수 있습니다.
 
 ### 4. 프로그래머스 문제 풀기
 
@@ -71,12 +73,12 @@ SolveSync에 접속해 **Google로 계속하기**를 누릅니다. 처음 로그
 ```mermaid
 flowchart LR
     A["프로그래머스 정답 제출"] --> B["Chrome 확장 프로그램"]
-    B -->|"계정 전용 토큰"| C["SolveSync API"]
+    B -->|"기기 전용 토큰"| C["SolveSync API"]
     C --> D["Supabase"]
     D --> E["대시보드 · 친구 · 스터디룸"]
 ```
 
-연동 토큰은 원문 대신 SHA-256 해시로 저장합니다. 브라우저에서 사용하는 Supabase Publishable Key와 서버 전용 Secret Key를 분리하고, 사용자 데이터 접근은 PostgreSQL Row Level Security로 제한합니다.
+기기 연결 시 PKCE와 5분 유효 일회용 승인 코드를 사용하며, 장기 토큰은 URL에 노출하지 않습니다. 기기 전용 토큰은 원문 대신 SHA-256 해시로 저장합니다. 브라우저에서 사용하는 Supabase Publishable Key와 서버 전용 Secret Key를 분리하고, 사용자 데이터 접근은 PostgreSQL Row Level Security로 제한합니다.
 
 ## 로컬에서 실행하기
 
@@ -99,7 +101,7 @@ npm install
 
 새 Supabase 프로젝트를 만든 뒤 Dashboard의 **SQL Editor**에서 `supabase/schema.sql` 전체를 실행합니다. 이 파일에는 테이블, 함수, 트리거, RLS 정책과 권한 설정이 포함되어 있습니다.
 
-기존 데이터베이스를 업데이트하는 경우 필요한 기능 SQL을 적용한 다음 `supabase/security-hardening.sql`을 마지막에 실행합니다. 스터디 라운지 메시지를 실시간으로 동기화하려면 `supabase/study-comments-realtime.sql`을 실행합니다. 스터디룸 성능 개선을 적용하려면 `supabase/study-room-directory-pagination.sql`과 `supabase/study-room-detail-performance.sql`을 순서대로 실행합니다.
+기존 데이터베이스를 업데이트하는 경우 다중 기기 연결을 위해 먼저 `supabase/extension-multi-device.sql`을 실행합니다. 그 밖의 필요한 기능 SQL을 적용한 다음 `supabase/security-hardening.sql`을 마지막에 실행합니다. 스터디 라운지 메시지를 실시간으로 동기화하려면 `supabase/study-comments-realtime.sql`을 실행합니다. 스터디룸 성능 개선을 적용하려면 `supabase/study-room-directory-pagination.sql`과 `supabase/study-room-detail-performance.sql`을 순서대로 실행합니다.
 
 ### 3. Google 로그인 구성
 
@@ -127,10 +129,11 @@ http://localhost:3000/auth/callback
 NEXT_PUBLIC_SUPABASE_URL=https://<your-project-ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_your-key
 SUPABASE_SECRET_KEY=
+SOLVESYNC_EXTENSION_IDS=
 PRIVACY_CONTACT_EMAIL=privacy@example.com
 ```
 
-`NEXT_PUBLIC_*` 변수는 브라우저에서 사용하는 공개 설정입니다. `SUPABASE_SECRET_KEY`, 데이터베이스 비밀번호, Google Client Secret에는 절대 `NEXT_PUBLIC_` 접두사를 붙이지 말고 Git에도 커밋하지 마세요. `PRIVACY_CONTACT_EMAIL`은 `/about` 개인정보 처리방침에 표시할 운영자 문의 주소입니다.
+`NEXT_PUBLIC_*` 변수는 브라우저에서 사용하는 공개 설정입니다. `SUPABASE_SECRET_KEY`, 데이터베이스 비밀번호, Google Client Secret에는 절대 `NEXT_PUBLIC_` 접두사를 붙이지 말고 Git에도 커밋하지 마세요. Chrome Web Store에 배포한 뒤에는 `SOLVESYNC_EXTENSION_IDS`에 확정된 확장 프로그램 ID를 입력합니다. 여러 ID는 쉼표로 구분하며, 압축해제 설치로 개발하는 동안에는 비워둘 수 있습니다. `PRIVACY_CONTACT_EMAIL`은 `/about` 개인정보 처리방침에 표시할 운영자 문의 주소입니다.
 
 ### 5. 개발 서버 실행
 

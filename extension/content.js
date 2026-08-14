@@ -52,9 +52,21 @@ async function capture(requireSuccess = true) {
   if (sentForProblem.has(id)) return { ok: true, duplicate: true };
   sentForProblem.add(id);
   const { startKey, event } = eventFor(id);
-  const response = await chrome.runtime.sendMessage({ type: 'PROGRAMMERS_ACCEPTED', event });
-  if (!response?.ok) { console.info('[AlgoSync] 전송을 보류했습니다:', response?.error); sentForProblem.delete(id); return response || { ok: false, error: '확장 프로그램 응답이 없습니다.' }; }
-  sessionStorage.removeItem(startKey); return response;
+  try {
+    const response = await chrome.runtime.sendMessage({ type: 'PROGRAMMERS_ACCEPTED', event });
+    if (!response?.ok) {
+      console.info('[SolveSync] 풀이 기록을 보관하지 못했습니다:', response?.error);
+      sentForProblem.delete(id);
+      return response || { ok: false, error: '확장 프로그램 응답이 없습니다.' };
+    }
+    if (response.queued) console.info('[SolveSync] 풀이 기록을 로컬에 보관했으며 자동 재전송합니다.');
+    sessionStorage.removeItem(startKey);
+    return response;
+  } catch (error) {
+    console.info('[SolveSync] 확장 프로그램 연결에 실패했습니다:', error?.message);
+    sentForProblem.delete(id);
+    return { ok: false, error: error?.message || '확장 프로그램에 연결하지 못했습니다.' };
+  }
 }
 async function detect() {
   // 프로그래머스의 제출 결과 모달은 SPA로 갱신됩니다. 백준허브와 같이 모달의 정답 상태를 직접 감지합니다.

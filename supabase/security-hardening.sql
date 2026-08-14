@@ -13,6 +13,12 @@ revoke all on public.study_members from authenticated;
 grant select on public.study_members to authenticated;
 revoke all on public.study_membership_history from anon, authenticated;
 
+-- 기기 토큰은 승인 코드 교환 API만 발급하고 사용자는 자신의 연결 조회/해제만 허용한다.
+revoke all on public.extension_connections from authenticated;
+grant select, delete on public.extension_connections to authenticated;
+revoke all on public.extension_connection_codes from public, anon, authenticated;
+grant all on public.extension_connection_codes to service_role;
+
 -- 핸들은 claim_handle RPC로만 최초 설정하고 일반 프로필 수정에서 제외한다.
 revoke all on public.profiles from authenticated;
 grant select on public.profiles to authenticated;
@@ -38,5 +44,8 @@ revoke execute on function public.study_member_solve_events(uuid) from public, a
 -- 풀이 기록은 Vercel 서버의 Secret Key 경로만 사용한다.
 revoke execute on function public.record_programmers_event(text, text, text, text, text, timestamptz, integer, timestamptz)
   from public, anon, authenticated;
+revoke execute on function public.exchange_extension_connection_code(text, text, uuid, text)
+  from public, anon, authenticated;
+grant execute on function public.exchange_extension_connection_code(text, text, uuid, text) to service_role;
 
 commit;

@@ -5,6 +5,17 @@ import { useEffect, useRef } from "react"
 import { Logo } from "@/components/logo"
 import { createClient } from "@/utils/supabase/client"
 
+function safeNextPath(value: string | null) {
+  if (!value) return null
+  try {
+    const target = new URL(value, window.location.origin)
+    if (target.origin !== window.location.origin || target.pathname !== "/extension/connect") return null
+    return `${target.pathname}${target.search}`
+  } catch {
+    return null
+  }
+}
+
 export default function AuthCallbackPage() {
   const started = useRef(false)
 
@@ -14,6 +25,7 @@ export default function AuthCallbackPage() {
 
     async function completeSignIn() {
       const code = new URLSearchParams(window.location.search).get("code")
+      const next = safeNextPath(new URLSearchParams(window.location.search).get("next"))
       if (!code) {
         window.location.replace("/login?error=missing_code")
         return
@@ -23,6 +35,11 @@ export default function AuthCallbackPage() {
       const { data, error } = await supabase.auth.exchangeCodeForSession(code)
       if (error || !data.session) {
         window.location.replace(`/login?error=${encodeURIComponent(error?.message || "session_missing")}`)
+        return
+      }
+
+      if (next) {
+        window.location.replace(next)
         return
       }
 

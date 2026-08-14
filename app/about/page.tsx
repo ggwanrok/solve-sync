@@ -163,7 +163,7 @@ export default function AboutPage() {
                   <span>구분</span><span>처리 항목</span><span>이용 목적</span>
                 </div>
                 <DataItem title="회원·프로필" items="Google 계정 식별자, 이메일, 이름, 프로필 이미지, 고유 닉네임" purpose="회원 식별, 로그인, 서비스 내 프로필 표시" />
-                <DataItem title="풀이 연동" items="문제 ID·제목·URL, 언어, 풀이 시작·정답 시각, 소요 시간, 연동 토큰의 해시값과 마지막 통신 시각" purpose="풀이 자동 기록, 대시보드와 스터디 진행도 제공" />
+                <DataItem title="풀이 연동" items="문제 ID·제목·URL, 언어, 풀이 시작·정답 시각, 소요 시간, 기기 이름, 기기별 연동 토큰의 해시값과 마지막 통신 시각" purpose="풀이 자동 기록, 다중 기기 연결, 대시보드와 스터디 진행도 제공" />
                 <DataItem title="친구·스터디" items="친구 요청 및 관계, 스터디 가입·탈퇴 이력, 방 정보·목표·접근 확인, 작성한 댓글" purpose="친구 및 스터디 협업 기능 제공" />
                 <DataItem title="자동 생성 정보" items="인증 쿠키, IP 주소, 접속 일시, 브라우저·기기 정보, 이용 및 오류 기록" purpose="세션 유지, 보안, 장애 대응 및 서비스 개선" />
               </div>
@@ -215,7 +215,7 @@ export default function AboutPage() {
               <ul className="list-disc space-y-2 pl-5 marker:text-primary">
                 <li>HTTPS 암호화 통신과 보안 속성이 적용된 인증 쿠키 사용</li>
                 <li>데이터베이스 Row Level Security를 통한 사용자별 접근 제한</li>
-                <li>프로그래머스 연동 토큰과 비공개방 비밀번호를 원문이 아닌 해시값으로 저장</li>
+                <li>프로그래머스 기기별 연동 토큰과 비공개방 비밀번호를 원문이 아닌 해시값으로 저장</li>
                 <li>서버 전용 비밀키와 브라우저 공개키 분리, 최소 권한에 따른 접근 제어</li>
               </ul>
             </PolicySection>
