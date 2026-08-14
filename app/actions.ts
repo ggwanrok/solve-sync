@@ -55,6 +55,7 @@ export async function respondFriendRequest(formData: FormData) {
   })
   if (error) throw new Error(error.message)
   revalidatePath("/friends")
+  revalidatePath("/", "layout")
   revalidateStudyFrom(formData)
 }
 

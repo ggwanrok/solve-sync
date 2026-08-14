@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-export type ShellUser = AccountUser
+export type ShellUser = AccountUser & { pendingFriendRequestCount: number }
 
 const nav = [
   { href: "/", label: "대시보드", icon: LayoutDashboard },
@@ -20,7 +20,7 @@ const nav = [
   { href: "/study", label: "스터디룸", icon: BookOpen },
 ]
 
-function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+function NavLinks({ pendingFriendRequestCount, onNavigate }: { pendingFriendRequestCount: number; onNavigate?: () => void }) {
   const pathname = usePathname()
   return (
     <nav className="flex flex-col gap-1">
@@ -41,6 +41,11 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
           >
             <item.icon className="size-4.5" />
             {item.label}
+            {item.href === "/friends" && pendingFriendRequestCount > 0 && (
+              <Badge className="ml-auto h-5 min-w-5 justify-center rounded-full px-1.5 text-[10px]" aria-label={`받은 친구 요청 ${pendingFriendRequestCount}건`}>
+                {pendingFriendRequestCount > 99 ? "99+" : pendingFriendRequestCount}
+              </Badge>
+            )}
           </Link>
         )
       })}
@@ -57,7 +62,7 @@ function SidebarContent({ user, onNavigate }: { user: ShellUser; onNavigate?: ()
         </Link>
       </div>
 
-      <NavLinks onNavigate={onNavigate} />
+      <NavLinks pendingFriendRequestCount={user.pendingFriendRequestCount} onNavigate={onNavigate} />
 
       <div className="mt-auto flex flex-col gap-3">
         <div className="flex items-center gap-3 rounded-xl px-2 py-1.5">

@@ -36,3 +36,18 @@ export const getViewerExtensions = cache(async () => {
     .order("created_at", { ascending: false })
   return (data || []) as ViewerExtensionDevice[]
 })
+
+export const getPendingFriendRequestCount = cache(async () => {
+  const { supabase, user } = await getViewer()
+  if (!user) return 0
+  const { count, error } = await supabase
+    .from("friend_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("receiver_id", user.id)
+    .eq("status", "pending")
+  if (error) {
+    console.error("pending friend request count failed", error)
+    return 0
+  }
+  return count || 0
+})
