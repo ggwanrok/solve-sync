@@ -1,9 +1,9 @@
 "use client"
 
-import { LayoutDashboard, Users, BookOpen, Menu, Puzzle } from "lucide-react"
+import { LayoutDashboard, Users, BookOpen, Menu, Puzzle, RefreshCw } from "lucide-react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { useState } from "react"
+import { usePathname, useRouter } from "next/navigation"
+import { useState, useTransition } from "react"
 import { Logo } from "@/components/logo"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { AccountDialog, type AccountUser } from "@/components/account-dialog"
@@ -74,6 +74,20 @@ function SidebarContent({ user, onNavigate }: { user: ShellUser; onNavigate?: ()
 
 export function AppShell({ children, user }: { children: React.ReactNode; user: ShellUser }) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [refreshPending, startRefreshTransition] = useTransition()
+  const pathname = usePathname()
+  const router = useRouter()
+  const refreshLabel = pathname === "/"
+    ? "대시보드"
+    : pathname === "/friends"
+      ? "친구"
+      : pathname.startsWith("/study")
+        ? "스터디룸"
+        : null
+
+  function refreshCurrentPage() {
+    startRefreshTransition(() => router.refresh())
+  }
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -112,6 +126,20 @@ export function AppShell({ children, user }: { children: React.ReactNode; user: 
           </div>
 
           <div className="ml-auto flex items-center gap-2 md:gap-3">
+            {refreshLabel && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={refreshCurrentPage}
+                disabled={refreshPending}
+                aria-label={`${refreshLabel} 새로고침`}
+              >
+                <RefreshCw className={refreshPending ? "animate-spin" : undefined} />
+                <span className="hidden sm:inline">새로고침</span>
+              </Button>
+            )}
             <Badge variant="outline" className="hidden gap-1.5 md:flex">
               <Puzzle className={cn("size-3.5", user.extensionConnected ? "text-primary" : "text-muted-foreground")} />
               프로그래머스 {user.extensionConnected ? "연동" : "미연동"}
