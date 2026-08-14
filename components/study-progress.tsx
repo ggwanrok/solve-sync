@@ -465,6 +465,27 @@ export function StudyProgress({
     ? second.periodNumber - first.periodNumber
     : first.periodNumber - second.periodNumber)
   const currentLabel = goalPeriod === "daily" ? "오늘" : "이번 주"
+  const currentMemberColumns = [
+    currentMembers.filter((_, index) => index % 2 === 0),
+    currentMembers.filter((_, index) => index % 2 === 1),
+  ]
+
+  function renderCurrentMember(member: CurrentStudyProgressMember) {
+    const problemKey = `${currentPeriod?.start || "current"}:${member.userId}:${member.solvedCount}`
+    return (
+      <MemberProgressCard
+        key={member.userId}
+        member={member}
+        goalCount={goalCount}
+        progressLabel={`${currentLabel} 풀이`}
+        showProgress={canViewProgress}
+        open={openCurrentMember === member.userId}
+        problems={problemsByKey[problemKey] || []}
+        loadingProblems={Boolean(loadingProblemKeys[problemKey])}
+        onToggle={() => toggleCurrentMember(member)}
+      />
+    )
+  }
 
   return (
     <Tabs defaultValue="current" onValueChange={(value) => {
@@ -485,23 +506,15 @@ export function StudyProgress({
       </div>
 
       <TabsContent value="current">
-        <div className="grid items-start gap-3 sm:grid-cols-2">
-          {currentMembers.map((member) => {
-            const problemKey = `${currentPeriod?.start || "current"}:${member.userId}:${member.solvedCount}`
-            return (
-              <MemberProgressCard
-                key={member.userId}
-                member={member}
-                goalCount={goalCount}
-                progressLabel={`${currentLabel} 풀이`}
-                showProgress={canViewProgress}
-                open={openCurrentMember === member.userId}
-                problems={problemsByKey[problemKey] || []}
-                loadingProblems={Boolean(loadingProblemKeys[problemKey])}
-                onToggle={() => toggleCurrentMember(member)}
-              />
-            )
-          })}
+        <div className="flex flex-col gap-3 sm:hidden">
+          {currentMembers.map(renderCurrentMember)}
+        </div>
+        <div className="hidden items-start gap-3 sm:grid sm:grid-cols-2">
+          {currentMemberColumns.map((members, columnIndex) => (
+            <div key={columnIndex} className="flex min-w-0 flex-col gap-3">
+              {members.map(renderCurrentMember)}
+            </div>
+          ))}
         </div>
       </TabsContent>
 
