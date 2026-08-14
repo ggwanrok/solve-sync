@@ -10,6 +10,13 @@ async function userClient() {
   return { supabase, user }
 }
 
+function revalidateStudyFrom(formData: FormData) {
+  const studyId = String(formData.get("studyId") || "")
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(studyId)) {
+    revalidatePath(`/study/${studyId}`)
+  }
+}
+
 export async function sendFriendRequest(formData: FormData) {
   const { supabase } = await userClient()
   const raw = String(formData.get("handle") || "").trim().toLowerCase()
@@ -23,6 +30,7 @@ export async function sendFriendRequest(formData: FormData) {
 
   switch (status) {
     case "sent":
+      revalidateStudyFrom(formData)
       return { status, message: "친구 요청을 보냈습니다." }
     case "already_sent":
       return { status, message: "이미 친구 요청을 보낸 사용자입니다." }
@@ -47,6 +55,7 @@ export async function respondFriendRequest(formData: FormData) {
   })
   if (error) throw new Error(error.message)
   revalidatePath("/friends")
+  revalidateStudyFrom(formData)
 }
 
 export async function createStudyRoom(input: { name: string; description: string; goalPeriod: "daily" | "weekly"; goalCount: number; password: string | null }) {

@@ -6,6 +6,7 @@ import { StudyProgress } from "@/components/study-progress"
 import { JoinStudyRoomButton } from "@/components/join-study-room-button"
 import { StudyRoomPasswordForm } from "@/components/study-room-password-form"
 import { StudyRoomMembershipActions } from "@/components/study-room-membership-actions"
+import { StudyRoomMembers, type StudyMemberFriendStatus } from "@/components/study-room-members"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -22,6 +23,43 @@ export default async function StudyDetailPage({ params }: { params: Promise<{ id
   if (!room) notFound()
   const isMember = Boolean(detail.isMember)
   const canView = Boolean(detail.canView)
+
+  const otherMemberIds = (detail.members || [])
+    .map((member) => member.userId)
+    .filter((memberId) => memberId !== user?.id)
+  const friendIds = new Set<string>()
+  const outgoingRequestIds = new Map<string, string>()
+  const incomingRequestIds = new Map<string, string>()
+
+  if (user && otherMemberIds.length > 0) {
+    const [friendships, outgoingRequests, incomingRequests] = await Promise.all([
+      supabase.from("friendships").select("friend_id").eq("user_id", user.id).in("friend_id", otherMemberIds),
+      supabase.from("friend_requests").select("id,receiver_id").eq("sender_id", user.id).eq("status", "pending").in("receiver_id", otherMemberIds),
+      supabase.from("friend_requests").select("id,sender_id").eq("receiver_id", user.id).eq("status", "pending").in("sender_id", otherMemberIds),
+    ])
+    const relationshipError = friendships.error || outgoingRequests.error || incomingRequests.error
+    if (relationshipError) throw new Error(`참가자 친구 상태를 불러오지 못했습니다: ${relationshipError.message}`)
+
+    for (const friendship of friendships.data || []) friendIds.add(friendship.friend_id)
+    for (const request of outgoingRequests.data || []) outgoingRequestIds.set(request.receiver_id, request.id)
+    for (const request of incomingRequests.data || []) incomingRequestIds.set(request.sender_id, request.id)
+  }
+
+  const membersWithFriendStatus = (detail.members || []).map((member) => {
+    let friendStatus: StudyMemberFriendStatus = "none"
+    if (member.userId === user?.id) friendStatus = "self"
+    else if (friendIds.has(member.userId)) friendStatus = "friend"
+    else if (incomingRequestIds.has(member.userId)) friendStatus = "incoming_pending"
+    else if (outgoingRequestIds.has(member.userId)) friendStatus = "outgoing_pending"
+
+    return {
+      userId: member.userId,
+      role: member.role,
+      profile: member.profile,
+      friendStatus,
+      friendRequestId: incomingRequestIds.get(member.userId),
+    }
+  })
 
   const progressByUser = new Map<string, number>(
     (detail.progress || []).map((item) => [item.userId, Number(item.solvedCount)]),
@@ -51,7 +89,10 @@ export default async function StudyDetailPage({ params }: { params: Promise<{ id
       <Card><CardContent className="flex flex-col gap-5 p-6"><div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex items-center gap-2"><h1 className="text-xl font-bold">{room.name}</h1>{room.ownerId === user?.id && <Badge variant="secondary" className="gap-1"><Crown className="size-3" />리더</Badge>}</div><p className="mt-1 text-sm text-muted-foreground">{room.description}</p><div className="mt-3 flex gap-2 text-sm"><span className="rounded-lg bg-primary/10 px-2.5 py-1 font-medium text-primary">{room.goalPeriod === "daily" ? "매일" : "매주"} {room.goalCount}문제</span><span className="flex items-center gap-1 text-muted-foreground"><Users className="size-4" />{detail.members.length}명</span></div></div>{!isMember && <JoinStudyRoomButton studyId={id} />}</div></CardContent></Card>
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2"><StudyProgress studyId={id} goalPeriod={room.goalPeriod} goalCount={room.goalCount} currentMembers={currentProgressMembers} currentPeriod={detail.currentPeriod} canViewProgress={isMember} /></div>
-        {isMember ? <StudyLounge studyId={id} currentUserId={user!.id} memberProfiles={memberProfiles} /> : <Card className="h-fit"><CardContent className="p-5 text-center"><p className="text-sm font-medium">스터디 라운지는 멤버 전용입니다.</p><p className="mt-1 text-xs text-muted-foreground">참여하면 멤버들과 메시지를 나눌 수 있어요.</p></CardContent></Card>}
+        <div className="flex flex-col gap-6">
+          <StudyRoomMembers studyId={id} members={membersWithFriendStatus} />
+          {isMember ? <StudyLounge studyId={id} currentUserId={user!.id} memberProfiles={memberProfiles} /> : <Card className="h-fit"><CardContent className="p-5 text-center"><p className="text-sm font-medium">스터디 라운지는 멤버 전용입니다.</p><p className="mt-1 text-xs text-muted-foreground">참여하면 멤버들과 메시지를 나눌 수 있어요.</p></CardContent></Card>}
+        </div>
       </div>
     </div>
   )
