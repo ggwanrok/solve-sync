@@ -1,6 +1,7 @@
-import { ChevronLeft, ChevronRight, Crown, Lock, Search, Users } from "lucide-react"
+import { ChevronDown, ChevronLeft, ChevronRight, Crown, Lock, Search, Users } from "lucide-react"
 import Link from "next/link"
 import { CreateStudyDialog } from "@/components/create-study-dialog"
+import { StudyDifficultyRange } from "@/components/study-difficulty-range"
 import { StudyRoomEntryButton } from "@/components/study-room-entry-button"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -16,8 +17,7 @@ type StudySearchParams = {
   field?: string
   query?: string
   page?: string
-  difficulty?: string | string[]
-  difficultyFilter?: string
+  minDifficulty?: string
   view?: string
 }
 type StudyRoomDirectoryItem = {
@@ -49,13 +49,13 @@ function studyPageHref({
   field,
   query,
   page = 1,
-  difficulties = [...DIFFICULTY_LEVELS],
+  minDifficulty = 0,
   view = "all",
 }: {
   field: SearchField
   query: string
   page?: number
-  difficulties?: DifficultyLevel[]
+  minDifficulty?: DifficultyLevel
   view?: StudyDirectoryView
 }) {
   const search = new URLSearchParams()
@@ -63,25 +63,16 @@ function studyPageHref({
     search.set("field", field)
     search.set("query", query)
   }
-  if (difficulties.length !== DIFFICULTY_LEVELS.length) {
-    search.set("difficultyFilter", "1")
-    difficulties.forEach((level) => search.append("difficulty", String(level)))
-  }
+  if (minDifficulty > 0) search.set("minDifficulty", String(minDifficulty))
   if (view === "joined") search.set("view", view)
   if (page > 1) search.set("page", String(page))
   const queryString = search.toString()
   return queryString ? `/study?${queryString}` : "/study"
 }
 
-function parseDifficulties(params: StudySearchParams): DifficultyLevel[] {
-  if (params.difficultyFilter !== "1") return [...DIFFICULTY_LEVELS]
-  const values = Array.isArray(params.difficulty)
-    ? params.difficulty
-    : params.difficulty
-      ? [params.difficulty]
-      : []
-  const requestedLevels = new Set(values.map(Number))
-  return DIFFICULTY_LEVELS.filter((level) => requestedLevels.has(level))
+function parseMinDifficulty(value: string | undefined): DifficultyLevel {
+  const level = Number(value)
+  return DIFFICULTY_LEVELS.includes(level as DifficultyLevel) ? level as DifficultyLevel : 0
 }
 
 export default async function StudyListPage({
@@ -96,7 +87,8 @@ export default async function StudyListPage({
   const query = (params.query || "").trim()
   const parsedPage = Number.parseInt(params.page || "1", 10)
   const page = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1
-  const difficulties = parseDifficulties(params)
+  const minDifficulty = parseMinDifficulty(params.minDifficulty)
+  const difficulties = DIFFICULTY_LEVELS.filter((level) => level >= minDifficulty)
   const view: StudyDirectoryView = params.view === "joined" ? "joined" : "all"
   const joinedOnly = view === "joined"
   const { supabase, user } = await getViewer()
@@ -115,18 +107,18 @@ export default async function StudyListPage({
   const studyRooms = directory?.rooms || []
   const total = Number(directory?.total || 0)
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
-  if (page > totalPages) redirect(studyPageHref({ field, query, page: totalPages, difficulties, view }))
+  if (page > totalPages) redirect(studyPageHref({ field, query, page: totalPages, minDifficulty, view }))
 
   const firstVisiblePage = Math.max(1, Math.min(page - 2, totalPages - 4))
   const visiblePages = Array.from(
     { length: Math.min(5, totalPages) },
     (_, index) => firstVisiblePage + index,
   )
-  const hasSearchFilters = Boolean(query) || difficulties.length !== DIFFICULTY_LEVELS.length
+  const hasSearchFilters = Boolean(query) || minDifficulty > 0
   const directoryLabel = joinedOnly ? "참여 중인 스터디룸" : "전체 스터디룸"
-  const resetHref = studyPageHref({ field: "title", query: "", difficulties: [...DIFFICULTY_LEVELS], view })
-  const joinedHref = studyPageHref({ field, query, difficulties, view: "joined" })
-  const allHref = studyPageHref({ field, query, difficulties, view: "all" })
+  const resetHref = studyPageHref({ field: "title", query: "", minDifficulty: 0, view })
+  const joinedHref = studyPageHref({ field, query, minDifficulty, view: "joined" })
+  const allHref = studyPageHref({ field, query, minDifficulty, view: "all" })
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
@@ -139,19 +131,21 @@ export default async function StudyListPage({
       </div>
 
       <form method="get" className="rounded-xl border bg-card p-3">
-        <input type="hidden" name="difficultyFilter" value="1" />
         <input type="hidden" name="view" value={view} />
         <div className="flex flex-col gap-2 sm:flex-row">
-          <select
-            name="field"
-            defaultValue={field}
-            aria-label="검색 기준"
-            className="h-9 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-3 focus:ring-ring/50 sm:w-44"
-          >
-            <option value="title">제목으로 검색</option>
-            <option value="description">설명으로 검색</option>
-            <option value="owner">방장 이름으로 검색</option>
-          </select>
+          <div className="relative sm:w-44">
+            <select
+              name="field"
+              defaultValue={field}
+              aria-label="검색 기준"
+              className="h-9 w-full appearance-none rounded-lg border border-input bg-background py-0 pl-3 pr-10 text-sm outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
+            >
+              <option value="title">제목으로 검색</option>
+              <option value="description">설명으로 검색</option>
+              <option value="owner">방장 이름으로 검색</option>
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+          </div>
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input key={params.query || "empty-query"} name="query" defaultValue={params.query || ""} placeholder="검색어를 입력하세요" className="h-9 pl-9" />
@@ -161,26 +155,7 @@ export default async function StudyListPage({
         </div>
         <fieldset className="mt-3 border-t pt-3">
           <legend className="px-1 text-xs font-medium text-muted-foreground">포함할 방 난이도</legend>
-          <div className="mt-1 flex flex-wrap gap-2">
-            {DIFFICULTY_LEVELS.map((level) => {
-              const selected = difficulties.includes(level)
-              return (
-                <label
-                  key={level}
-                  className="flex cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted/50 has-checked:border-primary/40 has-checked:bg-primary/5 has-checked:text-foreground"
-                >
-                  <input
-                    type="checkbox"
-                    name="difficulty"
-                    value={level}
-                    defaultChecked={selected}
-                    className="size-4 accent-primary"
-                  />
-                  Lv.{level} 이상
-                </label>
-              )
-            })}
-          </div>
+          <div className="mt-1"><StudyDifficultyRange key={minDifficulty} defaultValue={minDifficulty} /></div>
         </fieldset>
       </form>
 
@@ -245,18 +220,14 @@ export default async function StudyListPage({
         <div className="rounded-xl border border-dashed py-16 text-center">
           {joinedOnly && !hasSearchFilters ? <Users className="mx-auto mb-3 size-8 text-muted-foreground/50" /> : <Search className="mx-auto mb-3 size-8 text-muted-foreground/50" />}
           <p className="text-sm font-medium">
-            {difficulties.length === 0
-              ? "검색할 난이도를 선택해 주세요."
-              : joinedOnly && !hasSearchFilters
-                ? "참여 중인 스터디룸이 없습니다."
-                : "검색 결과가 없습니다."}
+            {joinedOnly && !hasSearchFilters
+              ? "참여 중인 스터디룸이 없습니다."
+              : "검색 결과가 없습니다."}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            {difficulties.length === 0
-              ? "한 개 이상의 난이도를 선택하면 스터디룸을 찾을 수 있어요."
-              : joinedOnly && !hasSearchFilters
-                ? "모두 둘러보기에서 함께할 스터디룸을 찾아보세요."
-                : "다른 검색어나 검색 조건을 사용해보세요."}
+            {joinedOnly && !hasSearchFilters
+              ? "모두 둘러보기에서 함께할 스터디룸을 찾아보세요."
+              : "다른 검색어나 검색 조건을 사용해보세요."}
           </p>
         </div>
       )}
@@ -264,14 +235,14 @@ export default async function StudyListPage({
       {totalPages > 1 && (
         <nav className="flex items-center justify-center gap-1" aria-label="스터디룸 페이지">
           {page > 1 ? (
-            <Button render={<Link href={studyPageHref({ field, query, page: page - 1, difficulties, view })} />} nativeButton={false} variant="outline" size="icon" aria-label="이전 페이지"><ChevronLeft className="size-4" /></Button>
+            <Button render={<Link href={studyPageHref({ field, query, page: page - 1, minDifficulty, view })} />} nativeButton={false} variant="outline" size="icon" aria-label="이전 페이지"><ChevronLeft className="size-4" /></Button>
           ) : (
             <Button type="button" variant="outline" size="icon" aria-label="이전 페이지" disabled><ChevronLeft className="size-4" /></Button>
           )}
           {visiblePages.map((pageNumber) => (
             <Button
               key={pageNumber}
-              render={<Link href={studyPageHref({ field, query, page: pageNumber, difficulties, view })} />}
+              render={<Link href={studyPageHref({ field, query, page: pageNumber, minDifficulty, view })} />}
               nativeButton={false}
               variant={pageNumber === page ? "default" : "outline"}
               size="icon"
@@ -282,7 +253,7 @@ export default async function StudyListPage({
             </Button>
           ))}
           {page < totalPages ? (
-            <Button render={<Link href={studyPageHref({ field, query, page: page + 1, difficulties, view })} />} nativeButton={false} variant="outline" size="icon" aria-label="다음 페이지"><ChevronRight className="size-4" /></Button>
+            <Button render={<Link href={studyPageHref({ field, query, page: page + 1, minDifficulty, view })} />} nativeButton={false} variant="outline" size="icon" aria-label="다음 페이지"><ChevronRight className="size-4" /></Button>
           ) : (
             <Button type="button" variant="outline" size="icon" aria-label="다음 페이지" disabled><ChevronRight className="size-4" /></Button>
           )}
