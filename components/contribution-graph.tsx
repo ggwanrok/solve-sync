@@ -1,7 +1,9 @@
 "use client"
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { ProblemDifficultyBadge } from "@/components/difficulty-badge"
 import { APP_TIME_ZONE } from "@/lib/calendar"
+import type { Difficulty } from "@/lib/difficulty"
 import { cn } from "@/lib/utils"
 
 const levelClass = ["bg-grass-0", "bg-grass-1", "bg-grass-2", "bg-grass-3", "bg-grass-4"]
@@ -9,7 +11,7 @@ const weekdayLabels = ["월", "화", "수", "목", "금", "토", "일"]
 
 export type ContributionDay = {
   date: string
-  problems: Array<{ title: string; language: string | null }>
+  problems: Array<{ title: string; language: string | null; difficulty: Difficulty | null }>
   isFuture?: boolean
 }
 
@@ -104,7 +106,7 @@ export function ContributionGraph({ data }: { data: ContributionDay[] }) {
                     />
                     <TooltipContent side="top" className="max-w-72 text-xs">
                       <p className="font-medium">{displayDate(day.date)}</p>
-                      {day.problems.length ? <ul className="mt-1.5 space-y-1">{day.problems.map((problem, index) => <li key={`${problem.title}-${index}`} className="flex gap-2"><span className="max-w-48 truncate">{problem.title}</span>{problem.language && <span className="text-muted-foreground">{problem.language}</span>}</li>)}</ul> : <p className="mt-1 text-muted-foreground">푼 문제 없음</p>}
+                      {day.problems.length ? <ul className="mt-1.5 space-y-1">{day.problems.map((problem, index) => <li key={`${problem.title}-${index}`} className="flex items-center gap-2"><span className="max-w-40 truncate">{problem.title}</span><ProblemDifficultyBadge difficulty={problem.difficulty} className="text-[10px]" />{problem.language && <span className="text-muted-foreground">{problem.language}</span>}</li>)}</ul> : <p className="mt-1 text-muted-foreground">푼 문제 없음</p>}
                     </TooltipContent>
                   </Tooltip>
                 })}

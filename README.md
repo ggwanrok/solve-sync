@@ -10,10 +10,10 @@ SolveSync(솔브싱크)는 프로그래머스 풀이 기록을 자동으로 모�
 
 ## 주요 기능
 
-- **풀이 자동 기록** — 프로그래머스에서 정답을 제출하면 문제, 언어, 풀이 시각과 소요 시간을 자동으로 저장합니다.
+- **풀이 자동 기록** — 프로그래머스에서 정답을 제출하면 문제, 난이도, 언어, 풀이 시각과 소요 시간을 자동으로 저장합니다.
 - **성장 대시보드** — 누적 풀이와 최근 활동, 기여 그래프로 알고리즘 학습 흐름을 확인합니다.
 - **친구 연결** — 고유한 `@핸들`로 사용자를 찾고 친구 요청을 주고받습니다.
-- **스터디룸** — 일간 또는 주간 목표를 정하고 멤버별 달성 현황을 함께 확인합니다.
+- **스터디룸** — 일간 또는 주간 목표와 최소 문제 난이도를 정하고 멤버별 달성 현황을 함께 확인합니다.
 - **공개·비공개 스터디** — 누구나 참여하는 공개방과 비밀번호로 보호되는 비공개방을 만들 수 있습니다.
 - **스터디 라운지** — 같은 스터디의 멤버들과 댓글을 남기고 실시간으로 대화합니다.
 
@@ -64,6 +64,7 @@ SolveSync에 접속해 **Google로 계속하기**를 누릅니다. 처음 로그
 **스터디** 메뉴에서 공개된 스터디룸을 둘러보거나 직접 새 방을 만듭니다.
 
 - 목표 주기를 `매일` 또는 `매주`로 설정할 수 있습니다.
+- 목표에 반영할 최소 문제 난이도를 `0단계 이상`부터 `5단계 이상`까지 설정할 수 있습니다.
 - 비공개방은 8자 이상의 비밀번호로 보호됩니다.
 - 스터디 멤버의 목표 달성 현황과 풀이 수를 함께 확인할 수 있습니다.
 - 라운지에서 멤버들과 학습 상황이나 문제 풀이 이야기를 나눌 수 있습니다.
@@ -101,7 +102,7 @@ npm install
 
 새 Supabase 프로젝트를 만든 뒤 Dashboard의 **SQL Editor**에서 `supabase/schema.sql` 전체를 실행합니다. 이 파일에는 테이블, 함수, 트리거, RLS 정책과 권한 설정이 포함되어 있습니다.
 
-기존 데이터베이스를 업데이트하는 경우 다중 기기 연결을 위해 먼저 `supabase/extension-multi-device.sql`을 실행합니다. 그 밖의 필요한 기능 SQL을 적용한 다음 `supabase/security-hardening.sql`을 마지막에 실행합니다. 스터디 라운지 메시지를 실시간으로 동기화하려면 `supabase/study-comments-realtime.sql`을 실행합니다. 스터디룸 성능 개선을 적용하려면 `supabase/study-room-directory-pagination.sql`과 `supabase/study-room-detail-performance.sql`을 순서대로 실행합니다.
+기존 데이터베이스를 업데이트하는 경우 다중 기기 연결을 위해 먼저 `supabase/extension-multi-device.sql`을 실행합니다. 익스텐션에서 문제 난이도를 저장하려면 `supabase/solve-event-difficulty.sql`을 실행합니다. 스터디룸 성능 개선을 적용하려면 `supabase/study-room-directory-pagination.sql`과 `supabase/study-room-detail-performance.sql`을 순서대로 실행한 뒤, 난이도 목표 기능을 위한 `supabase/study-difficulty-filter.sql`을 실행합니다. 그 밖의 필요한 기능 SQL을 적용한 다음 `supabase/security-hardening.sql`을 마지막에 실행합니다. 스터디 라운지 메시지를 실시간으로 동기화하려면 `supabase/study-comments-realtime.sql`을 실행합니다.
 
 ### 3. Google 로그인 구성
 

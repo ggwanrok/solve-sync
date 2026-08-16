@@ -1,7 +1,9 @@
 // Mock data for the SolveSync (솔브싱크) algorithm study platform.
 // All data here is placeholder content for building out the UI.
 
-export type Difficulty = "Lv.1" | "Lv.2" | "Lv.3" | "Lv.4" | "Lv.5"
+import type { Difficulty } from "@/lib/difficulty"
+
+export type { Difficulty } from "@/lib/difficulty"
 
 export type Solve = {
   id: string

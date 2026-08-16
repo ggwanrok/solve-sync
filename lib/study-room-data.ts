@@ -19,6 +19,7 @@ export type StudyRoomDetailData = {
     description: string
     goalPeriod: "daily" | "weekly"
     goalCount: number
+    minDifficulty: number
     isPrivate: boolean
   } | null
   members: StudyRoomMember[]
@@ -53,5 +54,6 @@ export type StudyPeriodProblemRow = {
   title: string
   url: string
   language: string | null
+  difficulty: number | null
   accepted_at: string
 }

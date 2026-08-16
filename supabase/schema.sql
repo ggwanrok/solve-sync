@@ -58,6 +58,7 @@ alter table public.study_rooms add column if not exists is_private boolean not n
 alter table public.study_rooms add column if not exists password_hash text;
 alter table public.study_rooms add column if not exists goal_period text not null default 'weekly' check (goal_period in ('daily', 'weekly'));
 alter table public.study_rooms add column if not exists goal_count integer not null default 7 check (goal_count between 1 and 100);
+alter table public.study_rooms add column if not exists min_difficulty smallint not null default 0 check (min_difficulty between 0 and 5);
 
 create table if not exists public.study_members (
   study_id uuid not null references public.study_rooms(id) on delete cascade,
@@ -159,6 +160,7 @@ create table if not exists public.solve_events (
   title text not null default '',
   url text not null,
   language text,
+  difficulty smallint check (difficulty between 0 and 5),
   started_at timestamptz,
   duration_seconds integer,
   accepted_at timestamptz not null,
@@ -325,6 +327,7 @@ begin
       room.description,
       room.goal_period,
       room.goal_count,
+      room.min_difficulty,
       room.is_private,
       room.created_at,
       owner.handle as owner_handle,
@@ -428,14 +431,15 @@ $$;
 create or replace function public.study_member_goal_progress(target_study uuid)
 returns table(user_id uuid, solved_count bigint)
 language plpgsql security definer set search_path = public as $$
-declare target_period text;
+declare target_period text; target_min_difficulty smallint;
 begin
   if not public.is_study_member(target_study) then raise exception '스터디 멤버만 진행 현황을 볼 수 있습니다.'; end if;
-  select goal_period into target_period from study_rooms where id = target_study;
+  select goal_period, min_difficulty into target_period, target_min_difficulty from study_rooms where id = target_study;
   return query
   select sm.user_id, count(distinct se.problem_id)::bigint
   from study_members sm
   left join solve_events se on se.user_id = sm.user_id
+    and coalesce(se.difficulty, 0) >= target_min_difficulty
     and se.accepted_at >= case
       when target_period = 'daily' then (date_trunc('day', now() at time zone 'Asia/Seoul') at time zone 'Asia/Seoul')
       else (date_trunc('week', now() at time zone 'Asia/Seoul') at time zone 'Asia/Seoul')
@@ -447,7 +451,8 @@ $$;
 
 drop function if exists public.create_study_room(text, text, integer, text);
 drop function if exists public.create_study_room(text, text, integer, text, text);
-create function public.create_study_room(room_name text, room_description text, room_goal_count integer, room_password text default null, room_goal_period text default 'weekly')
+drop function if exists public.create_study_room(text, text, integer, text, text, integer);
+create function public.create_study_room(room_name text, room_description text, room_goal_count integer, room_password text default null, room_goal_period text default 'weekly', room_min_difficulty integer default 0)
 returns uuid language plpgsql security definer set search_path = public as $$
 declare room_id uuid;
 begin
@@ -456,9 +461,10 @@ begin
   if char_length(coalesce(room_description, '')) > 100 then raise exception '소개는 100자 이하로 입력해 주세요.'; end if;
   if room_goal_period not in ('daily', 'weekly') then raise exception '목표 주기를 확인해 주세요.'; end if;
   if room_goal_count not between 1 and 100 then raise exception '목표 문제 수를 확인해 주세요.'; end if;
+  if room_min_difficulty is null or room_min_difficulty not between 0 and 5 then raise exception '목표 난이도를 확인해 주세요.'; end if;
   if room_password is not null and char_length(room_password) < 8 then raise exception '비밀번호는 8자 이상 입력해 주세요.'; end if;
-  insert into study_rooms(owner_id, name, description, weekly_goal, goal_period, goal_count, max_members, is_private, password_hash)
-  values(auth.uid(), trim(room_name), trim(coalesce(room_description, '')), case when room_goal_period = 'daily' then room_goal_count * 7 else room_goal_count end, room_goal_period, room_goal_count, 50, room_password is not null, case when room_password is null then null else extensions.crypt(room_password, extensions.gen_salt('bf')) end)
+  insert into study_rooms(owner_id, name, description, weekly_goal, goal_period, goal_count, min_difficulty, max_members, is_private, password_hash)
+  values(auth.uid(), trim(room_name), trim(coalesce(room_description, '')), case when room_goal_period = 'daily' then room_goal_count * 7 else room_goal_count end, room_goal_period, room_goal_count, room_min_difficulty, 50, room_password is not null, case when room_password is null then null else extensions.crypt(room_password, extensions.gen_salt('bf')) end)
   returning id into room_id;
   insert into study_members(study_id, user_id, role) values(room_id, auth.uid(), 'leader');
   insert into study_membership_history(study_id, user_id, role) values(room_id, auth.uid(), 'leader');
@@ -621,12 +627,14 @@ begin
     into progress_json from (
       select member.user_id, count(distinct event.problem_id)::bigint as solved_count
       from study_members member
-      left join solve_events event on event.user_id = member.user_id and event.accepted_at >= current_period_start and event.accepted_at < current_period_end
+      left join solve_events event on event.user_id = member.user_id
+        and coalesce(event.difficulty, 0) >= target_room.min_difficulty
+        and event.accepted_at >= current_period_start and event.accepted_at < current_period_end
       where member.study_id = target_study group by member.user_id
     ) progress;
   end if;
   return jsonb_build_object(
-    'room', jsonb_build_object('id', target_room.id, 'ownerId', target_room.owner_id, 'name', target_room.name, 'description', target_room.description, 'goalPeriod', target_room.goal_period, 'goalCount', target_room.goal_count, 'isPrivate', target_room.is_private),
+    'room', jsonb_build_object('id', target_room.id, 'ownerId', target_room.owner_id, 'name', target_room.name, 'description', target_room.description, 'goalPeriod', target_room.goal_period, 'goalCount', target_room.goal_count, 'minDifficulty', target_room.min_difficulty, 'isPrivate', target_room.is_private),
     'members', members_json, 'progress', progress_json, 'isMember', is_member, 'canView', true,
     'currentPeriod', jsonb_build_object('start', current_period_start, 'end', current_period_end)
   );
@@ -650,7 +658,7 @@ declare
 begin
   if auth.uid() is null then raise exception '로그인이 필요합니다.' using errcode = '42501'; end if;
   if not public.is_study_member(target_study) then raise exception '스터디 멤버만 지난 기록을 볼 수 있습니다.'; end if;
-  select room.created_at, room.goal_period into target_room from study_rooms room where room.id = target_study;
+  select room.created_at, room.goal_period, room.min_difficulty into target_room from study_rooms room where room.id = target_study;
   if target_room.created_at is null then raise exception '존재하지 않는 스터디룸입니다.'; end if;
   period_unit := case when target_room.goal_period = 'daily' then 'day' else 'week' end;
   period_step := case when target_room.goal_period = 'daily' then interval '1 day' else interval '1 week' end;
@@ -672,7 +680,9 @@ begin
     from period_bounds period
     join study_membership_history history on history.study_id = target_study and history.joined_at < period.period_end and coalesce(history.left_at, 'infinity'::timestamptz) > period.period_start
     join profiles profile on profile.id = history.user_id
-    left join solve_events event on event.user_id = history.user_id and event.accepted_at >= period.period_start and event.accepted_at < period.period_end
+    left join solve_events event on event.user_id = history.user_id
+      and coalesce(event.difficulty, 0) >= target_room.min_difficulty
+      and event.accepted_at >= period.period_start and event.accepted_at < period.period_end
     group by period.period_start, period.period_end, period.period_number, history.user_id, history.role, profile.handle, profile.nickname, profile.avatar_url
   )
   select jsonb_build_object(
@@ -684,23 +694,27 @@ begin
 end;
 $$;
 
-create or replace function public.study_member_period_solve_events(target_study uuid, target_user uuid, target_period_start timestamptz)
-returns table(problem_id text, title text, url text, language text, accepted_at timestamptz)
+drop function if exists public.study_member_period_solve_events(uuid, uuid, timestamptz);
+create function public.study_member_period_solve_events(target_study uuid, target_user uuid, target_period_start timestamptz)
+returns table(problem_id text, title text, url text, language text, difficulty smallint, accepted_at timestamptz)
 language plpgsql stable security definer set search_path = public as $$
 declare
   target_period text;
+  target_min_difficulty smallint;
   period_start timestamptz;
   period_end timestamptz;
 begin
   if auth.uid() is null then raise exception '로그인이 필요합니다.' using errcode = '42501'; end if;
   if not public.is_study_member(target_study) then raise exception '스터디 멤버만 풀이 상세를 볼 수 있습니다.'; end if;
-  select room.goal_period into target_period from study_rooms room where room.id = target_study;
+  select room.goal_period, room.min_difficulty into target_period, target_min_difficulty from study_rooms room where room.id = target_study;
   if target_period is null then raise exception '존재하지 않는 스터디룸입니다.'; end if;
   period_start := date_trunc(case when target_period = 'daily' then 'day' else 'week' end, target_period_start at time zone 'Asia/Seoul') at time zone 'Asia/Seoul';
   period_end := (period_start at time zone 'Asia/Seoul' + case when target_period = 'daily' then interval '1 day' else interval '1 week' end) at time zone 'Asia/Seoul';
   if not exists(select 1 from study_membership_history history where history.study_id = target_study and history.user_id = target_user and history.joined_at < period_end and coalesce(history.left_at, 'infinity'::timestamptz) > period_start) then return; end if;
-  return query select event.problem_id, event.title, event.url, event.language, event.accepted_at
-  from solve_events event where event.user_id = target_user and event.accepted_at >= period_start and event.accepted_at < period_end
+  return query select event.problem_id, event.title, event.url, event.language, event.difficulty, event.accepted_at
+  from solve_events event where event.user_id = target_user
+    and coalesce(event.difficulty, 0) >= target_min_difficulty
+    and event.accepted_at >= period_start and event.accepted_at < period_end
   order by event.accepted_at desc;
 end;
 $$;
@@ -825,7 +839,7 @@ grant select on public.profiles to authenticated;
 grant update(nickname, avatar_url, guide_completed_at) on public.profiles to authenticated;
 grant select on public.friend_requests, public.friendships to authenticated;
 revoke all on public.study_rooms from authenticated;
-grant select(id, owner_id, name, description, emoji, weekly_goal, max_members, is_private, created_at, goal_period, goal_count) on public.study_rooms to authenticated;
+grant select(id, owner_id, name, description, emoji, weekly_goal, max_members, is_private, created_at, goal_period, goal_count, min_difficulty) on public.study_rooms to authenticated;
 revoke all on public.study_members from authenticated;
 grant select on public.study_members to authenticated;
 revoke all on public.study_membership_history from anon, authenticated;
@@ -835,8 +849,8 @@ grant select, delete on public.extension_connections to authenticated;
 revoke all on public.extension_connection_codes from public, anon, authenticated;
 grant all on public.extension_connection_codes to service_role;
 grant select on public.solve_events to authenticated;
-revoke execute on function public.claim_handle(text), public.is_handle_available(text), public.send_friend_request(text), public.respond_friend_request(uuid, boolean), public.is_study_member(uuid), public.create_study_room(text, text, integer, text, text) from public, anon;
-grant execute on function public.claim_handle(text), public.is_handle_available(text), public.send_friend_request(text), public.respond_friend_request(uuid, boolean), public.is_study_member(uuid), public.create_study_room(text, text, integer, text, text) to authenticated;
+revoke execute on function public.claim_handle(text), public.is_handle_available(text), public.send_friend_request(text), public.respond_friend_request(uuid, boolean), public.is_study_member(uuid), public.create_study_room(text, text, integer, text, text, integer) from public, anon;
+grant execute on function public.claim_handle(text), public.is_handle_available(text), public.send_friend_request(text), public.respond_friend_request(uuid, boolean), public.is_study_member(uuid), public.create_study_room(text, text, integer, text, text, integer) to authenticated;
 grant usage on schema public to anon;
 revoke execute on function public.record_programmers_event(text, text, text, text, text, timestamptz, integer, timestamptz) from public, anon, authenticated;
 revoke execute on function public.exchange_extension_connection_code(text, text, uuid, text) from public, anon, authenticated;

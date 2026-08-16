@@ -17,6 +17,7 @@ type StudyRoomDirectoryItem = {
   description: string
   goal_period: "daily" | "weekly"
   goal_count: number
+  min_difficulty: number
   is_private: boolean
   created_at: string
   owner_handle: string
@@ -130,7 +131,7 @@ export default async function StudyListPage({
                 </div>
                 <div className="rounded-lg border bg-muted/40 px-3 py-2 text-sm">
                   <span className="text-muted-foreground">규칙 · </span>
-                  <span className="font-medium">{room.goal_period === "daily" ? "매일" : "매주"} {room.goal_count}문제</span>
+                  <span className="font-medium">{room.goal_period === "daily" ? "매일" : "매주"} {room.goal_count}문제 · Lv.{room.min_difficulty} 이상</span>
                 </div>
                 <div className="mt-auto flex flex-col gap-3">
                   <div className="flex items-center justify-between">

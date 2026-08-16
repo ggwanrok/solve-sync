@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react"
 import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Clock, ExternalLink, History, LoaderCircle } from "lucide-react"
 import { toast } from "sonner"
+import { ProblemDifficultyBadge } from "@/components/difficulty-badge"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -25,6 +26,7 @@ export type StudyProgressProblem = {
   title: string
   url: string
   language: string | null
+  difficulty: number | null
   acceptedAt: string
 }
 
@@ -107,7 +109,10 @@ function ProblemList({ id, problems, open, loading }: { id: string; problems: St
                     className="flex items-center gap-3 rounded-lg px-2.5 py-2 transition-colors hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium">{problem.title || `문제 ${problem.problemId}`}</p>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <p className="min-w-0 flex-1 truncate text-sm font-medium">{problem.title || `문제 ${problem.problemId}`}</p>
+                        <ProblemDifficultyBadge difficulty={problem.difficulty} />
+                      </div>
                       <p className="text-[11px] text-muted-foreground">
                         {solvedAtFormatter.format(new Date(problem.acceptedAt))}
                         {problem.language && <> · {problem.language}</>}
@@ -404,6 +409,7 @@ export function StudyProgress({
         title: problem.title,
         url: problem.url,
         language: problem.language,
+        difficulty: problem.difficulty,
         acceptedAt: problem.accepted_at,
       }))
       setProblemsByKey((current) => ({ ...current, [key]: problems }))

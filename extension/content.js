@@ -29,6 +29,18 @@ function language() {
   const selected = document.querySelector('[aria-selected="true"], .language-selector .selected, select');
   return selected?.value || text(selected) || null;
 }
+function normalizedDifficulty(value) {
+  const match = String(value ?? '').trim().match(/^(?:Lv\.?\s*)?([0-5])$/i);
+  return match ? Number(match[1]) : null;
+}
+function difficulty() {
+  const id = problemId();
+  const candidates = [...document.querySelectorAll('[data-challenge-level]')];
+  const metadata = candidates.find((node) => node.dataset.lessonId === id)
+    || candidates.find((node) => !node.dataset.lessonId)
+    || candidates[0];
+  return normalizedDifficulty(metadata?.dataset?.challengeLevel);
+}
 function resultElement() {
   const modalResult = document.querySelector('div.modal-header > h4, #modal-dialog h4, .modal-header h4, [class*="modal" i] h4');
   if (modalResult && SUCCESS_TEXT.test(text(modalResult)) && !FAILURE_TEXT.test(text(modalResult))) return modalResult;
@@ -43,7 +55,7 @@ function eventFor(id) {
   const startKey = `algosync:programmers:started:${id}`;
   const startedAt = sessionStorage.getItem(startKey) || new Date().toISOString();
   const acceptedAt = new Date().toISOString();
-  return { startKey, event: { problemId: id, title: title(), url: location.origin + location.pathname, language: language(), startedAt, acceptedAt, durationSeconds: Math.max(0, Math.round((Date.parse(acceptedAt) - Date.parse(startedAt)) / 1000)) } };
+  return { startKey, event: { problemId: id, title: title(), url: location.origin + location.pathname, language: language(), difficulty: difficulty(), startedAt, acceptedAt, durationSeconds: Math.max(0, Math.round((Date.parse(acceptedAt) - Date.parse(startedAt)) / 1000)) } };
 }
 async function capture(requireSuccess = true) {
   const id = problemId(); const result = resultElement();

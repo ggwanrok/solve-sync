@@ -17,11 +17,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createStudyRoom } from "@/app/actions"
+import { DIFFICULTY_LEVELS, minimumDifficultyLabel, type DifficultyLevel } from "@/lib/difficulty"
 
 export function CreateStudyDialog() {
   const [open, setOpen] = useState(false)
   const [unit, setUnit] = useState<"일" | "주">("주")
   const [count, setCount] = useState(5)
+  const [minDifficulty, setMinDifficulty] = useState<DifficultyLevel>(0)
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [isPrivate, setIsPrivate] = useState(false)
@@ -44,10 +46,11 @@ export function CreateStudyDialog() {
         description: description.trim(),
         goalPeriod: unit === "일" ? "daily" : "weekly",
         goalCount: count,
+        minDifficulty,
         password: isPrivate ? password : null,
       })
       toast.success(`'${name.trim()}' 스터디룸을 만들었어요!`)
-      setOpen(false); setName(""); setDescription(""); setCount(5); setUnit("주"); setIsPrivate(false); setPassword("")
+      setOpen(false); setName(""); setDescription(""); setCount(5); setMinDifficulty(0); setUnit("주"); setIsPrivate(false); setPassword("")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "스터디룸을 만들지 못했어요.")
     } finally { setPending(false) }
@@ -119,6 +122,23 @@ export function CreateStudyDialog() {
             <p className="text-sm text-muted-foreground">
               <span className="font-medium text-foreground">{unit === "일" ? "매일" : "매주"}</span> 최소{" "}
               <span className="font-medium text-primary">{count}문제</span>를 풀어야 해요.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="min-difficulty">난이도 수준</Label>
+            <Select value={String(minDifficulty)} onValueChange={(value) => setMinDifficulty(Number(value) as DifficultyLevel)}>
+              <SelectTrigger id="min-difficulty" className="w-full bg-background">
+                <SelectValue>{minimumDifficultyLabel(minDifficulty)}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {DIFFICULTY_LEVELS.map((level) => (
+                  <SelectItem key={level} value={String(level)}>{minimumDifficultyLabel(level)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">
+              프로그래머스 <span className="font-medium text-foreground">Lv.{minDifficulty} 이상</span> 문제만 목표에 반영돼요.
             </p>
           </div>
 

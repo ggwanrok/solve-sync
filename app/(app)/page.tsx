@@ -2,14 +2,16 @@ import { CheckCircle2, Flame } from "lucide-react"
 import { redirect } from "next/navigation"
 import { ContributionCalendarCard, type ContributionYear } from "@/components/contribution-calendar-card"
 import { type ContributionDay } from "@/components/contribution-graph"
+import { ProblemDifficultyBadge } from "@/components/difficulty-badge"
 import { GettingStartedGuide } from "@/components/getting-started-guide"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { addCalendarDays, APP_TIME_ZONE, dayKey } from "@/lib/calendar"
+import { difficultyLabel } from "@/lib/difficulty"
 import { cn } from "@/lib/utils"
 import { getViewer, getViewerExtensions, getViewerProfile } from "@/lib/server/viewer"
 
-type SolveEvent = { id: string; title: string; language: string | null; accepted_at: string; problem_id: string }
+type SolveEvent = { id: string; title: string; language: string | null; difficulty: number | null; accepted_at: string; problem_id: string }
 
 function currentStreak(events: SolveEvent[]) {
   const solvedDays = new Set(events.map((event) => dayKey(new Date(event.accepted_at))))
@@ -31,7 +33,7 @@ export default async function DashboardPage() {
     getViewerProfile(),
     supabase
       .from("solve_events")
-      .select("id,title,language,accepted_at,problem_id")
+      .select("id,title,language,difficulty,accepted_at,problem_id")
       .eq("user_id", user.id)
       .order("accepted_at", { ascending: false }),
   ])
@@ -40,7 +42,7 @@ export default async function DashboardPage() {
   solves.forEach((event) => {
     const date = dayKey(new Date(event.accepted_at))
     const problems = problemsByDay.get(date) || []
-    problems.push({ title: event.title || `문제 ${event.problem_id}`, language: event.language })
+    problems.push({ title: event.title || `문제 ${event.problem_id}`, language: event.language, difficulty: difficultyLabel(event.difficulty) })
     problemsByDay.set(date, problems)
   })
   const today = dayKey(new Date())
@@ -78,7 +80,7 @@ export default async function DashboardPage() {
         {stats.map((stat) => <Card key={stat.label}><CardContent className="flex items-center gap-3 p-4"><div className={cn("flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent", stat.accent)}><stat.icon className="size-5" /></div><div><p className="text-xs text-muted-foreground">{stat.label}</p><p className="text-xl font-bold">{stat.value}<span className="ml-0.5 text-xs font-normal text-muted-foreground">{stat.unit}</span></p></div></CardContent></Card>)}
       </div>
       <ContributionCalendarCard years={contributionsByYear} initialYear={currentYear} />
-      <Card><CardHeader className="flex-row items-center justify-between"><CardTitle className="text-base">최근 풀이</CardTitle><Badge variant="outline">{extensions.length ? "프로그래머스" : "미연동"}</Badge></CardHeader><CardContent className="flex flex-col gap-1">{solves.length ? solves.slice(0, 5).map((solve) => <div key={solve.id} className="rounded-lg px-2 py-2 hover:bg-accent/50"><p className="truncate text-sm font-medium">{solve.title || `문제 ${solve.problem_id}`}</p><p className="text-xs text-muted-foreground">{solve.language && <>{solve.language} · </>}{new Date(solve.accepted_at).toLocaleDateString("ko-KR", { timeZone: APP_TIME_ZONE })}</p></div>) : <p className="py-8 text-center text-sm text-muted-foreground">아직 수집된 풀이가 없습니다.</p>}</CardContent></Card>
+      <Card><CardHeader className="flex-row items-center justify-between"><CardTitle className="text-base">최근 풀이</CardTitle><Badge variant="outline">{extensions.length ? "프로그래머스" : "미연동"}</Badge></CardHeader><CardContent className="flex flex-col gap-1">{solves.length ? solves.slice(0, 5).map((solve) => <div key={solve.id} className="rounded-lg px-2 py-2 hover:bg-accent/50"><div className="flex min-w-0 items-center gap-2"><p className="min-w-0 flex-1 truncate text-sm font-medium">{solve.title || `문제 ${solve.problem_id}`}</p><ProblemDifficultyBadge difficulty={solve.difficulty} /></div><p className="text-xs text-muted-foreground">{solve.language && <>{solve.language} · </>}{new Date(solve.accepted_at).toLocaleDateString("ko-KR", { timeZone: APP_TIME_ZONE })}</p></div>) : <p className="py-8 text-center text-sm text-muted-foreground">아직 수집된 풀이가 없습니다.</p>}</CardContent></Card>
     </div>
   )
 }

@@ -6,7 +6,7 @@ drop policy if exists study_rooms_update_owner on public.study_rooms;
 drop policy if exists study_members_join_self on public.study_members;
 
 revoke all on public.study_rooms from authenticated;
-grant select(id, owner_id, name, description, emoji, weekly_goal, max_members, is_private, created_at, goal_period, goal_count)
+grant select(id, owner_id, name, description, emoji, weekly_goal, max_members, is_private, created_at, goal_period, goal_count, min_difficulty)
   on public.study_rooms to authenticated;
 
 revoke all on public.study_members from authenticated;
@@ -30,7 +30,7 @@ revoke execute on function public.is_handle_available(text) from public, anon;
 revoke execute on function public.send_friend_request(text) from public, anon;
 revoke execute on function public.respond_friend_request(uuid, boolean) from public, anon;
 revoke execute on function public.is_study_member(uuid) from public, anon;
-revoke execute on function public.create_study_room(text, text, integer, text, text) from public, anon;
+revoke execute on function public.create_study_room(text, text, integer, text, text, integer) from public, anon;
 revoke execute on function public.delete_own_account() from public, anon;
 revoke execute on function public.has_study_room_access(uuid) from public, anon;
 revoke execute on function public.verify_study_room_password(uuid, text) from public, anon;

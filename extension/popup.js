@@ -8,6 +8,7 @@ const lastError = document.querySelector('#lastError');
 const syncNow = document.querySelector('#syncNow');
 const connectAccount = document.querySelector('#connectAccount');
 const disconnectAccount = document.querySelector('#disconnectAccount');
+const openHomepage = document.querySelector('#openHomepage');
 
 function formatDate(value) {
   if (!value) return '아직 동기화 기록이 없습니다.';
@@ -91,6 +92,10 @@ syncNow.addEventListener('click', async () => {
   } finally {
     syncNow.textContent = '지금 동기화';
   }
+});
+
+openHomepage.addEventListener('click', () => {
+  chrome.tabs.create({ url: API_BASE });
 });
 
 refresh().catch((error) => {

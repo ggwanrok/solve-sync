@@ -59,13 +59,14 @@ export async function respondFriendRequest(formData: FormData) {
   revalidateStudyFrom(formData)
 }
 
-export async function createStudyRoom(input: { name: string; description: string; goalPeriod: "daily" | "weekly"; goalCount: number; password: string | null }) {
+export async function createStudyRoom(input: { name: string; description: string; goalPeriod: "daily" | "weekly"; goalCount: number; minDifficulty: number; password: string | null }) {
   const { supabase } = await userClient()
   const { error } = await supabase.rpc("create_study_room", {
     room_name: input.name,
     room_description: input.description,
     room_goal_period: input.goalPeriod,
     room_goal_count: input.goalCount,
+    room_min_difficulty: input.minDifficulty,
     room_password: input.password,
   })
   if (error) throw new Error(error.message)
