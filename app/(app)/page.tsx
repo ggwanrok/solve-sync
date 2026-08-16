@@ -7,7 +7,6 @@ import { GettingStartedGuide } from "@/components/getting-started-guide"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { addCalendarDays, APP_TIME_ZONE, dayKey } from "@/lib/calendar"
-import { difficultyLabel } from "@/lib/difficulty"
 import { cn } from "@/lib/utils"
 import { getViewer, getViewerExtensions, getViewerProfile } from "@/lib/server/viewer"
 
@@ -42,7 +41,7 @@ export default async function DashboardPage() {
   solves.forEach((event) => {
     const date = dayKey(new Date(event.accepted_at))
     const problems = problemsByDay.get(date) || []
-    problems.push({ title: event.title || `문제 ${event.problem_id}`, language: event.language, difficulty: difficultyLabel(event.difficulty) })
+    problems.push({ title: event.title || `문제 ${event.problem_id}`, language: event.language, difficulty: event.difficulty })
     problemsByDay.set(date, problems)
   })
   const today = dayKey(new Date())

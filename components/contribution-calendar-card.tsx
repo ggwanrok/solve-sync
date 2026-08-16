@@ -24,7 +24,7 @@ export function ContributionCalendarCard({
     <Card>
       <CardHeader>
         <CardTitle className="text-base">나의 잔디</CardTitle>
-        <CardDescription>{selected.year}년 실제 수집된 풀이 수</CardDescription>
+        <CardDescription>{selected.year}년 난이도와 풀이량을 반영한 학습 강도</CardDescription>
         <CardAction>
           <Select
             value={String(selected.year)}

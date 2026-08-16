@@ -45,6 +45,8 @@
   --color-grass-2: var(--grass-2);
   --color-grass-3: var(--grass-3);
   --color-grass-4: var(--grass-4);
+  --color-grass-5: var(--grass-5);
+  --color-grass-6: var(--grass-6);
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --radius-sm: calc(var(--radius) * 0.6);
@@ -90,6 +92,8 @@
   --grass-2: oklch(0.72 0.12 156);
   --grass-3: oklch(0.6 0.15 156);
   --grass-4: oklch(0.48 0.15 156);
+  --grass-5: oklch(0.42 0.15 156);
+  --grass-6: oklch(0.36 0.14 156);
   --radius: 0.7rem;
   --sidebar: oklch(0.98 0.006 155);
   --sidebar-foreground: oklch(0.18 0.01 160);
@@ -135,6 +139,8 @@
   --grass-2: oklch(0.55 0.13 157);
   --grass-3: oklch(0.68 0.16 157);
   --grass-4: oklch(0.8 0.17 157);
+  --grass-5: oklch(0.86 0.18 157);
+  --grass-6: oklch(0.91 0.16 157);
   --sidebar: oklch(0.18 0.012 160);
   --sidebar-foreground: oklch(0.95 0.006 150);
   --sidebar-primary: oklch(0.72 0.16 157);

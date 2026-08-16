@@ -8,11 +8,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { DIFFICULTY_LEVELS, type DifficultyLevel } from "@/lib/difficulty"
+import { parseStudyDirectoryView, type StudyDirectoryView } from "@/lib/study-directory-view"
 import { redirect } from "next/navigation"
 import { getViewer } from "@/lib/server/viewer"
 
 type SearchField = "title" | "description" | "owner"
-type StudyDirectoryView = "all" | "joined"
 type StudySearchParams = {
   field?: string
   query?: string
@@ -50,7 +50,7 @@ function studyPageHref({
   query,
   page = 1,
   minDifficulty = 0,
-  view = "all",
+  view = "joined",
 }: {
   field: SearchField
   query: string
@@ -64,7 +64,7 @@ function studyPageHref({
     search.set("query", query)
   }
   if (minDifficulty > 0) search.set("minDifficulty", String(minDifficulty))
-  if (view === "joined") search.set("view", view)
+  if (view === "all") search.set("view", view)
   if (page > 1) search.set("page", String(page))
   const queryString = search.toString()
   return queryString ? `/study?${queryString}` : "/study"
@@ -89,7 +89,7 @@ export default async function StudyListPage({
   const page = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1
   const minDifficulty = parseMinDifficulty(params.minDifficulty)
   const difficulties = DIFFICULTY_LEVELS.filter((level) => level >= minDifficulty)
-  const view: StudyDirectoryView = params.view === "joined" ? "joined" : "all"
+  const view = parseStudyDirectoryView(params.view)
   const joinedOnly = view === "joined"
   const { supabase, user } = await getViewer()
   if (!user) redirect("/login")

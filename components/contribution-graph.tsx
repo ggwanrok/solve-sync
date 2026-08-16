@@ -3,15 +3,15 @@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { ProblemDifficultyBadge } from "@/components/difficulty-badge"
 import { APP_TIME_ZONE } from "@/lib/calendar"
-import type { Difficulty } from "@/lib/difficulty"
+import { contributionIntensity } from "@/lib/difficulty"
 import { cn } from "@/lib/utils"
 
-const levelClass = ["bg-grass-0", "bg-grass-1", "bg-grass-2", "bg-grass-3", "bg-grass-4"]
+const levelClass = ["bg-grass-0", "bg-grass-1", "bg-grass-2", "bg-grass-3", "bg-grass-4", "bg-grass-5", "bg-grass-6"]
 const weekdayLabels = ["월", "화", "수", "목", "금", "토", "일"]
 
 export type ContributionDay = {
   date: string
-  problems: Array<{ title: string; language: string | null; difficulty: Difficulty | null }>
+  problems: Array<{ title: string; language: string | null; difficulty: number | null }>
   isFuture?: boolean
 }
 
@@ -91,7 +91,7 @@ export function ContributionGraph({ data }: { data: ContributionDay[] }) {
                       />
                     )
                   }
-                  const level = Math.min(day.problems.length, 4)
+                  const level = contributionIntensity(day.problems.map((problem) => problem.difficulty))
                   return <Tooltip key={day.date}>
                     <TooltipTrigger
                       render={
@@ -114,11 +114,11 @@ export function ContributionGraph({ data }: { data: ContributionDay[] }) {
             ))}
           </div>
           <div className="flex items-center justify-end gap-2 pt-1 text-xs text-muted-foreground">
-            <span>적음</span>
+            <span>낮은 강도</span>
             {levelClass.map((c, i) => (
               <div key={i} className={cn("size-[13px] rounded-[3px] ring-1 ring-inset ring-border/40", c)} />
             ))}
-            <span>많음</span>
+            <span>높은 강도</span>
           </div>
         </div>
       </div>
