@@ -6,10 +6,20 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { DIFFICULTY_LEVELS, type DifficultyLevel } from "@/lib/difficulty"
 import { redirect } from "next/navigation"
 import { getViewer } from "@/lib/server/viewer"
 
 type SearchField = "title" | "description" | "owner"
+type StudyDirectoryView = "all" | "joined"
+type StudySearchParams = {
+  field?: string
+  query?: string
+  page?: string
+  difficulty?: string | string[]
+  difficultyFilter?: string
+  view?: string
+}
 type StudyRoomDirectoryItem = {
   id: string
   owner_id: string
@@ -35,21 +45,49 @@ type StudyRoomDirectory = {
 
 const PAGE_SIZE = 12
 
-function studyPageHref(field: SearchField, query: string, page: number) {
+function studyPageHref({
+  field,
+  query,
+  page = 1,
+  difficulties = [...DIFFICULTY_LEVELS],
+  view = "all",
+}: {
+  field: SearchField
+  query: string
+  page?: number
+  difficulties?: DifficultyLevel[]
+  view?: StudyDirectoryView
+}) {
   const search = new URLSearchParams()
   if (query) {
     search.set("field", field)
     search.set("query", query)
   }
+  if (difficulties.length !== DIFFICULTY_LEVELS.length) {
+    search.set("difficultyFilter", "1")
+    difficulties.forEach((level) => search.append("difficulty", String(level)))
+  }
+  if (view === "joined") search.set("view", view)
   if (page > 1) search.set("page", String(page))
   const queryString = search.toString()
   return queryString ? `/study?${queryString}` : "/study"
 }
 
+function parseDifficulties(params: StudySearchParams): DifficultyLevel[] {
+  if (params.difficultyFilter !== "1") return [...DIFFICULTY_LEVELS]
+  const values = Array.isArray(params.difficulty)
+    ? params.difficulty
+    : params.difficulty
+      ? [params.difficulty]
+      : []
+  const requestedLevels = new Set(values.map(Number))
+  return DIFFICULTY_LEVELS.filter((level) => requestedLevels.has(level))
+}
+
 export default async function StudyListPage({
   searchParams,
 }: {
-  searchParams: Promise<{ field?: string; query?: string; page?: string }>
+  searchParams: Promise<StudySearchParams>
 }) {
   const params = await searchParams
   const field: SearchField = ["title", "description", "owner"].includes(params.field || "")
@@ -58,6 +96,9 @@ export default async function StudyListPage({
   const query = (params.query || "").trim()
   const parsedPage = Number.parseInt(params.page || "1", 10)
   const page = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1
+  const difficulties = parseDifficulties(params)
+  const view: StudyDirectoryView = params.view === "joined" ? "joined" : "all"
+  const joinedOnly = view === "joined"
   const { supabase, user } = await getViewer()
   if (!user) redirect("/login")
   const { data, error } = await supabase.rpc("study_room_directory", {
@@ -65,6 +106,8 @@ export default async function StudyListPage({
     directory_query: query,
     page_number: page,
     page_size: PAGE_SIZE,
+    difficulty_levels: difficulties,
+    joined_only: joinedOnly,
   })
   if (error) throw new Error(`스터디룸 목록을 불러오지 못했습니다: ${error.message}`)
 
@@ -72,42 +115,95 @@ export default async function StudyListPage({
   const studyRooms = directory?.rooms || []
   const total = Number(directory?.total || 0)
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
-  if (page > totalPages) redirect(studyPageHref(field, query, totalPages))
+  if (page > totalPages) redirect(studyPageHref({ field, query, page: totalPages, difficulties, view }))
 
   const firstVisiblePage = Math.max(1, Math.min(page - 2, totalPages - 4))
   const visiblePages = Array.from(
     { length: Math.min(5, totalPages) },
     (_, index) => firstVisiblePage + index,
   )
+  const hasSearchFilters = Boolean(query) || difficulties.length !== DIFFICULTY_LEVELS.length
+  const directoryLabel = joinedOnly ? "참여 중인 스터디룸" : "전체 스터디룸"
+  const resetHref = studyPageHref({ field: "title", query: "", difficulties: [...DIFFICULTY_LEVELS], view })
+  const joinedHref = studyPageHref({ field, query, difficulties, view: "joined" })
+  const allHref = studyPageHref({ field, query, difficulties, view: "all" })
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">스터디룸</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{query ? `검색 결과 ${total}개` : `전체 스터디룸 ${total}개`} · 함께 공부할 방을 찾아보세요.</p>
+          <p className="mt-1 text-sm text-muted-foreground">{hasSearchFilters ? `${directoryLabel} 검색 결과 ${total}개` : `${directoryLabel} ${total}개`} · 함께 공부할 방을 찾아보세요.</p>
         </div>
         <CreateStudyDialog />
       </div>
 
-      <form method="get" className="flex flex-col gap-2 rounded-xl border bg-card p-3 sm:flex-row">
-        <select
-          name="field"
-          defaultValue={field}
-          aria-label="검색 기준"
-          className="h-9 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-3 focus:ring-ring/50 sm:w-44"
-        >
-          <option value="title">제목으로 검색</option>
-          <option value="description">설명으로 검색</option>
-          <option value="owner">방장 이름으로 검색</option>
-        </select>
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input key={params.query || "empty-query"} name="query" defaultValue={params.query || ""} placeholder="검색어를 입력하세요" className="h-9 pl-9" />
+      <form method="get" className="rounded-xl border bg-card p-3">
+        <input type="hidden" name="difficultyFilter" value="1" />
+        <input type="hidden" name="view" value={view} />
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <select
+            name="field"
+            defaultValue={field}
+            aria-label="검색 기준"
+            className="h-9 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-ring focus:ring-3 focus:ring-ring/50 sm:w-44"
+          >
+            <option value="title">제목으로 검색</option>
+            <option value="description">설명으로 검색</option>
+            <option value="owner">방장 이름으로 검색</option>
+          </select>
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input key={params.query || "empty-query"} name="query" defaultValue={params.query || ""} placeholder="검색어를 입력하세요" className="h-9 pl-9" />
+          </div>
+          <Button type="submit" className="h-9 px-4">검색</Button>
+          {hasSearchFilters && <Button render={<Link href={resetHref} />} nativeButton={false} type="button" variant="outline" className="h-9 px-4">필터 초기화</Button>}
         </div>
-        <Button type="submit" className="h-9 px-4">검색</Button>
-        {query && <Button render={<Link href="/study" />} nativeButton={false} type="button" variant="outline" className="h-9 px-4">초기화</Button>}
+        <fieldset className="mt-3 border-t pt-3">
+          <legend className="px-1 text-xs font-medium text-muted-foreground">포함할 방 난이도</legend>
+          <div className="mt-1 flex flex-wrap gap-2">
+            {DIFFICULTY_LEVELS.map((level) => {
+              const selected = difficulties.includes(level)
+              return (
+                <label
+                  key={level}
+                  className="flex cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted/50 has-checked:border-primary/40 has-checked:bg-primary/5 has-checked:text-foreground"
+                >
+                  <input
+                    type="checkbox"
+                    name="difficulty"
+                    value={level}
+                    defaultChecked={selected}
+                    className="size-4 accent-primary"
+                  />
+                  Lv.{level} 이상
+                </label>
+              )
+            })}
+          </div>
+        </fieldset>
       </form>
+
+      <nav className="flex w-full border-b" aria-label="스터디룸 보기 방식">
+        <Button
+          render={<Link href={joinedHref} />}
+          nativeButton={false}
+          variant="ghost"
+          className={`rounded-b-none border-b-2 px-4 ${joinedOnly ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}
+          aria-current={joinedOnly ? "page" : undefined}
+        >
+          참여 중인 스터디룸
+        </Button>
+        <Button
+          render={<Link href={allHref} />}
+          nativeButton={false}
+          variant="ghost"
+          className={`rounded-b-none border-b-2 px-4 ${!joinedOnly ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}
+          aria-current={!joinedOnly ? "page" : undefined}
+        >
+          모두 둘러보기
+        </Button>
+      </nav>
 
       {query && <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">‘{query}’</span>에 해당하는 스터디룸입니다.</p>}
 
@@ -126,7 +222,7 @@ export default async function StudyListPage({
                     {leader && <Badge variant="secondary" className="gap-1 px-1.5 py-0 text-xs"><Crown className="size-3 text-warning-foreground" />리더</Badge>}
                     {!leader && joined && <Badge variant="secondary" className="px-1.5 py-0 text-xs">참여 중</Badge>}
                   </div>
-                  <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{room.description}</p>
+                  <p className="mt-1 h-10 line-clamp-2 text-sm text-muted-foreground">{room.description || <span className="sr-only">소개 없음</span>}</p>
                   <p className="mt-2 text-xs text-muted-foreground">방장 · {ownerName}</p>
                 </div>
                 <div className="rounded-lg border bg-muted/40 px-3 py-2 text-sm">
@@ -147,23 +243,35 @@ export default async function StudyListPage({
 
       {studyRooms.length === 0 && (
         <div className="rounded-xl border border-dashed py-16 text-center">
-          <Search className="mx-auto mb-3 size-8 text-muted-foreground/50" />
-          <p className="text-sm font-medium">검색 결과가 없습니다.</p>
-          <p className="mt-1 text-xs text-muted-foreground">다른 검색어나 검색 기준을 사용해보세요.</p>
+          {joinedOnly && !hasSearchFilters ? <Users className="mx-auto mb-3 size-8 text-muted-foreground/50" /> : <Search className="mx-auto mb-3 size-8 text-muted-foreground/50" />}
+          <p className="text-sm font-medium">
+            {difficulties.length === 0
+              ? "검색할 난이도를 선택해 주세요."
+              : joinedOnly && !hasSearchFilters
+                ? "참여 중인 스터디룸이 없습니다."
+                : "검색 결과가 없습니다."}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {difficulties.length === 0
+              ? "한 개 이상의 난이도를 선택하면 스터디룸을 찾을 수 있어요."
+              : joinedOnly && !hasSearchFilters
+                ? "모두 둘러보기에서 함께할 스터디룸을 찾아보세요."
+                : "다른 검색어나 검색 조건을 사용해보세요."}
+          </p>
         </div>
       )}
 
       {totalPages > 1 && (
         <nav className="flex items-center justify-center gap-1" aria-label="스터디룸 페이지">
           {page > 1 ? (
-            <Button render={<Link href={studyPageHref(field, query, page - 1)} />} nativeButton={false} variant="outline" size="icon" aria-label="이전 페이지"><ChevronLeft className="size-4" /></Button>
+            <Button render={<Link href={studyPageHref({ field, query, page: page - 1, difficulties, view })} />} nativeButton={false} variant="outline" size="icon" aria-label="이전 페이지"><ChevronLeft className="size-4" /></Button>
           ) : (
             <Button type="button" variant="outline" size="icon" aria-label="이전 페이지" disabled><ChevronLeft className="size-4" /></Button>
           )}
           {visiblePages.map((pageNumber) => (
             <Button
               key={pageNumber}
-              render={<Link href={studyPageHref(field, query, pageNumber)} />}
+              render={<Link href={studyPageHref({ field, query, page: pageNumber, difficulties, view })} />}
               nativeButton={false}
               variant={pageNumber === page ? "default" : "outline"}
               size="icon"
@@ -174,7 +282,7 @@ export default async function StudyListPage({
             </Button>
           ))}
           {page < totalPages ? (
-            <Button render={<Link href={studyPageHref(field, query, page + 1)} />} nativeButton={false} variant="outline" size="icon" aria-label="다음 페이지"><ChevronRight className="size-4" /></Button>
+            <Button render={<Link href={studyPageHref({ field, query, page: page + 1, difficulties, view })} />} nativeButton={false} variant="outline" size="icon" aria-label="다음 페이지"><ChevronRight className="size-4" /></Button>
           ) : (
             <Button type="button" variant="outline" size="icon" aria-label="다음 페이지" disabled><ChevronRight className="size-4" /></Button>
           )}

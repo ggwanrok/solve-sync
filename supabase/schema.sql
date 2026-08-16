@@ -299,11 +299,15 @@ returns boolean language sql stable security definer set search_path = public as
   select exists(select 1 from study_members where study_id = target_study and user_id = auth.uid());
 $$;
 
+drop function if exists public.study_room_directory(text, text, integer, integer);
+
 create or replace function public.study_room_directory(
   directory_field text default 'title',
   directory_query text default '',
   page_number integer default 1,
-  page_size integer default 12
+  page_size integer default 12,
+  difficulty_levels integer[] default array[0, 1, 2, 3, 4, 5],
+  joined_only boolean default false
 )
 returns jsonb language plpgsql stable security definer set search_path = public as $$
 declare
@@ -334,11 +338,16 @@ begin
       owner.nickname as owner_nickname
     from study_rooms room
     join profiles owner on owner.id = room.owner_id
-    where normalized_query = '' or case normalized_field
-      when 'description' then room.description
-      when 'owner' then concat_ws(' ', owner.nickname, owner.handle)
-      else room.name
-    end ilike search_pattern escape E'\\'
+    where room.min_difficulty = any(coalesce(difficulty_levels, array[0, 1, 2, 3, 4, 5]))
+      and (not coalesce(joined_only, false) or exists(
+        select 1 from study_members joined_member
+        where joined_member.study_id = room.id and joined_member.user_id = current_user_id
+      ))
+      and (normalized_query = '' or case normalized_field
+        when 'description' then room.description
+        when 'owner' then concat_ws(' ', owner.nickname, owner.handle)
+        else room.name
+      end ilike search_pattern escape E'\\')
   ),
   paged_rooms as (
     select *
@@ -867,8 +876,8 @@ revoke execute on function public.study_goal_history(uuid) from public, anon;
 grant execute on function public.study_goal_history(uuid) to authenticated;
 revoke execute on function public.study_member_solve_events(uuid) from public, anon;
 grant execute on function public.study_member_solve_events(uuid) to authenticated;
-revoke execute on function public.study_room_directory(text, text, integer, integer) from public, anon;
-grant execute on function public.study_room_directory(text, text, integer, integer) to authenticated;
+revoke execute on function public.study_room_directory(text, text, integer, integer, integer[], boolean) from public, anon;
+grant execute on function public.study_room_directory(text, text, integer, integer, integer[], boolean) to authenticated;
 revoke execute on function public.study_room_detail(uuid) from public, anon;
 grant execute on function public.study_room_detail(uuid) to authenticated;
 revoke execute on function public.study_goal_history_page(uuid, integer, integer, text) from public, anon;
