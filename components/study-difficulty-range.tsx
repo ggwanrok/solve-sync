@@ -1,7 +1,6 @@
 "use client"
 
 import { Slider } from "@base-ui/react/slider"
-import { LockKeyhole } from "lucide-react"
 import { useState } from "react"
 import { DIFFICULTY_LEVELS, type DifficultyLevel } from "@/lib/difficulty"
 
@@ -10,14 +9,9 @@ export function StudyDifficultyRange({ defaultValue }: { defaultValue: Difficult
 
   return (
     <div className="rounded-lg border bg-muted/20 px-4 py-3">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <p className="text-sm font-medium">Lv.{value}부터 Lv.5까지</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">왼쪽 기준점을 움직여 검색할 최소 난이도를 정하세요.</p>
-        </div>
-        <span className="flex items-center gap-1 rounded-full border bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground">
-          <LockKeyhole className="size-3" />상한 Lv.5 고정
-        </span>
+      <div>
+        <p className="text-sm font-medium">Lv.{value}부터 Lv.5까지</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">왼쪽 기준점을 움직여 검색할 최소 난이도를 정하세요.</p>
       </div>
 
       <div className="mt-3">
