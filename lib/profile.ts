@@ -2,6 +2,7 @@ export const PROFILE_IMAGE_MAX_BYTES = 2 * 1024 * 1024
 export const PROFILE_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const
 export const NICKNAME_MIN_LENGTH = 2
 export const NICKNAME_MAX_LENGTH = 20
+export const DEFAULT_PROFILE_IMAGE = "/placeholder-user.jpg"
 
 export function normalizeNickname(input: unknown) {
   if (typeof input !== "string") return null
@@ -30,4 +31,10 @@ export function hasValidProfileImageSignature(bytes: Uint8Array, type: string) {
       && String.fromCharCode(...bytes.slice(8, 12)) === "WEBP"
   }
   return false
+}
+
+export function profileImageUrl(imageUrl: string | null | undefined) {
+  return imageUrl?.includes("/storage/v1/object/public/avatars/")
+    ? imageUrl
+    : DEFAULT_PROFILE_IMAGE
 }

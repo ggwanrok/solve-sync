@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { getViewer } from "@/lib/server/viewer"
+import { createAdminClient } from "@/utils/supabase/admin"
 
 async function userClient() {
   const { supabase, user } = await getViewer()
@@ -60,16 +61,35 @@ export async function respondFriendRequest(formData: FormData) {
 }
 
 export async function removeFriend(friendId: string) {
-  const { supabase } = await userClient()
+  const { supabase, user } = await userClient()
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(friendId)) {
-    throw new Error("삭제할 친구 정보가 올바르지 않습니다.")
+    return { ok: false as const, message: "삭제할 친구 정보가 올바르지 않습니다." }
   }
 
-  const { data, error } = await supabase.rpc("remove_friend", { target_user: friendId })
-  if (error) throw new Error(error.message)
-  if (!data) throw new Error("이미 친구 목록에서 삭제된 사용자입니다.")
+  const admin = createAdminClient()
+  if (admin) {
+    const pairFilter = `and(user_id.eq.${user.id},friend_id.eq.${friendId}),and(user_id.eq.${friendId},friend_id.eq.${user.id})`
+    const { count, error } = await admin
+      .from("friendships")
+      .delete({ count: "exact" })
+      .or(pairFilter)
+    if (error) {
+      console.error("friend removal failed", { userId: user.id, friendId, code: error.code, message: error.message })
+      return { ok: false as const, message: "친구를 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요." }
+    }
+    if (!count) return { ok: false as const, message: "이미 친구 목록에서 삭제된 사용자입니다." }
+  } else {
+    const { data, error } = await supabase.rpc("remove_friend", { target_user: friendId })
+    if (error) {
+      console.error("remove_friend RPC failed", { userId: user.id, friendId, code: error.code, message: error.message })
+      return { ok: false as const, message: "친구 삭제를 위한 서버 설정이 필요합니다." }
+    }
+    if (!data) return { ok: false as const, message: "이미 친구 목록에서 삭제된 사용자입니다." }
+  }
+
   revalidatePath("/friends")
   revalidatePath("/study", "layout")
+  return { ok: true as const }
 }
 
 export async function createStudyRoom(input: { name: string; description: string; goalPeriod: "daily" | "weekly"; goalCount: number; minDifficulty: number; password: string | null }) {

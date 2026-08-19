@@ -24,7 +24,11 @@ export function FriendCard({ friend }: { friend: FriendCardProfile }) {
   function handleRemove() {
     startTransition(async () => {
       try {
-        await removeFriend(friend.id)
+        const result = await removeFriend(friend.id)
+        if (!result.ok) {
+          toast.error(result.message)
+          return
+        }
         toast.success(`${name}님을 친구 목록에서 삭제했습니다.`)
         router.refresh()
       } catch (error) {
