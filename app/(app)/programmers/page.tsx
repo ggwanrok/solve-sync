@@ -4,9 +4,7 @@ import {
   CheckCircle2,
   Chrome,
   CircleAlert,
-  Download,
   ExternalLink,
-  FolderOpen,
   KeyRound,
   MonitorSmartphone,
   MousePointerClick,
@@ -25,37 +23,36 @@ export const metadata: Metadata = {
   description: "SolveSync Chrome 확장 프로그램을 설치하고 프로그래머스 풀이를 자동으로 기록하는 방법입니다.",
 }
 
-const DOWNLOAD_URL = "https://github.com/ggwanrok/solve-sync/archive/refs/heads/main.zip"
-const REPOSITORY_URL = "https://github.com/ggwanrok/solve-sync"
+const CHROME_WEB_STORE_URL = "https://chromewebstore.google.com/detail/solvesync/dgghaooaokpafdhjgieajelgbilacmkd?hl=ko&utm_source=ext_sidebar"
 
 const installSteps = [
   {
-    icon: Download,
-    title: "확장 프로그램 파일 받기",
-    description: "아래 ‘확장 프로그램 다운로드’ 버튼을 눌러 ZIP 파일을 받은 다음 압축을 풀어 주세요.",
-  },
-  {
-    icon: Puzzle,
-    title: "Chrome 확장 프로그램 페이지 열기",
-    description: "Chrome 주소창에 chrome://extensions 를 입력하고 Enter를 누르세요.",
+    icon: ExternalLink,
+    title: "Chrome 웹 스토어 열기",
+    description: "아래 ‘Chrome 웹 스토어에서 설치’ 버튼을 눌러 SolveSync 확장 프로그램 페이지를 여세요.",
   },
   {
     icon: MousePointerClick,
-    title: "개발자 모드 켜기",
-    description: "확장 프로그램 페이지 오른쪽 위의 ‘개발자 모드’ 스위치를 켜세요.",
+    title: "Chrome에 추가",
+    description: "웹 스토어 페이지 오른쪽 위에 있는 ‘Chrome에 추가’ 버튼을 누르세요.",
   },
   {
-    icon: FolderOpen,
-    title: "extension 폴더 선택하기",
-    description: "‘압축해제된 확장 프로그램을 로드합니다’를 누르고, 압축을 푼 solve-sync-main 폴더 안의 extension 폴더를 선택하세요.",
+    icon: ShieldCheck,
+    title: "설치 권한 확인",
+    description: "확인 창에서 안내된 권한을 확인한 다음 ‘확장 프로그램 추가’를 누르세요.",
+  },
+  {
+    icon: Pin,
+    title: "SolveSync 고정하기",
+    description: "설치가 끝나면 Chrome 오른쪽 위 퍼즐 아이콘을 누르고 SolveSync 옆 고정 아이콘을 선택하세요.",
   },
 ]
 
 const connectSteps = [
   {
-    icon: Pin,
-    title: "SolveSync를 도구 모음에 고정",
-    description: "Chrome 오른쪽 위 퍼즐 아이콘을 누른 뒤 SolveSync 옆의 고정 아이콘을 눌러 주세요.",
+    icon: Puzzle,
+    title: "SolveSync 확장 프로그램 열기",
+    description: "Chrome 도구 모음에 고정한 SolveSync 아이콘을 눌러 확장 프로그램을 여세요.",
   },
   {
     icon: KeyRound,
@@ -120,13 +117,13 @@ export default async function ProgrammersGuidePage() {
               </p>
             </div>
             <Button
-              render={<a href={DOWNLOAD_URL} target="_blank" rel="noreferrer" />}
+              render={<a href={CHROME_WEB_STORE_URL} target="_blank" rel="noreferrer" />}
               nativeButton={false}
               size="lg"
               className="shrink-0"
             >
-              <Download />
-              확장 프로그램 다운로드
+              <ExternalLink />
+              Chrome 웹 스토어에서 설치
             </Button>
           </div>
         </div>
@@ -134,14 +131,14 @@ export default async function ProgrammersGuidePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Download className="size-5 text-primary" />1. 확장 프로그램 설치</CardTitle>
-          <CardDescription>다운로드한 폴더를 Chrome에 직접 등록합니다.</CardDescription>
+          <CardTitle className="flex items-center gap-2"><Chrome className="size-5 text-primary" />1. Chrome 웹 스토어에서 설치</CardTitle>
+          <CardDescription>개발자 모드나 별도 파일 다운로드 없이 웹 스토어에서 바로 설치합니다.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <StepList steps={installSteps} />
           <div className="flex items-start gap-3 rounded-xl bg-accent/45 p-4 text-xs leading-relaxed">
             <CircleAlert className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-            <p><strong className="font-medium">폴더를 정확히 선택해 주세요.</strong> <code className="rounded bg-background px-1.5 py-0.5 font-mono">solve-sync-main</code> 전체가 아니라 그 안의 <code className="rounded bg-background px-1.5 py-0.5 font-mono">extension</code> 폴더를 선택해야 합니다. 설치 후 목록에 <strong className="font-medium">SolveSync</strong>가 나타납니다.</p>
+            <p><strong className="font-medium">이미 설치되어 있다면 다시 설치할 필요가 없습니다.</strong> Chrome 도구 모음에서 SolveSync를 열고 아래 계정 연결 단계부터 진행하세요.</p>
           </div>
         </CardContent>
       </Card>
@@ -210,8 +207,8 @@ export default async function ProgrammersGuidePage() {
             <p className="mt-1 text-xs text-muted-foreground">오른쪽 위 프로필 사진을 누르면 기기별 마지막 동기화 시각을 확인하거나 연결을 해제할 수 있습니다.</p>
           </div>
         </div>
-        <Button render={<a href={REPOSITORY_URL} target="_blank" rel="noreferrer" />} nativeButton={false} variant="ghost" size="sm">
-          GitHub 열기 <ExternalLink />
+        <Button render={<a href={CHROME_WEB_STORE_URL} target="_blank" rel="noreferrer" />} nativeButton={false} variant="ghost" size="sm">
+          Chrome 웹 스토어 열기 <ExternalLink />
         </Button>
       </div>
     </div>

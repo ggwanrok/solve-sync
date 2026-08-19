@@ -27,13 +27,11 @@ SolveSync에 접속해 **Google로 계속하기**를 누릅니다. 처음 로그
 
 ### 2. Chrome 확장 프로그램 설치하기
 
-현재 확장 프로그램은 저장소의 `extension` 디렉터리에서 직접 설치합니다.
+Chrome 웹 스토어에서 [SolveSync 확장 프로그램](https://chromewebstore.google.com/detail/solvesync/dgghaooaokpafdhjgieajelgbilacmkd?hl=ko&utm_source=ext_sidebar)을 설치합니다.
 
-1. 이 저장소를 내려받거나 클론합니다.
-2. Chrome 주소창에 `chrome://extensions`를 입력합니다.
-3. 오른쪽 위의 **개발자 모드**를 켭니다.
-4. **압축해제된 확장 프로그램을 로드합니다**를 누릅니다.
-5. 저장소 안의 `extension` 디렉터리를 선택합니다.
+1. 웹 스토어 페이지에서 **Chrome에 추가**를 누릅니다.
+2. 권한 확인 창에서 **확장 프로그램 추가**를 누릅니다.
+3. Chrome 도구 모음의 퍼즐 아이콘을 열고 SolveSync를 고정합니다.
 
 설치가 끝나면 Chrome 도구 모음에 SolveSync 확장 프로그램을 고정해두면 편리합니다.
 

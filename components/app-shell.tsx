@@ -72,7 +72,7 @@ function SidebarContent({ user, contributions, onNavigate }: { user: ShellUser; 
           className="flex items-center justify-center gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent/45 px-3 py-2 text-xs font-medium text-sidebar-foreground transition-colors hover:border-primary/35 hover:bg-sidebar-accent"
         >
           <Chrome className="size-3.5 text-primary" aria-hidden="true" />
-          프로그래머스 연동하기
+          프로그래머스 연동방법
         </Link>
         <div className="border-y border-sidebar-border px-2 py-4">
           <div className="mb-2 flex items-center justify-between text-[11px] text-muted-foreground">
