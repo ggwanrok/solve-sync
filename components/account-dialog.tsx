@@ -2,15 +2,15 @@
 
 import { Camera, LoaderCircle, LogOut, MonitorSmartphone, Save, Trash2, Unplug } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useRef, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 import { toast } from "sonner"
 import { authenticatedFetch } from "@/lib/authenticated-fetch"
+import { ProfileImageCropDialog } from "@/components/profile-image-crop-dialog"
 import { UserAvatar } from "@/components/user-avatar"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { optimizeProfileImage } from "@/lib/profile-image-client"
 import { isSupportedProfileImage, NICKNAME_MAX_LENGTH, PROFILE_IMAGE_INPUT_MAX_BYTES } from "@/lib/profile"
 import { createClient } from "@/utils/supabase/client"
 
@@ -39,6 +39,7 @@ export function AccountDialog({ user }: { user: AccountUser }) {
   const [devices, setDevices] = useState(user.extensionDevices || [])
   const [nickname, setNickname] = useState(user.name)
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl)
+  const [avatarCropFile, setAvatarCropFile] = useState<File | null>(null)
   const [savingProfile, setSavingProfile] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [revokingDevice, setRevokingDevice] = useState<string | null>(null)
@@ -66,32 +67,43 @@ export function AccountDialog({ user }: { user: AccountUser }) {
     }
   }
 
-  const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const selectAvatar = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
     if (!isSupportedProfileImage(file, PROFILE_IMAGE_INPUT_MAX_BYTES)) {
       event.target.value = ""
       return toast.error("JPG, PNG, WebP 형식의 5MB 이하 이미지를 선택해 주세요.")
     }
+    setAvatarCropFile(file)
+  }
 
+  const uploadAvatar = async (optimizedFile: File) => {
     setUploadingAvatar(true)
     try {
-      const optimizedFile = await optimizeProfileImage(file)
       const formData = new FormData()
       formData.set("avatar", optimizedFile)
       const response = await authenticatedFetch("/api/account/avatar", { method: "POST", body: formData })
       const result = await response.json() as { error?: string; avatarUrl?: string }
-      if (!response.ok || !result.avatarUrl) return toast.error(result.error || "프로필 사진을 업로드하지 못했습니다.")
+      if (!response.ok || !result.avatarUrl) {
+        toast.error(result.error || "프로필 사진을 업로드하지 못했습니다.")
+        return false
+      }
       setAvatarUrl(result.avatarUrl)
       toast.success("프로필 사진을 변경했습니다.")
       router.refresh()
+      return true
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "프로필 사진을 업로드하지 못했습니다.")
+      return false
     } finally {
       setUploadingAvatar(false)
-      if (avatarInputRef.current) avatarInputRef.current.value = ""
     }
   }
+
+  const closeAvatarCrop = useCallback(() => {
+    setAvatarCropFile(null)
+    if (avatarInputRef.current) avatarInputRef.current.value = ""
+  }, [])
 
   const revokeDevice = async (installationId: string) => {
     setRevokingDevice(installationId)
@@ -154,7 +166,7 @@ export function AccountDialog({ user }: { user: AccountUser }) {
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 className="sr-only"
-                onChange={uploadAvatar}
+                onChange={selectAvatar}
                 disabled={uploadingAvatar}
                 aria-label="프로필 사진 파일 선택"
               />
@@ -164,7 +176,7 @@ export function AccountDialog({ user }: { user: AccountUser }) {
               </Button>
             </div>
           </div>
-          <p className="mt-2 text-[11px] text-muted-foreground">원본 최대 5MB · 512×512 WebP 자동 압축</p>
+          <p className="mt-2 text-[11px] text-muted-foreground">원본 최대 5MB</p>
 
           <form className="mt-4 space-y-2" onSubmit={saveNickname}>
             <Label htmlFor="account-nickname">표시 이름</Label>
@@ -229,6 +241,7 @@ export function AccountDialog({ user }: { user: AccountUser }) {
         <div className="rounded-xl border border-destructive/30 p-4">
           {!confirmDelete ? <Button type="button" variant="destructive" className="w-full" onClick={() => setConfirmDelete(true)}><Trash2 className="size-4" />회원 탈퇴</Button> : <div className="space-y-3"><p className="text-sm text-destructive">계정과 모든 풀이·친구·스터디 데이터가 삭제되며 복구할 수 없습니다.</p><div className="flex gap-2"><Button type="button" variant="outline" className="flex-1" onClick={() => setConfirmDelete(false)} disabled={deleting}>취소</Button><Button type="button" variant="destructive" className="flex-1" onClick={deleteAccount} disabled={deleting}>{deleting ? "삭제 중..." : "영구 삭제"}</Button></div></div>}
         </div>
+        {avatarCropFile && <ProfileImageCropDialog file={avatarCropFile} onCancel={closeAvatarCrop} onApply={uploadAvatar} />}
       </DialogContent>
     </Dialog>
   )

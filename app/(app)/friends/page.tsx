@@ -23,7 +23,7 @@ export default async function FriendsPage() {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
-      <div><h1 className="text-2xl font-bold tracking-tight">친구</h1><p className="mt-1 text-sm text-muted-foreground">고유한 @아이디로 친구를 찾고 함께 성장하세요.</p></div>
+      <div><h1 className="text-2xl font-bold tracking-tight">친구</h1><p className="mt-1 text-sm text-muted-foreground">@아이디로 친구를 찾고 함께 성장하세요.</p></div>
       <FriendRequestForm />
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">

@@ -5,22 +5,13 @@ import { PROFILE_IMAGE_DIMENSION, PROFILE_IMAGE_MAX_BYTES } from "@/lib/profile"
 const QUALITY_STEPS = [0.82, 0.72, 0.62, 0.52, 0.42]
 
 type DecodedImage = {
-  source: CanvasImageSource
+  source: HTMLImageElement
   width: number
   height: number
   dispose: () => void
 }
 
 async function decodeImage(file: File): Promise<DecodedImage> {
-  if (typeof createImageBitmap === "function") {
-    try {
-      const bitmap = await createImageBitmap(file)
-      return { source: bitmap, width: bitmap.width, height: bitmap.height, dispose: () => bitmap.close() }
-    } catch {
-      // Fall back to an HTML image for browsers with partial ImageBitmap support.
-    }
-  }
-
   const objectUrl = URL.createObjectURL(file)
   const image = new Image()
   image.decoding = "async"
@@ -43,7 +34,14 @@ function encodeCanvas(canvas: HTMLCanvasElement, type: "image/webp" | "image/jpe
   return new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, quality))
 }
 
-export async function optimizeProfileImage(file: File) {
+export type ProfileImageCrop = {
+  zoom: number
+  offsetX: number
+  offsetY: number
+  viewportSize: number
+}
+
+export async function optimizeProfileImage(file: File, crop?: ProfileImageCrop) {
   const decoded = await decodeImage(file)
   try {
     if (!decoded.width || !decoded.height) throw new Error("이미지 크기를 확인할 수 없습니다.")
@@ -54,9 +52,19 @@ export async function optimizeProfileImage(file: File) {
     const context = canvas.getContext("2d")
     if (!context) throw new Error("이미지를 처리할 수 없습니다.")
 
-    const sourceSize = Math.min(decoded.width, decoded.height)
-    const sourceX = (decoded.width - sourceSize) / 2
-    const sourceY = (decoded.height - sourceSize) / 2
+    const viewportSize = crop?.viewportSize || 1
+    const zoom = Math.max(1, crop?.zoom || 1)
+    const baseScale = Math.max(viewportSize / decoded.width, viewportSize / decoded.height)
+    const displayScale = baseScale * zoom
+    const sourceSize = viewportSize / displayScale
+    const sourceX = Math.max(0, Math.min(
+      decoded.width - sourceSize,
+      decoded.width / 2 - (crop?.offsetX || 0) / displayScale - sourceSize / 2,
+    ))
+    const sourceY = Math.max(0, Math.min(
+      decoded.height - sourceSize,
+      decoded.height / 2 - (crop?.offsetY || 0) / displayScale - sourceSize / 2,
+    ))
     context.imageSmoothingEnabled = true
     context.imageSmoothingQuality = "high"
     context.drawImage(
