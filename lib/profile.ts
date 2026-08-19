@@ -4,6 +4,7 @@ export const PROFILE_IMAGE_DIMENSION = 512
 export const PROFILE_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const
 export const NICKNAME_MIN_LENGTH = 2
 export const NICKNAME_MAX_LENGTH = 20
+export const PROFILE_BIO_MAX_LENGTH = 40
 export const DEFAULT_PROFILE_IMAGE = "/placeholder-user.jpg"
 
 export function normalizeNickname(input: unknown) {
@@ -14,6 +15,15 @@ export function normalizeNickname(input: unknown) {
   if (length < NICKNAME_MIN_LENGTH || length > NICKNAME_MAX_LENGTH) return null
   if (/[\u0000-\u001f\u007f]/u.test(nickname)) return null
   return nickname
+}
+
+export function normalizeProfileBio(input: unknown) {
+  if (typeof input !== "string") return null
+  if (/[\u0000-\u001f\u007f]/u.test(input)) return null
+
+  const bio = input.trim().replace(/\s+/g, " ")
+  if (Array.from(bio).length > PROFILE_BIO_MAX_LENGTH) return null
+  return bio
 }
 
 export function isSupportedProfileImage(file: { size: number; type: string }, maxBytes = PROFILE_IMAGE_MAX_BYTES) {

@@ -4,7 +4,9 @@ import {
   hasValidProfileImageSignature,
   isSupportedProfileImage,
   normalizeNickname,
+  normalizeProfileBio,
   profileImageUrl,
+  PROFILE_BIO_MAX_LENGTH,
   PROFILE_IMAGE_INPUT_MAX_BYTES,
   PROFILE_IMAGE_MAX_BYTES,
 } from "../lib/profile.ts"
@@ -17,6 +19,17 @@ test("표시 이름은 2자 이상 20자 이하만 허용한다", () => {
   assert.equal(normalizeNickname("김"), null)
   assert.equal(normalizeNickname("가".repeat(21)), null)
   assert.equal(normalizeNickname("김도현"), "김도현")
+})
+
+test("한 줄 소개는 공백을 정리하고 비워둘 수 있다", () => {
+  assert.equal(normalizeProfileBio("  매일   한 문제씩  "), "매일 한 문제씩")
+  assert.equal(normalizeProfileBio("   "), "")
+})
+
+test("한 줄 소개는 40자 이하만 허용한다", () => {
+  assert.equal(normalizeProfileBio("가".repeat(PROFILE_BIO_MAX_LENGTH)), "가".repeat(PROFILE_BIO_MAX_LENGTH))
+  assert.equal(normalizeProfileBio("가".repeat(PROFILE_BIO_MAX_LENGTH + 1)), null)
+  assert.equal(normalizeProfileBio("첫 줄\n둘째 줄"), null)
 })
 
 test("압축된 프로필 사진은 지원 형식과 500KB 제한을 확인한다", () => {

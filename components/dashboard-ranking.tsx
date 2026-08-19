@@ -11,6 +11,7 @@ export type DashboardRankingEntry = {
   userId: string
   handle: string
   nickname: string
+  bio: string
   avatarUrl: string | null
   rankingScore: number
   top100Score: number
@@ -178,7 +179,7 @@ export function LeaderboardCard({ entries, viewerId }: { entries: DashboardRanki
                   <p className="truncate text-sm font-medium">{entry.nickname || entry.handle}</p>
                   {isViewer && <Badge variant="secondary" className="h-4 shrink-0 px-1.5 text-[9px]">나</Badge>}
                 </div>
-                <p className="truncate text-[11px] text-muted-foreground">@{entry.handle} · {formatScore(entry.totalSolved)}문제</p>
+                {entry.bio && <p className="truncate text-[11px] text-muted-foreground">{entry.bio}</p>}
               </div>
               <p className="shrink-0 text-sm font-semibold tabular-nums">{formatScore(entry.rankingScore)}<span className="ml-0.5 text-[10px] font-normal text-muted-foreground">점</span></p>
             </div>

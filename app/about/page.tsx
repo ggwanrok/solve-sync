@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   description: "Solve-Sync 서비스 소개와 개인정보의 수집, 이용, 보관 및 보호 방법을 안내합니다.",
 }
 
-const effectiveDate = "2026년 8월 10일"
+const effectiveDate = "2026년 8월 19일"
 const contactEmail = process.env.PRIVACY_CONTACT_EMAIL
 
 const sections = [
@@ -162,13 +162,13 @@ export default function AboutPage() {
                 <div className="hidden grid-cols-[9rem_1fr_1fr] gap-6 border-b py-3 text-xs font-semibold text-foreground md:grid">
                   <span>구분</span><span>처리 항목</span><span>이용 목적</span>
                 </div>
-                <DataItem title="회원·프로필" items="Google 계정 식별자, 이메일, 이름, 프로필 이미지, 고유 닉네임" purpose="회원 식별, 로그인, 서비스 내 프로필 표시" />
+                <DataItem title="회원·프로필" items="Google 계정 식별자, 이메일, 이름, 프로필 이미지, 고유 닉네임, 한 줄 소개" purpose="회원 식별, 로그인, 서비스 내 프로필 표시" />
                 <DataItem title="풀이 연동" items="문제 ID·제목·URL, 언어, 풀이 시작·정답 시각, 소요 시간, 기기 이름, 기기별 연동 토큰의 해시값과 마지막 통신 시각" purpose="풀이 자동 기록, 다중 기기 연결, 대시보드와 스터디 진행도 제공" />
                 <DataItem title="친구·스터디" items="친구 요청 및 관계, 스터디 가입·탈퇴 이력, 방 정보·목표·접근 확인, 작성한 댓글" purpose="친구 및 스터디 협업 기능 제공" />
                 <DataItem title="자동 생성 정보" items="인증 쿠키, IP 주소, 접속 일시, 브라우저·기기 정보, 이용 및 오류 기록" purpose="세션 유지, 보안, 장애 대응 및 서비스 개선" />
               </div>
               <p>회원 정보는 Google 로그인과 온보딩 과정에서, 풀이 정보는 이용자가 연결한 Chrome 확장 프로그램에서, 활동 정보는 서비스 기능을 이용하는 과정에서 수집됩니다.</p>
-              <p>고유 닉네임과 프로필 이미지는 친구 검색 및 스터디 활동 과정에서 다른 로그인 이용자에게 표시될 수 있으며, 스터디 댓글과 진행도는 해당 스터디 구성원에게 제공됩니다.</p>
+              <p>고유 닉네임, 프로필 이미지와 한 줄 소개는 랭킹, 친구 검색 및 스터디 활동 과정에서 다른 로그인 이용자에게 표시될 수 있으며, 스터디 댓글과 진행도는 해당 스터디 구성원에게 제공됩니다.</p>
             </PolicySection>
 
             <PolicySection id="retention" number={3} title="보유기간 및 파기 방법">

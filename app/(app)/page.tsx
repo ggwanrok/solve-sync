@@ -16,6 +16,7 @@ type RankingRpcRow = {
   user_id: string
   handle: string
   nickname: string
+  bio: string | null
   avatar_url: string | null
   ranking_score: number | string
   top_100_score: number | string
@@ -36,6 +37,7 @@ function normalizeRankingEntry(row: RankingRpcRow): DashboardRankingEntry {
     userId: row.user_id,
     handle: row.handle,
     nickname: row.nickname,
+    bio: row.bio || "",
     avatarUrl: row.avatar_url,
     rankingScore: Number(row.ranking_score),
     top100Score: Number(row.top_100_score),
@@ -88,6 +90,7 @@ export default async function DashboardPage() {
     userId: user.id,
     handle: profile?.handle || "",
     nickname: profile?.nickname || profile?.handle || "나",
+    bio: profile?.bio || "",
     avatarUrl: profile?.avatar_url || null,
     rankingScore: localRanking.rankingScore,
     top100Score: localRanking.topProblemScore,

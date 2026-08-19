@@ -7,6 +7,7 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   handle text unique,
   nickname text not null default '',
+  bio text not null default '',
   avatar_url text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -14,6 +15,10 @@ create table if not exists public.profiles (
 );
 
 alter table public.profiles add column if not exists guide_completed_at timestamptz;
+alter table public.profiles add column if not exists bio text not null default '';
+
+alter table public.profiles drop constraint if exists profiles_bio_length;
+alter table public.profiles add constraint profiles_bio_length check (char_length(bio) <= 40);
 
 alter table public.profiles drop constraint if exists profiles_handle_format;
 alter table public.profiles add constraint profiles_handle_format check (handle is null or handle ~ '^[a-z0-9_]{3,20}$');
@@ -825,6 +830,7 @@ returns table(
   user_id uuid,
   handle text,
   nickname text,
+  bio text,
   avatar_url text,
   ranking_score bigint,
   top_100_score bigint,
@@ -880,6 +886,7 @@ as $$
       profile.id as user_id,
       profile.handle,
       profile.nickname,
+      profile.bio,
       profile.avatar_url,
       coalesce(aggregate.top_100_score, 0)::bigint as top_100_score,
       coalesce(aggregate.solved_bonus, 0)::bigint as solved_bonus,
@@ -909,6 +916,7 @@ as $$
     ranked.user_id,
     ranked.handle,
     ranked.nickname,
+    ranked.bio,
     ranked.avatar_url,
     ranked.ranking_score,
     ranked.top_100_score,
@@ -976,7 +984,7 @@ create policy solve_events_read_self on public.solve_events for select to authen
 grant usage on schema public to authenticated;
 revoke all on public.profiles from authenticated;
 grant select on public.profiles to authenticated;
-grant update(nickname, avatar_url, guide_completed_at) on public.profiles to authenticated;
+grant update(nickname, bio, avatar_url, guide_completed_at) on public.profiles to authenticated;
 grant select on public.friend_requests, public.friendships to authenticated;
 revoke all on public.study_rooms from authenticated;
 grant select(id, owner_id, name, description, emoji, weekly_goal, max_members, is_private, created_at, goal_period, goal_count, min_difficulty) on public.study_rooms to authenticated;

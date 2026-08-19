@@ -38,6 +38,7 @@ export default async function AppGroupLayout({ children }: { children: React.Rea
   return <AppShell user={{
     name: profile.nickname || profile.handle,
     handle: profile.handle,
+    bio: profile.bio || "",
     avatarUrl: profile.avatar_url,
     pendingFriendRequestCount,
     extensionConnected: extensions.length > 0,

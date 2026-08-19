@@ -1,7 +1,7 @@
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from "@/lib/auth-cookies"
-import { normalizeNickname } from "@/lib/profile"
+import { normalizeNickname, normalizeProfileBio } from "@/lib/profile"
 import { createRequestClient } from "@/utils/supabase/request"
 
 async function viewer(request: Request) {
@@ -25,18 +25,22 @@ export async function PATCH(request: Request) {
   if (!nickname) {
     return NextResponse.json({ error: "표시 이름은 2~20자로 입력해 주세요." }, { status: 400 })
   }
+  const bio = normalizeProfileBio(input.bio)
+  if (bio === null) {
+    return NextResponse.json({ error: "한 줄 소개는 40자 이내로 입력해 주세요." }, { status: 400 })
+  }
 
   const { data, error } = await supabase
     .from("profiles")
-    .update({ nickname })
+    .update({ nickname, bio })
     .eq("id", user.id)
-    .select("nickname")
+    .select("nickname,bio")
     .single()
   if (error) {
-    console.error("profile nickname update failed", { userId: user.id, code: error.code, message: error.message })
-    return NextResponse.json({ error: "표시 이름을 변경하지 못했습니다." }, { status: 500 })
+    console.error("profile update failed", { userId: user.id, code: error.code, message: error.message })
+    return NextResponse.json({ error: "프로필을 변경하지 못했습니다." }, { status: 500 })
   }
-  return NextResponse.json({ nickname: data.nickname })
+  return NextResponse.json({ nickname: data.nickname, bio: data.bio })
 }
 
 export async function DELETE(request: Request) {

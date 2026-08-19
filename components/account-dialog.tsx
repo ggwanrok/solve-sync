@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { isSupportedProfileImage, NICKNAME_MAX_LENGTH, PROFILE_IMAGE_INPUT_MAX_BYTES } from "@/lib/profile"
+import { isSupportedProfileImage, NICKNAME_MAX_LENGTH, PROFILE_BIO_MAX_LENGTH, PROFILE_IMAGE_INPUT_MAX_BYTES } from "@/lib/profile"
 import { createClient } from "@/utils/supabase/client"
 
 export type ExtensionDevice = {
@@ -24,6 +24,7 @@ export type ExtensionDevice = {
 export type AccountUser = {
   name: string
   handle: string
+  bio: string
   avatarUrl: string | null
   extensionConnected?: boolean
   extensionDevices?: ExtensionDevice[]
@@ -38,6 +39,7 @@ export function AccountDialog({ user }: { user: AccountUser }) {
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const [devices, setDevices] = useState(user.extensionDevices || [])
   const [nickname, setNickname] = useState(user.name)
+  const [bio, setBio] = useState(user.bio)
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl)
   const [avatarCropFile, setAvatarCropFile] = useState<File | null>(null)
   const [savingProfile, setSavingProfile] = useState(false)
@@ -46,22 +48,23 @@ export function AccountDialog({ user }: { user: AccountUser }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
-  const saveNickname = async (event: React.FormEvent<HTMLFormElement>) => {
+  const saveProfile = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setSavingProfile(true)
     try {
       const response = await authenticatedFetch("/api/account", {
         method: "PATCH",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ nickname }),
+        body: JSON.stringify({ nickname, bio }),
       })
-      const result = await response.json() as { error?: string; nickname?: string }
-      if (!response.ok || !result.nickname) return toast.error(result.error || "표시 이름을 변경하지 못했습니다.")
+      const result = await response.json() as { error?: string; nickname?: string; bio?: string }
+      if (!response.ok || !result.nickname) return toast.error(result.error || "프로필을 변경하지 못했습니다.")
       setNickname(result.nickname)
-      toast.success("표시 이름을 변경했습니다.")
+      setBio(result.bio || "")
+      toast.success("프로필을 변경했습니다.")
       router.refresh()
     } catch {
-      toast.error("표시 이름을 변경하지 못했습니다.")
+      toast.error("프로필을 변경하지 못했습니다.")
     } finally {
       setSavingProfile(false)
     }
@@ -178,9 +181,9 @@ export function AccountDialog({ user }: { user: AccountUser }) {
           </div>
           <p className="mt-2 text-[11px] text-muted-foreground">원본 최대 5MB</p>
 
-          <form className="mt-4 space-y-2" onSubmit={saveNickname}>
-            <Label htmlFor="account-nickname">표시 이름</Label>
-            <div className="flex gap-2">
+          <form className="mt-4 space-y-4" onSubmit={saveProfile}>
+            <div className="space-y-2">
+              <Label htmlFor="account-nickname">표시 이름</Label>
               <Input
                 id="account-nickname"
                 value={nickname}
@@ -190,12 +193,33 @@ export function AccountDialog({ user }: { user: AccountUser }) {
                 disabled={savingProfile}
                 required
               />
-              <Button type="submit" size="sm" disabled={savingProfile || nickname.trim() === user.name}>
+              <p className="text-[11px] text-muted-foreground">친구와 스터디룸에 표시되는 2~20자의 이름입니다.</p>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <Label htmlFor="account-bio">한 줄 소개</Label>
+                <span className="text-[11px] tabular-nums text-muted-foreground">{Array.from(bio).length}/{PROFILE_BIO_MAX_LENGTH}</span>
+              </div>
+              <Input
+                id="account-bio"
+                value={bio}
+                onChange={(event) => setBio(event.target.value)}
+                maxLength={PROFILE_BIO_MAX_LENGTH}
+                placeholder="나를 한 줄로 소개해 주세요."
+                disabled={savingProfile}
+              />
+              <p className="text-[11px] text-muted-foreground">작성한 소개는 전체 랭킹의 닉네임 아래에 표시됩니다.</p>
+            </div>
+            <div className="flex justify-end">
+              <Button
+                type="submit"
+                size="sm"
+                disabled={savingProfile || (nickname.trim() === user.name && bio.trim() === user.bio)}
+              >
                 {savingProfile ? <LoaderCircle className="animate-spin" /> : <Save />}
                 {savingProfile ? "저장 중" : "저장"}
               </Button>
             </div>
-            <p className="text-[11px] text-muted-foreground">친구와 스터디룸에 표시되는 2~20자의 이름입니다.</p>
           </form>
         </div>
 
