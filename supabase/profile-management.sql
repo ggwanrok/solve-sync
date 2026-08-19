@@ -23,7 +23,7 @@ revoke execute on function public.remove_friend(uuid) from public, anon;
 grant execute on function public.remove_friend(uuid) to authenticated;
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('avatars', 'avatars', true, 2097152, array['image/jpeg', 'image/png', 'image/webp'])
+values ('avatars', 'avatars', true, 512000, array['image/jpeg', 'image/png', 'image/webp'])
 on conflict (id) do update set
   public = excluded.public,
   file_size_limit = excluded.file_size_limit,

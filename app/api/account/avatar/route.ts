@@ -11,7 +11,7 @@ const extensionByType: Record<string, string> = {
 export async function POST(request: Request) {
   const contentLength = Number(request.headers.get("content-length") || 0)
   if (contentLength > PROFILE_IMAGE_MAX_BYTES + 256 * 1024) {
-    return NextResponse.json({ error: "프로필 사진은 2MB 이하여야 합니다." }, { status: 413 })
+    return NextResponse.json({ error: "압축된 프로필 사진은 500KB 이하여야 합니다." }, { status: 413 })
   }
 
   const { supabase, accessToken } = await createRequestClient(request)
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
 
   const avatar = formData.get("avatar")
   if (!(avatar instanceof File) || !isSupportedProfileImage(avatar)) {
-    return NextResponse.json({ error: "JPG, PNG, WebP 형식의 2MB 이하 이미지를 선택해 주세요." }, { status: 400 })
+    return NextResponse.json({ error: "JPG, PNG, WebP 형식의 500KB 이하 이미지가 필요합니다." }, { status: 400 })
   }
 
   const signature = new Uint8Array(await avatar.slice(0, 12).arrayBuffer())

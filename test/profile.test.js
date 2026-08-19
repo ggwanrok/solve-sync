@@ -5,6 +5,7 @@ import {
   isSupportedProfileImage,
   normalizeNickname,
   profileImageUrl,
+  PROFILE_IMAGE_INPUT_MAX_BYTES,
   PROFILE_IMAGE_MAX_BYTES,
 } from "../lib/profile.ts"
 
@@ -18,10 +19,15 @@ test("표시 이름은 2자 이상 20자 이하만 허용한다", () => {
   assert.equal(normalizeNickname("김도현"), "김도현")
 })
 
-test("프로필 사진은 지원 형식과 2MB 제한을 확인한다", () => {
+test("압축된 프로필 사진은 지원 형식과 500KB 제한을 확인한다", () => {
   assert.equal(isSupportedProfileImage({ type: "image/png", size: PROFILE_IMAGE_MAX_BYTES }), true)
   assert.equal(isSupportedProfileImage({ type: "image/gif", size: 100 }), false)
   assert.equal(isSupportedProfileImage({ type: "image/jpeg", size: PROFILE_IMAGE_MAX_BYTES + 1 }), false)
+})
+
+test("압축 전 원본 프로필 사진은 최대 5MB까지 허용한다", () => {
+  assert.equal(isSupportedProfileImage({ type: "image/jpeg", size: PROFILE_IMAGE_INPUT_MAX_BYTES }, PROFILE_IMAGE_INPUT_MAX_BYTES), true)
+  assert.equal(isSupportedProfileImage({ type: "image/jpeg", size: PROFILE_IMAGE_INPUT_MAX_BYTES + 1 }, PROFILE_IMAGE_INPUT_MAX_BYTES), false)
 })
 
 test("프로필 사진의 실제 파일 헤더를 확인한다", () => {

@@ -1,4 +1,6 @@
-export const PROFILE_IMAGE_MAX_BYTES = 2 * 1024 * 1024
+export const PROFILE_IMAGE_INPUT_MAX_BYTES = 5 * 1024 * 1024
+export const PROFILE_IMAGE_MAX_BYTES = 500 * 1024
+export const PROFILE_IMAGE_DIMENSION = 512
 export const PROFILE_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const
 export const NICKNAME_MIN_LENGTH = 2
 export const NICKNAME_MAX_LENGTH = 20
@@ -14,9 +16,9 @@ export function normalizeNickname(input: unknown) {
   return nickname
 }
 
-export function isSupportedProfileImage(file: { size: number; type: string }) {
+export function isSupportedProfileImage(file: { size: number; type: string }, maxBytes = PROFILE_IMAGE_MAX_BYTES) {
   return file.size > 0
-    && file.size <= PROFILE_IMAGE_MAX_BYTES
+    && file.size <= maxBytes
     && PROFILE_IMAGE_TYPES.includes(file.type as (typeof PROFILE_IMAGE_TYPES)[number])
 }
 

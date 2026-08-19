@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { isSupportedProfileImage, NICKNAME_MAX_LENGTH } from "@/lib/profile"
+import { optimizeProfileImage } from "@/lib/profile-image-client"
+import { isSupportedProfileImage, NICKNAME_MAX_LENGTH, PROFILE_IMAGE_INPUT_MAX_BYTES } from "@/lib/profile"
 import { createClient } from "@/utils/supabase/client"
 
 export type ExtensionDevice = {
@@ -68,23 +69,24 @@ export function AccountDialog({ user }: { user: AccountUser }) {
   const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
-    if (!isSupportedProfileImage(file)) {
+    if (!isSupportedProfileImage(file, PROFILE_IMAGE_INPUT_MAX_BYTES)) {
       event.target.value = ""
-      return toast.error("JPG, PNG, WebP 형식의 2MB 이하 이미지를 선택해 주세요.")
+      return toast.error("JPG, PNG, WebP 형식의 5MB 이하 이미지를 선택해 주세요.")
     }
 
     setUploadingAvatar(true)
     try {
+      const optimizedFile = await optimizeProfileImage(file)
       const formData = new FormData()
-      formData.set("avatar", file)
+      formData.set("avatar", optimizedFile)
       const response = await authenticatedFetch("/api/account/avatar", { method: "POST", body: formData })
       const result = await response.json() as { error?: string; avatarUrl?: string }
       if (!response.ok || !result.avatarUrl) return toast.error(result.error || "프로필 사진을 업로드하지 못했습니다.")
       setAvatarUrl(result.avatarUrl)
       toast.success("프로필 사진을 변경했습니다.")
       router.refresh()
-    } catch {
-      toast.error("프로필 사진을 업로드하지 못했습니다.")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "프로필 사진을 업로드하지 못했습니다.")
     } finally {
       setUploadingAvatar(false)
       if (avatarInputRef.current) avatarInputRef.current.value = ""
@@ -158,11 +160,11 @@ export function AccountDialog({ user }: { user: AccountUser }) {
               />
               <Button type="button" variant="outline" size="xs" className="mt-2" onClick={() => avatarInputRef.current?.click()} disabled={uploadingAvatar}>
                 {uploadingAvatar ? <LoaderCircle className="animate-spin" /> : <Camera />}
-                {uploadingAvatar ? "업로드 중" : "사진 변경"}
+                {uploadingAvatar ? "처리 중" : "사진 변경"}
               </Button>
             </div>
           </div>
-          <p className="mt-2 text-[11px] text-muted-foreground">JPG, PNG, WebP · 최대 2MB</p>
+          <p className="mt-2 text-[11px] text-muted-foreground">원본 최대 5MB · 512×512 WebP 자동 압축</p>
 
           <form className="mt-4 space-y-2" onSubmit={saveNickname}>
             <Label htmlFor="account-nickname">표시 이름</Label>
