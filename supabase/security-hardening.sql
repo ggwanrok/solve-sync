@@ -29,6 +29,7 @@ revoke execute on function public.claim_handle(text) from public, anon;
 revoke execute on function public.is_handle_available(text) from public, anon;
 revoke execute on function public.send_friend_request(text) from public, anon;
 revoke execute on function public.respond_friend_request(uuid, boolean) from public, anon;
+revoke execute on function public.remove_friend(uuid) from public, anon;
 revoke execute on function public.is_study_member(uuid) from public, anon;
 revoke execute on function public.create_study_room(text, text, integer, text, text, integer) from public, anon;
 revoke execute on function public.delete_own_account() from public, anon;

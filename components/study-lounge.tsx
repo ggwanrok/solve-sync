@@ -395,7 +395,7 @@ export function StudyLounge({
               const name = comment.profile?.nickname || comment.profile?.handle || "멤버"
               return (
                 <div key={comment.id} className={cn("flex gap-2", isCurrentUser && "flex-row-reverse")}>
-                  <UserAvatar name={name} className="size-8" />
+                  <UserAvatar name={name} imageUrl={comment.profile?.avatar_url} className="size-8" />
                   <div className={cn("min-w-0 max-w-[calc(100%-2.5rem)]", isCurrentUser && "text-right")}>
                     <div className={cn("flex items-baseline gap-2", isCurrentUser && "flex-row-reverse")}>
                       <p className="truncate text-xs font-medium">{isCurrentUser ? "나" : name}</p>

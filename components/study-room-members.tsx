@@ -107,7 +107,7 @@ export function StudyRoomMembers({
 
             return (
               <li key={member.userId} className="flex items-center gap-3 px-4 py-3">
-                <UserAvatar name={name} className="size-9" />
+                <UserAvatar name={name} imageUrl={member.profile?.avatar_url} className="size-9" />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
                     <p className="truncate text-sm font-medium">{name}</p>

@@ -18,7 +18,7 @@ export function ActivityFeedList({ items }: { items: ActivityItem[] }) {
         return (
           <li key={item.id} className="flex gap-3 py-3">
             <div className="relative flex flex-col items-center">
-              <UserAvatar name={item.name} className="size-9" />
+              <UserAvatar name={item.name} imageUrl={item.avatar} className="size-9" />
               {i < items.length - 1 && <span className="mt-1 w-px flex-1 bg-border" />}
             </div>
             <div className="flex-1 pt-0.5">

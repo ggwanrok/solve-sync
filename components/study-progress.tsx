@@ -158,7 +158,7 @@ function MemberProgressCard({
   const memberSummary = (
     <>
       <div className="flex items-center gap-3">
-        <UserAvatar name={name} className="size-10" />
+        <UserAvatar name={name} imageUrl={member.profile?.avatar_url} className="size-10" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{name}{member.role === "leader" && " ♛"}</p>
           <p className="truncate text-xs text-muted-foreground">{member.profile?.handle}</p>
@@ -236,7 +236,7 @@ function HistoryMemberRow({
         className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 px-4 py-3 text-left transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
       >
         <div className="flex min-w-0 items-center gap-2.5">
-          <UserAvatar name={name} className="size-8" />
+          <UserAvatar name={name} imageUrl={member.profile?.avatar_url} className="size-8" />
           <div className="min-w-0">
             <p className="truncate text-sm font-medium">{name}{member.role === "leader" && " ♛"}</p>
             <p className="truncate text-[11px] text-muted-foreground">{member.profile?.handle}</p>

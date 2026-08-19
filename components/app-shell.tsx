@@ -66,7 +66,7 @@ function SidebarContent({ user, onNavigate }: { user: ShellUser; onNavigate?: ()
 
       <div className="mt-auto flex flex-col gap-3">
         <div className="flex items-center gap-3 rounded-xl px-2 py-1.5">
-          <UserAvatar name={user.name} className="size-9" />
+          <UserAvatar name={user.name} imageUrl={user.avatarUrl} className="size-9" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium">{user.name}</p>
             <p className="truncate text-xs text-muted-foreground">{user.handle}</p>

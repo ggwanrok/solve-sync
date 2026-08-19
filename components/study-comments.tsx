@@ -41,7 +41,7 @@ export function StudyComments({ initial }: { initial: StudyComment[] }) {
         <ul className="flex flex-col gap-4">
           {comments.map((c) => (
             <li key={c.id} className="flex gap-3">
-              <UserAvatar name={c.name} className="size-8" />
+              <UserAvatar name={c.name} imageUrl={c.avatar} className="size-8" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">{c.name}</span>

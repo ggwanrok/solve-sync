@@ -59,6 +59,19 @@ export async function respondFriendRequest(formData: FormData) {
   revalidateStudyFrom(formData)
 }
 
+export async function removeFriend(friendId: string) {
+  const { supabase } = await userClient()
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(friendId)) {
+    throw new Error("삭제할 친구 정보가 올바르지 않습니다.")
+  }
+
+  const { data, error } = await supabase.rpc("remove_friend", { target_user: friendId })
+  if (error) throw new Error(error.message)
+  if (!data) throw new Error("이미 친구 목록에서 삭제된 사용자입니다.")
+  revalidatePath("/friends")
+  revalidatePath("/study", "layout")
+}
+
 export async function createStudyRoom(input: { name: string; description: string; goalPeriod: "daily" | "weekly"; goalCount: number; minDifficulty: number; password: string | null }) {
   const { supabase } = await userClient()
   const { error } = await supabase.rpc("create_study_room", {

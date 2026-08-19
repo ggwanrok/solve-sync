@@ -1,13 +1,16 @@
 "use client"
 
-import { LogOut, MonitorSmartphone, Trash2, Unplug } from "lucide-react"
+import { Camera, LoaderCircle, LogOut, MonitorSmartphone, Save, Trash2, Unplug } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { toast } from "sonner"
 import { authenticatedFetch } from "@/lib/authenticated-fetch"
 import { UserAvatar } from "@/components/user-avatar"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { isSupportedProfileImage, NICKNAME_MAX_LENGTH } from "@/lib/profile"
 import { createClient } from "@/utils/supabase/client"
 
 export type ExtensionDevice = {
@@ -20,6 +23,7 @@ export type ExtensionDevice = {
 export type AccountUser = {
   name: string
   handle: string
+  avatarUrl: string | null
   extensionConnected?: boolean
   extensionDevices?: ExtensionDevice[]
 }
@@ -30,10 +34,62 @@ function formatDate(value: string) {
 
 export function AccountDialog({ user }: { user: AccountUser }) {
   const router = useRouter()
+  const avatarInputRef = useRef<HTMLInputElement>(null)
   const [devices, setDevices] = useState(user.extensionDevices || [])
+  const [nickname, setNickname] = useState(user.name)
+  const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl)
+  const [savingProfile, setSavingProfile] = useState(false)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [revokingDevice, setRevokingDevice] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
+
+  const saveNickname = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setSavingProfile(true)
+    try {
+      const response = await authenticatedFetch("/api/account", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ nickname }),
+      })
+      const result = await response.json() as { error?: string; nickname?: string }
+      if (!response.ok || !result.nickname) return toast.error(result.error || "표시 이름을 변경하지 못했습니다.")
+      setNickname(result.nickname)
+      toast.success("표시 이름을 변경했습니다.")
+      router.refresh()
+    } catch {
+      toast.error("표시 이름을 변경하지 못했습니다.")
+    } finally {
+      setSavingProfile(false)
+    }
+  }
+
+  const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    if (!isSupportedProfileImage(file)) {
+      event.target.value = ""
+      return toast.error("JPG, PNG, WebP 형식의 2MB 이하 이미지를 선택해 주세요.")
+    }
+
+    setUploadingAvatar(true)
+    try {
+      const formData = new FormData()
+      formData.set("avatar", file)
+      const response = await authenticatedFetch("/api/account/avatar", { method: "POST", body: formData })
+      const result = await response.json() as { error?: string; avatarUrl?: string }
+      if (!response.ok || !result.avatarUrl) return toast.error(result.error || "프로필 사진을 업로드하지 못했습니다.")
+      setAvatarUrl(result.avatarUrl)
+      toast.success("프로필 사진을 변경했습니다.")
+      router.refresh()
+    } catch {
+      toast.error("프로필 사진을 업로드하지 못했습니다.")
+    } finally {
+      setUploadingAvatar(false)
+      if (avatarInputRef.current) avatarInputRef.current.value = ""
+    }
+  }
 
   const revokeDevice = async (installationId: string) => {
     setRevokingDevice(installationId)
@@ -80,11 +136,54 @@ export function AccountDialog({ user }: { user: AccountUser }) {
   return (
     <Dialog>
       <DialogTrigger render={<button type="button" className="rounded-full outline-none ring-ring focus-visible:ring-2" aria-label="마이페이지 열기" />}>
-        <UserAvatar name={user.name} className="size-9" />
+        <UserAvatar name={nickname} imageUrl={avatarUrl} className="size-9" />
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
-        <DialogHeader><DialogTitle>마이페이지</DialogTitle><DialogDescription>계정과 확장 프로그램 연결 기기를 관리합니다.</DialogDescription></DialogHeader>
-        <div className="flex items-center gap-3 rounded-xl border p-4"><UserAvatar name={user.name} className="size-11" /><div><p className="font-medium">{user.name}</p><p className="text-xs text-muted-foreground">고유 닉네임 · {user.handle}</p></div></div>
+        <DialogHeader><DialogTitle>마이페이지</DialogTitle><DialogDescription>프로필과 확장 프로그램 연결 기기를 관리합니다.</DialogDescription></DialogHeader>
+
+        <div className="rounded-xl border p-4">
+          <div className="flex items-center gap-4">
+            <UserAvatar name={nickname} imageUrl={avatarUrl} className="size-16" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-medium">{nickname}</p>
+              <p className="truncate text-xs text-muted-foreground">고유 닉네임 · @{user.handle}</p>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="sr-only"
+                onChange={uploadAvatar}
+                disabled={uploadingAvatar}
+                aria-label="프로필 사진 파일 선택"
+              />
+              <Button type="button" variant="outline" size="xs" className="mt-2" onClick={() => avatarInputRef.current?.click()} disabled={uploadingAvatar}>
+                {uploadingAvatar ? <LoaderCircle className="animate-spin" /> : <Camera />}
+                {uploadingAvatar ? "업로드 중" : "사진 변경"}
+              </Button>
+            </div>
+          </div>
+          <p className="mt-2 text-[11px] text-muted-foreground">JPG, PNG, WebP · 최대 2MB</p>
+
+          <form className="mt-4 space-y-2" onSubmit={saveNickname}>
+            <Label htmlFor="account-nickname">표시 이름</Label>
+            <div className="flex gap-2">
+              <Input
+                id="account-nickname"
+                value={nickname}
+                onChange={(event) => setNickname(event.target.value)}
+                minLength={2}
+                maxLength={NICKNAME_MAX_LENGTH}
+                disabled={savingProfile}
+                required
+              />
+              <Button type="submit" size="sm" disabled={savingProfile || nickname.trim() === user.name}>
+                {savingProfile ? <LoaderCircle className="animate-spin" /> : <Save />}
+                {savingProfile ? "저장 중" : "저장"}
+              </Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">친구와 스터디룸에 표시되는 2~20자의 이름입니다.</p>
+          </form>
+        </div>
 
         <div className="rounded-xl border p-4">
           <div className="flex items-center justify-between gap-3">

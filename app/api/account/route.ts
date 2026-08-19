@@ -1,15 +1,60 @@
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import { ACCESS_TOKEN_COOKIE, REFRESH_TOKEN_COOKIE } from "@/lib/auth-cookies"
+import { normalizeNickname } from "@/lib/profile"
 import { createRequestClient } from "@/utils/supabase/request"
 
-export async function DELETE(request: Request) {
+async function viewer(request: Request) {
   const { supabase, accessToken } = await createRequestClient(request)
-  const { data: { user }, error: userError } = await supabase.auth.getUser(accessToken)
+  const { data: { user }, error } = await supabase.auth.getUser(accessToken)
+  return { supabase, user, error }
+}
+
+export async function PATCH(request: Request) {
+  const { supabase, user } = await viewer(request)
+  if (!user) return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 })
+
+  let input: Record<string, unknown>
+  try {
+    input = await request.json()
+  } catch {
+    return NextResponse.json({ error: "올바른 요청이 필요합니다." }, { status: 400 })
+  }
+
+  const nickname = normalizeNickname(input.nickname)
+  if (!nickname) {
+    return NextResponse.json({ error: "표시 이름은 2~20자로 입력해 주세요." }, { status: 400 })
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .update({ nickname })
+    .eq("id", user.id)
+    .select("nickname")
+    .single()
+  if (error) {
+    console.error("profile nickname update failed", { userId: user.id, code: error.code, message: error.message })
+    return NextResponse.json({ error: "표시 이름을 변경하지 못했습니다." }, { status: 500 })
+  }
+  return NextResponse.json({ nickname: data.nickname })
+}
+
+export async function DELETE(request: Request) {
+  const { supabase, user, error: userError } = await viewer(request)
   if (userError || !user) {
     const cookieStore = await cookies()
     console.error("account auth failed", { code: userError?.code, message: userError?.message, cookieNames: cookieStore.getAll().map(({ name }) => name) })
     return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 })
+  }
+
+  const { data: avatarFiles, error: avatarListError } = await supabase.storage.from("avatars").list(user.id, { limit: 100 })
+  if (avatarListError) {
+    console.error("account avatar list failed", { userId: user.id, message: avatarListError.message })
+  } else if (avatarFiles?.length) {
+    const { error: avatarRemoveError } = await supabase.storage
+      .from("avatars")
+      .remove(avatarFiles.map((file) => `${user.id}/${file.name}`))
+    if (avatarRemoveError) console.error("account avatar cleanup failed", { userId: user.id, message: avatarRemoveError.message })
   }
 
   const { error } = await supabase.rpc("delete_own_account")
