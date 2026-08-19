@@ -69,7 +69,7 @@ function SidebarContent({ user, onNavigate }: { user: ShellUser; onNavigate?: ()
           <UserAvatar name={user.name} imageUrl={user.avatarUrl} className="size-9" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium">{user.name}</p>
-            <p className="truncate text-xs text-muted-foreground">{user.handle}</p>
+            <p className="truncate text-xs text-muted-foreground">@{user.handle}</p>
           </div>
         </div>
       </div>

@@ -45,12 +45,12 @@ export default function OnboardingPage() {
 
     if (!data) {
       setCheckedHandle(null)
-      setAvailabilityMessage("이미 사용 중인 닉네임입니다.")
+      setAvailabilityMessage("이미 사용 중인 아이디입니다.")
       return
     }
 
     setCheckedHandle(normalizedHandle)
-    setAvailabilityMessage("사용할 수 있는 닉네임입니다.")
+    setAvailabilityMessage("사용할 수 있는 아이디입니다.")
   }
 
   const submit = async (event: React.FormEvent) => {
@@ -74,7 +74,7 @@ export default function OnboardingPage() {
           <div className="flex flex-col items-center gap-3 rounded-2xl border bg-card px-8 py-6 shadow-lg">
             <LoaderCircle className="size-7 animate-spin text-primary" />
             <div className="text-center">
-              <p className="font-medium">닉네임을 설정하고 있어요</p>
+              <p className="font-medium">아이디를 설정하고 있어요</p>
               <p className="mt-1 text-xs text-muted-foreground">잠시만 기다려주세요.</p>
             </div>
           </div>
@@ -83,14 +83,14 @@ export default function OnboardingPage() {
       <div className="w-full max-w-md rounded-2xl border bg-card p-8 shadow-sm">
         <Logo />
         <div className="mt-8">
-          <h1 className="text-2xl font-bold">사용할 닉네임을 설정해주세요.</h1>
+          <h1 className="text-2xl font-bold">사용할 아이디를 설정해주세요.</h1>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            친구 검색과 스터디 활동에 표시되는 고유한 닉네임입니다.
+            친구 검색에 사용하는 고유한 아이디이며, 생성 후에는 변경할 수 없습니다.
           </p>
         </div>
         <form onSubmit={submit} className="mt-7 flex flex-col gap-4">
           <div className="flex flex-col gap-2">
-            <Label htmlFor="handle">닉네임</Label>
+            <Label htmlFor="handle">아이디</Label>
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <Input
@@ -121,7 +121,7 @@ export default function OnboardingPage() {
             )}
           </div>
           <Button type="submit" disabled={pending || !isAvailable} className="gap-2">
-            {pending ? "확정 중..." : "닉네임 확정"}
+            {pending ? "확정 중..." : "아이디 확정"}
             <ArrowRight className="size-4" />
           </Button>
         </form>

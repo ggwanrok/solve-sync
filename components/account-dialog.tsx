@@ -146,7 +146,7 @@ export function AccountDialog({ user }: { user: AccountUser }) {
             <UserAvatar name={nickname} imageUrl={avatarUrl} className="size-16" />
             <div className="min-w-0 flex-1">
               <p className="truncate font-medium">{nickname}</p>
-              <p className="truncate text-xs text-muted-foreground">고유 닉네임 · @{user.handle}</p>
+              <p className="truncate text-xs text-muted-foreground">아이디 · @{user.handle}</p>
               <input
                 ref={avatarInputRef}
                 type="file"

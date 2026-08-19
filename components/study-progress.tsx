@@ -161,7 +161,7 @@ function MemberProgressCard({
         <UserAvatar name={name} imageUrl={member.profile?.avatar_url} className="size-10" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{name}{member.role === "leader" && " ♛"}</p>
-          <p className="truncate text-xs text-muted-foreground">{member.profile?.handle}</p>
+          <p className="truncate text-xs text-muted-foreground">{member.profile?.handle && `@${member.profile.handle}`}</p>
         </div>
         {showProgress && (
           <>
@@ -239,7 +239,7 @@ function HistoryMemberRow({
           <UserAvatar name={name} imageUrl={member.profile?.avatar_url} className="size-8" />
           <div className="min-w-0">
             <p className="truncate text-sm font-medium">{name}{member.role === "leader" && " ♛"}</p>
-            <p className="truncate text-[11px] text-muted-foreground">{member.profile?.handle}</p>
+            <p className="truncate text-[11px] text-muted-foreground">{member.profile?.handle && `@${member.profile.handle}`}</p>
           </div>
         </div>
         <div className="flex items-center gap-2 text-right">

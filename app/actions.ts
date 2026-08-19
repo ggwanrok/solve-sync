@@ -20,7 +20,7 @@ function revalidateStudyFrom(formData: FormData) {
 export async function sendFriendRequest(formData: FormData) {
   const { supabase } = await userClient()
   const raw = String(formData.get("handle") || "").trim().toLowerCase()
-  if (!raw) return { status: "invalid" as const, message: "닉네임을 입력해 주세요." }
+  if (!raw) return { status: "invalid" as const, message: "아이디를 입력해 주세요." }
 
   const { data, error } = await supabase.rpc("send_friend_request", { target_handle: raw.replace(/^@+/, "") })
   if (error) return { status: "error" as const, message: error.message }
@@ -41,7 +41,7 @@ export async function sendFriendRequest(formData: FormData) {
     case "self":
       return { status, message: "자기 자신에게는 친구 요청을 보낼 수 없습니다." }
     case "not_found":
-      return { status, message: "해당 닉네임의 사용자를 찾을 수 없습니다." }
+      return { status, message: "해당 아이디의 사용자를 찾을 수 없습니다." }
     default:
       return { status: "error" as const, message: "친구 요청 상태를 확인하지 못했습니다." }
   }

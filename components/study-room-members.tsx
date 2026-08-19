@@ -117,7 +117,7 @@ export function StudyRoomMembers({
                       </span>
                     )}
                   </div>
-                  <p className="truncate text-xs text-muted-foreground">{member.profile?.handle}</p>
+                  <p className="truncate text-xs text-muted-foreground">{member.profile?.handle && `@${member.profile.handle}`}</p>
                 </div>
                 <div className="shrink-0" aria-live="polite">
                   {status === "self" && <Badge variant="secondary">나</Badge>}
