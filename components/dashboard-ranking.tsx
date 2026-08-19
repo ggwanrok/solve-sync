@@ -1,4 +1,4 @@
-import { BarChart3, Crown, Sparkles, Trophy } from "lucide-react"
+import { BarChart3, Crown, Gauge, Trophy } from "lucide-react"
 import { DifficultyBadge } from "@/components/difficulty-badge"
 import { UserAvatar } from "@/components/user-avatar"
 import { Badge } from "@/components/ui/badge"
@@ -30,8 +30,73 @@ const rankStyle: Record<number, string> = {
   3: "bg-orange-400/15 text-orange-700 dark:text-orange-300",
 }
 
+const donutStroke = [
+  "var(--muted-foreground)",
+  "var(--chart-2)",
+  "var(--primary)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--destructive)",
+] as const
+
 function formatScore(value: number) {
   return new Intl.NumberFormat("ko-KR").format(value)
+}
+
+function DifficultyDonutChart({ counts }: { counts: ViewerRanking["levelSolved"] }) {
+  const total = counts.reduce((sum, count) => sum + count, 0)
+  let offset = 0
+
+  return (
+    <div className="grid items-center gap-5 sm:grid-cols-[9rem_minmax(0,1fr)]">
+      <div className="relative mx-auto size-36">
+        <svg
+          viewBox="0 0 120 120"
+          className="size-full"
+          role="img"
+          aria-label={`단계별 풀이 분포, 총 ${total}문제`}
+        >
+          <title>단계별 풀이 분포</title>
+          <desc>Lv.0부터 Lv.5까지 해결한 문제 수의 비율</desc>
+          <circle cx="60" cy="60" r="44" fill="none" stroke="var(--muted)" strokeWidth="14" />
+          {total > 0 && counts.map((count, level) => {
+            const percentage = count / total * 100
+            const dashOffset = -offset
+            offset += percentage
+            if (!count) return null
+
+            return (
+              <circle
+                key={level}
+                cx="60"
+                cy="60"
+                r="44"
+                pathLength="100"
+                fill="none"
+                stroke={donutStroke[level]}
+                strokeWidth="14"
+                strokeDasharray={`${percentage} ${100 - percentage}`}
+                strokeDashoffset={dashOffset}
+                transform="rotate(-90 60 60)"
+              />
+            )
+          })}
+        </svg>
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+          <p className="text-2xl font-bold tabular-nums">{formatScore(total)}</p>
+          <p className="text-[11px] text-muted-foreground">문제</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+        {counts.map((count, level) => (
+          <div key={level} className="flex items-center justify-between gap-2">
+            <DifficultyBadge level={`Lv.${level}` as `Lv.${0 | 1 | 2 | 3 | 4 | 5}`} />
+            <p className="font-semibold tabular-nums">{formatScore(count)}<span className="ml-0.5 text-[10px] font-normal text-muted-foreground">문제</span></p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
@@ -43,7 +108,7 @@ export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
           나의 랭킹
         </CardTitle>
         <CardDescription>
-          가장 어려운 {RANKING_TOP_PROBLEM_LIMIT}문제와 누적 풀이 보너스를 합산해요.
+          풀이 기록을 바탕으로 계산한 SolveSync 랭킹이에요.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
@@ -59,44 +124,25 @@ export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
           </div>
           <div className="rounded-xl bg-accent/55 p-4 ring-1 ring-inset ring-border/70">
             <div className="mb-5 flex size-9 items-center justify-center rounded-lg bg-background/70 text-accent-foreground">
-              <Sparkles className="size-4.5" />
+              <Gauge className="size-4.5" />
             </div>
             <p className="text-xs text-muted-foreground">랭킹 점수</p>
             <p className="mt-1 text-3xl font-bold tracking-tight">{formatScore(ranking.rankingScore)}</p>
           </div>
-          <div className="col-span-2 grid grid-cols-2 divide-x rounded-xl bg-muted/45 py-3 ring-1 ring-inset ring-border/60">
-            <div className="px-4">
-              <p className="text-[11px] text-muted-foreground">상위 100문제</p>
-              <p className="mt-0.5 font-semibold">{formatScore(ranking.top100Score)}점</p>
-            </div>
-            <div className="px-4">
-              <p className="text-[11px] text-muted-foreground">풀이 보너스</p>
-              <p className="mt-0.5 font-semibold">{formatScore(ranking.solvedBonus)} / {RANKING_SOLVE_BONUS_MAX}</p>
-            </div>
-          </div>
+          <p className="col-span-2 px-1 text-xs leading-5 text-muted-foreground">
+            랭킹 점수는 난이도 상위 {RANKING_TOP_PROBLEM_LIMIT}문제의 점수 합과 풀이 수 보너스(최대 {RANKING_SOLVE_BONUS_MAX}점)를 더해 계산합니다. 난이도는 Lv.0부터 Lv.5까지 {RANKING_DIFFICULTY_POINTS.join(" · ")}점으로 환산합니다.
+          </p>
         </div>
 
-        <div className="flex min-w-0 flex-col justify-between gap-4">
-          <div>
-            <div className="flex items-end justify-between gap-3">
-              <div>
-                <p className="flex items-center gap-1.5 text-sm font-medium"><BarChart3 className="size-4 text-primary" />단계별 풀이</p>
-                <p className="mt-1 text-xs text-muted-foreground">총 {formatScore(ranking.totalSolved)}문제</p>
-              </div>
-              {ranking.unknownSolved > 0 && <span className="text-[11px] text-muted-foreground">난이도 미확인 {ranking.unknownSolved}문제</span>}
+        <div className="flex min-w-0 flex-col justify-center gap-4">
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <p className="flex items-center gap-1.5 text-sm font-medium"><BarChart3 className="size-4 text-primary" />단계별 풀이</p>
+              <p className="mt-1 text-xs text-muted-foreground">난이도별 풀이 비중</p>
             </div>
-            <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
-              {ranking.levelSolved.map((count, level) => (
-                <div key={level} className="flex flex-col items-center gap-2 rounded-lg bg-background/65 px-2 py-3 ring-1 ring-inset ring-border/65">
-                  <DifficultyBadge level={`Lv.${level}` as `Lv.${0 | 1 | 2 | 3 | 4 | 5}`} />
-                  <p className="font-semibold tabular-nums">{formatScore(count)}<span className="ml-0.5 text-[10px] font-normal text-muted-foreground">문제</span></p>
-                </div>
-              ))}
-            </div>
+            {ranking.unknownSolved > 0 && <span className="text-[11px] text-muted-foreground">난이도 미확인 {ranking.unknownSolved}문제</span>}
           </div>
-          <p className="rounded-lg bg-muted/45 px-3 py-2.5 text-[11px] leading-5 text-muted-foreground">
-            난이도 점수는 Lv.0부터 Lv.5까지 {RANKING_DIFFICULTY_POINTS.join(" · ")}점이며, 높은 점수의 문제부터 최대 100개가 반영됩니다.
-          </p>
+          <DifficultyDonutChart counts={ranking.levelSolved} />
         </div>
       </CardContent>
     </Card>

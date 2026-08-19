@@ -66,7 +66,7 @@ function SidebarContent({ user, contributions, onNavigate }: { user: ShellUser; 
       <NavLinks pendingFriendRequestCount={user.pendingFriendRequestCount} onNavigate={onNavigate} />
 
       <div className="mt-auto flex flex-col gap-3">
-        <div className="border-t border-sidebar-border px-2 pt-4">
+        <div className="border-b border-sidebar-border px-2 pb-4">
           <div className="mb-2 flex items-center justify-between text-[11px] text-muted-foreground">
             <span className="font-medium text-sidebar-foreground">나의 잔디</span>
             <span>최근 16주</span>
