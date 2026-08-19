@@ -113,8 +113,8 @@ export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
-        <div className="grid self-center grid-cols-2 gap-3">
-          <div className="flex min-h-28 items-center gap-3 rounded-xl bg-primary/8 p-4 ring-1 ring-inset ring-primary/15 sm:gap-4 sm:p-5">
+        <div className="grid self-center grid-cols-2 gap-3 lg:grid-cols-1">
+          <div className="flex min-h-24 items-center gap-3 rounded-xl bg-primary/8 p-4 ring-1 ring-inset ring-primary/15 sm:gap-4 sm:p-5">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/12 text-primary">
               <Crown className="size-4.5" />
             </div>
@@ -125,7 +125,7 @@ export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
               </p>
             </div>
           </div>
-          <div className="flex min-h-28 items-center gap-3 rounded-xl bg-accent/55 p-4 ring-1 ring-inset ring-border/70 sm:gap-4 sm:p-5">
+          <div className="flex min-h-24 items-center gap-3 rounded-xl bg-accent/55 p-4 ring-1 ring-inset ring-border/70 sm:gap-4 sm:p-5">
             <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-background/70 text-accent-foreground">
               <Gauge className="size-4.5" />
             </div>
