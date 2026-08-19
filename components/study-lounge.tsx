@@ -9,6 +9,7 @@ import { UserAvatar } from "@/components/user-avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils"
 import { createClient } from "@/utils/supabase/client"
 
 export type LoungeComment = {
@@ -390,19 +391,23 @@ export function StudyLounge({
           ) : <>
             {hasOlder && <Button type="button" variant="ghost" size="sm" className="mx-auto shrink-0" onClick={loadOlderComments} disabled={loadingOlder}>{loadingOlder && <LoaderCircle className="size-3.5 animate-spin" />}{loadingOlder ? "불러오는 중..." : "이전 메시지 불러오기"}</Button>}
             {comments.map((comment) => {
-            const name = comment.profile?.nickname || comment.profile?.handle || "멤버"
-            return (
-              <div key={comment.id} className="flex gap-2">
-                <UserAvatar name={name} className="size-8" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <p className="truncate text-xs font-medium">{name}</p>
-                    <time className="shrink-0 text-[10px] text-muted-foreground" dateTime={comment.created_at}>{formatTime(comment.created_at)}</time>
+              const isCurrentUser = comment.author_id === currentUserId
+              const name = comment.profile?.nickname || comment.profile?.handle || "멤버"
+              return (
+                <div key={comment.id} className={cn("flex gap-2", isCurrentUser && "flex-row-reverse")}>
+                  <UserAvatar name={name} className="size-8" />
+                  <div className={cn("min-w-0 max-w-[calc(100%-2.5rem)]", isCurrentUser && "text-right")}>
+                    <div className={cn("flex items-baseline gap-2", isCurrentUser && "flex-row-reverse")}>
+                      <p className="truncate text-xs font-medium">{isCurrentUser ? "나" : name}</p>
+                      <time className="shrink-0 text-[10px] text-muted-foreground" dateTime={comment.created_at}>{formatTime(comment.created_at)}</time>
+                    </div>
+                    <p className={cn(
+                      "mt-1 w-fit max-w-full whitespace-pre-wrap break-words rounded-2xl bg-muted px-3 py-2 text-left text-sm",
+                      isCurrentUser ? "ml-auto rounded-tr-sm bg-primary text-primary-foreground" : "rounded-tl-sm",
+                    )}>{comment.message}</p>
                   </div>
-                  <p className="mt-1 whitespace-pre-wrap break-words text-sm">{comment.message}</p>
                 </div>
-              </div>
-            )
+              )
             })}
           </>}
         </div>
