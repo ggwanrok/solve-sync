@@ -1,9 +1,9 @@
 import { BarChart3, Crown, Gauge, Trophy } from "lucide-react"
 import { DifficultyBadge } from "@/components/difficulty-badge"
+import { RankingFormulaHelp } from "@/components/ranking-formula-help"
 import { UserAvatar } from "@/components/user-avatar"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { RANKING_DIFFICULTY_POINTS, RANKING_SOLVE_BONUS_MAX, RANKING_TOP_PROBLEM_LIMIT } from "@/lib/ranking"
 import { cn } from "@/lib/utils"
 
 export type DashboardRankingEntry = {
@@ -107,8 +107,9 @@ export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
           <Trophy className="size-4.5 text-primary" />
           나의 랭킹
         </CardTitle>
-        <CardDescription>
-          풀이 기록을 바탕으로 계산한 SolveSync 랭킹이에요.
+        <CardDescription className="flex items-center gap-1">
+          <span>풀이 기록을 바탕으로 계산한 SolveSync 랭킹이에요.</span>
+          <RankingFormulaHelp />
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
@@ -129,9 +130,6 @@ export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
             <p className="text-xs text-muted-foreground">랭킹 점수</p>
             <p className="mt-1 text-3xl font-bold tracking-tight">{formatScore(ranking.rankingScore)}</p>
           </div>
-          <p className="col-span-2 px-1 text-xs leading-5 text-muted-foreground">
-            랭킹 점수는 난이도 상위 {RANKING_TOP_PROBLEM_LIMIT}문제의 점수 합과 풀이 수 보너스(최대 {RANKING_SOLVE_BONUS_MAX}점)를 더해 계산합니다. 난이도는 Lv.0부터 Lv.5까지 {RANKING_DIFFICULTY_POINTS.join(" · ")}점으로 환산합니다.
-          </p>
         </div>
 
         <div className="flex min-w-0 flex-col justify-center gap-4">
