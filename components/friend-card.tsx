@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronRight, LoaderCircle, Sprout, Trash2 } from "lucide-react"
+import { LoaderCircle, Sprout, Trash2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
 import { toast } from "sonner"
@@ -59,7 +59,6 @@ export function FriendCard({ friend, contributions }: { friend: FriendCardProfil
             <span className="block truncate text-sm font-medium">{name}</span>
             <span className="block truncate text-xs text-primary">@{friend.handle}</span>
           </span>
-          <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         </DialogTrigger>
 
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
@@ -71,8 +70,7 @@ export function FriendCard({ friend, contributions }: { friend: FriendCardProfil
           <div className="flex flex-col items-center rounded-xl bg-accent/35 px-5 py-6 text-center sm:flex-row sm:text-left">
             <UserAvatar name={name} imageUrl={friend.avatar_url} className="size-24 ring-4 ring-background" />
             <div className="mt-4 min-w-0 sm:ml-5 sm:mt-0">
-              <p className="text-xs font-medium text-muted-foreground">표시 이름</p>
-              <p className="mt-1 truncate text-2xl font-bold tracking-tight">{name}</p>
+              <p className="truncate text-2xl font-bold tracking-tight">{name}</p>
               <p className="mt-0.5 truncate text-sm text-primary">@{friend.handle}</p>
               <Badge variant="secondary" className="mt-3">친구</Badge>
             </div>
