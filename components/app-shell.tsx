@@ -1,6 +1,6 @@
 "use client"
 
-import { LayoutDashboard, Users, BookOpen, Menu, Puzzle, RefreshCw } from "lucide-react"
+import { LayoutDashboard, Users, BookOpen, Chrome, Menu, Puzzle, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
@@ -66,6 +66,14 @@ function SidebarContent({ user, contributions, onNavigate }: { user: ShellUser; 
       <NavLinks pendingFriendRequestCount={user.pendingFriendRequestCount} onNavigate={onNavigate} />
 
       <div className="mt-auto flex flex-col gap-3">
+        <Link
+          href="/programmers"
+          onClick={onNavigate}
+          className="flex items-center justify-center gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent/45 px-3 py-2 text-xs font-medium text-sidebar-foreground transition-colors hover:border-primary/35 hover:bg-sidebar-accent"
+        >
+          <Chrome className="size-3.5 text-primary" aria-hidden="true" />
+          프로그래머스 연동하기
+        </Link>
         <div className="border-y border-sidebar-border px-2 py-4">
           <div className="mb-2 flex items-center justify-between text-[11px] text-muted-foreground">
             <span className="font-medium text-sidebar-foreground">나의 잔디</span>
@@ -96,6 +104,8 @@ export function AppShell({ children, user, contributions }: { children: React.Re
       ? "친구"
       : pathname.startsWith("/study")
         ? "스터디룸"
+        : pathname === "/programmers"
+          ? "연동 안내"
         : null
 
   function refreshCurrentPage() {
