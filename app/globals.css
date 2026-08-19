@@ -18,6 +18,12 @@
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+  --color-difficulty-0: var(--difficulty-0);
+  --color-difficulty-1: var(--difficulty-1);
+  --color-difficulty-2: var(--difficulty-2);
+  --color-difficulty-3: var(--difficulty-3);
+  --color-difficulty-4: var(--difficulty-4);
+  --color-difficulty-5: var(--difficulty-5);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -87,6 +93,12 @@
   --chart-3: oklch(0.72 0.16 65);
   --chart-4: oklch(0.55 0.12 240);
   --chart-5: oklch(0.58 0.21 25);
+  --difficulty-0: oklch(0.55 0.045 257);
+  --difficulty-1: oklch(0.62 0.21 260);
+  --difficulty-2: oklch(0.67 0.17 162);
+  --difficulty-3: oklch(0.79 0.18 86);
+  --difficulty-4: oklch(0.7 0.2 48);
+  --difficulty-5: oklch(0.63 0.22 25);
   --grass-0: oklch(0.93 0.006 155);
   --grass-1: oklch(0.85 0.07 156);
   --grass-2: oklch(0.72 0.12 156);
@@ -134,6 +146,12 @@
   --chart-3: oklch(0.78 0.15 70);
   --chart-4: oklch(0.65 0.13 240);
   --chart-5: oklch(0.66 0.2 25);
+  --difficulty-0: oklch(0.7 0.035 257);
+  --difficulty-1: oklch(0.7 0.16 255);
+  --difficulty-2: oklch(0.75 0.16 160);
+  --difficulty-3: oklch(0.84 0.17 86);
+  --difficulty-4: oklch(0.75 0.18 50);
+  --difficulty-5: oklch(0.7 0.19 25);
   --grass-0: oklch(0.28 0.015 160);
   --grass-1: oklch(0.4 0.08 157);
   --grass-2: oklch(0.55 0.13 157);

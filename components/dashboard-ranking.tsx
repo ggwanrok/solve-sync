@@ -31,12 +31,12 @@ const rankStyle: Record<number, string> = {
 }
 
 const donutStroke = [
-  "var(--muted-foreground)",
-  "var(--chart-2)",
-  "var(--primary)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--destructive)",
+  "var(--difficulty-0)",
+  "var(--difficulty-1)",
+  "var(--difficulty-2)",
+  "var(--difficulty-3)",
+  "var(--difficulty-4)",
+  "var(--difficulty-5)",
 ] as const
 
 function formatScore(value: number) {

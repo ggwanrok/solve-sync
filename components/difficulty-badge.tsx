@@ -2,12 +2,12 @@ import { difficultyLabel, type Difficulty } from "@/lib/difficulty"
 import { cn } from "@/lib/utils"
 
 const styles: Record<Difficulty, string> = {
-  "Lv.0": "bg-muted text-muted-foreground ring-border",
-  "Lv.1": "bg-chart-2/15 text-chart-2 ring-chart-2/25",
-  "Lv.2": "bg-primary/12 text-primary ring-primary/25",
-  "Lv.3": "bg-chart-3/15 text-warning-foreground ring-chart-3/30",
-  "Lv.4": "bg-chart-4/15 text-chart-4 ring-chart-4/25",
-  "Lv.5": "bg-destructive/12 text-destructive ring-destructive/25",
+  "Lv.0": "bg-difficulty-0/12 text-slate-600 ring-difficulty-0/25 dark:text-slate-300",
+  "Lv.1": "bg-difficulty-1/15 text-blue-700 ring-difficulty-1/30 dark:text-blue-300",
+  "Lv.2": "bg-difficulty-2/15 text-emerald-700 ring-difficulty-2/30 dark:text-emerald-300",
+  "Lv.3": "bg-difficulty-3/18 text-yellow-700 ring-difficulty-3/35 dark:text-yellow-300",
+  "Lv.4": "bg-difficulty-4/15 text-orange-700 ring-difficulty-4/30 dark:text-orange-300",
+  "Lv.5": "bg-difficulty-5/15 text-red-700 ring-difficulty-5/30 dark:text-red-300",
 }
 
 export function DifficultyBadge({ level, className }: { level: Difficulty; className?: string }) {
