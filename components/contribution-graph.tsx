@@ -56,38 +56,40 @@ function displayDate(date: string) {
   })
 }
 
-export function ContributionGraph({ data }: { data: ContributionDay[] }) {
+export function ContributionGraph({ data, compact = false }: { data: ContributionDay[]; compact?: boolean }) {
   const weeks = buildWeeks(data)
+  const cellClass = compact ? "size-2 rounded-[2px]" : "size-[13px] rounded-[3px]"
+  const gapClass = compact ? "gap-0.5" : "gap-[3px]"
 
   return (
     <TooltipProvider delay={100}>
-      <div className="w-full overflow-x-auto">
-        <div className="flex min-w-max flex-col gap-2">
-          <div className="flex gap-[3px] text-xs text-muted-foreground">
+      <div className={cn("w-full", compact ? "overflow-hidden" : "overflow-x-auto")}>
+        <div className={cn("flex min-w-max flex-col gap-2", compact && "items-center")}>
+          {!compact && <div className="flex gap-[3px] text-xs text-muted-foreground">
             <span aria-hidden className="mr-1 w-5 shrink-0" />
             {weeks.map((week, weekIndex) => (
               <span key={weekIndex} className="w-[13px] shrink-0 whitespace-nowrap text-[10px]">
                 {monthLabel(week, weekIndex)}
               </span>
             ))}
-          </div>
-          <div className="flex gap-[3px]">
-            <div className="mr-1 grid w-5 shrink-0 grid-rows-7 gap-[3px] text-[9px] text-muted-foreground">
+          </div>}
+          <div className={cn("flex", gapClass)}>
+            {!compact && <div className="mr-1 grid w-5 shrink-0 grid-rows-7 gap-[3px] text-[9px] text-muted-foreground">
               {weekdayLabels.map((label, index) => (
                 <span key={index} className="h-[13px] leading-[13px]">{label}</span>
               ))}
-            </div>
+            </div>}
             {weeks.map((week, weekIndex) => (
-              <div key={weekIndex} className="flex flex-col gap-[3px]">
+              <div key={weekIndex} className={cn("flex flex-col", gapClass)}>
                 {week.map((day, dayIndex) => {
-                  if (!day) return <div key={`empty-${dayIndex}`} aria-hidden className="size-[13px]" />
+                  if (!day) return <div key={`empty-${dayIndex}`} aria-hidden className={cellClass} />
                   if (day.isFuture) {
                     return (
                       <div
                         key={day.date}
                         data-date={day.date}
                         aria-hidden
-                        className="size-[13px] rounded-[3px] bg-muted/35 ring-1 ring-inset ring-border/25"
+                        className={cn(cellClass, "bg-muted/35 ring-1 ring-inset ring-border/25")}
                       />
                     )
                   }
@@ -98,7 +100,8 @@ export function ContributionGraph({ data }: { data: ContributionDay[] }) {
                         <div
                           data-date={day.date}
                           className={cn(
-                            "size-[13px] rounded-[3px] ring-1 ring-inset ring-border/40 transition-colors",
+                            cellClass,
+                            "ring-1 ring-inset ring-border/40 transition-colors",
                             levelClass[level],
                           )}
                         />
@@ -113,13 +116,13 @@ export function ContributionGraph({ data }: { data: ContributionDay[] }) {
               </div>
             ))}
           </div>
-          <div className="flex items-center justify-end gap-2 pt-1 text-xs text-muted-foreground">
+          {!compact && <div className="flex items-center justify-end gap-2 pt-1 text-xs text-muted-foreground">
             <span>낮은 강도</span>
             {levelClass.map((c, i) => (
               <div key={i} className={cn("size-[13px] rounded-[3px] ring-1 ring-inset ring-border/40", c)} />
             ))}
             <span>높은 강도</span>
-          </div>
+          </div>}
         </div>
       </div>
     </TooltipProvider>

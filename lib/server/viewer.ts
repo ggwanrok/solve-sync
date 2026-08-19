@@ -1,4 +1,5 @@
 import { cache } from "react"
+import { addCalendarDays, dayKey } from "@/lib/calendar"
 import { createClient } from "@/utils/supabase/server"
 
 export const getViewer = cache(async () => {
@@ -50,4 +51,27 @@ export const getPendingFriendRequestCount = cache(async () => {
     return 0
   }
   return count || 0
+})
+
+export type ViewerSidebarSolve = {
+  title: string
+  language: string | null
+  difficulty: number | null
+  accepted_at: string
+  problem_id: string
+}
+
+export const getViewerSidebarSolves = cache(async () => {
+  const { supabase, user } = await getViewer()
+  if (!user) return [] as ViewerSidebarSolve[]
+
+  const firstDate = addCalendarDays(dayKey(new Date()), -111)
+  const { data } = await supabase
+    .from("solve_events")
+    .select("title,language,difficulty,accepted_at,problem_id")
+    .eq("user_id", user.id)
+    .gte("accepted_at", `${firstDate}T00:00:00+09:00`)
+    .order("accepted_at", { ascending: true })
+
+  return (data || []) as ViewerSidebarSolve[]
 })

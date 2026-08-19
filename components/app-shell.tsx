@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
 import { Logo } from "@/components/logo"
+import { ContributionGraph, type ContributionDay } from "@/components/contribution-graph"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { AccountDialog, type AccountUser } from "@/components/account-dialog"
 import { UserAvatar } from "@/components/user-avatar"
@@ -53,7 +54,7 @@ function NavLinks({ pendingFriendRequestCount, onNavigate }: { pendingFriendRequ
   )
 }
 
-function SidebarContent({ user, onNavigate }: { user: ShellUser; onNavigate?: () => void }) {
+function SidebarContent({ user, contributions, onNavigate }: { user: ShellUser; contributions: ContributionDay[]; onNavigate?: () => void }) {
   return (
     <div className="flex h-full flex-col gap-6 p-4">
       <div className="px-2 pt-2">
@@ -65,6 +66,13 @@ function SidebarContent({ user, onNavigate }: { user: ShellUser; onNavigate?: ()
       <NavLinks pendingFriendRequestCount={user.pendingFriendRequestCount} onNavigate={onNavigate} />
 
       <div className="mt-auto flex flex-col gap-3">
+        <div className="border-t border-sidebar-border px-2 pt-4">
+          <div className="mb-2 flex items-center justify-between text-[11px] text-muted-foreground">
+            <span className="font-medium text-sidebar-foreground">나의 잔디</span>
+            <span>최근 16주</span>
+          </div>
+          <ContributionGraph data={contributions} compact />
+        </div>
         <div className="flex items-center gap-3 rounded-xl px-2 py-1.5">
           <UserAvatar name={user.name} imageUrl={user.avatarUrl} className="size-9" />
           <div className="min-w-0 flex-1">
@@ -77,7 +85,7 @@ function SidebarContent({ user, onNavigate }: { user: ShellUser; onNavigate?: ()
   )
 }
 
-export function AppShell({ children, user }: { children: React.ReactNode; user: ShellUser }) {
+export function AppShell({ children, user, contributions }: { children: React.ReactNode; user: ShellUser; contributions: ContributionDay[] }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [refreshPending, startRefreshTransition] = useTransition()
   const pathname = usePathname()
@@ -98,7 +106,7 @@ export function AppShell({ children, user }: { children: React.ReactNode; user: 
     <div className="flex min-h-screen bg-background">
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-r border-sidebar-border bg-sidebar lg:block">
-        <SidebarContent user={user} />
+        <SidebarContent user={user} contributions={contributions} />
       </aside>
 
       {/* Mobile drawer */}
@@ -109,7 +117,7 @@ export function AppShell({ children, user }: { children: React.ReactNode; user: 
             onClick={() => setMobileOpen(false)}
           />
           <div className="absolute left-0 top-0 h-full w-72 border-r border-sidebar-border bg-sidebar">
-            <SidebarContent user={user} onNavigate={() => setMobileOpen(false)} />
+            <SidebarContent user={user} contributions={contributions} onNavigate={() => setMobileOpen(false)} />
           </div>
         </div>
       )}
