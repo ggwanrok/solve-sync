@@ -114,21 +114,25 @@ export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
       </CardHeader>
       <CardContent className="grid gap-5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-xl bg-primary/8 p-4 ring-1 ring-inset ring-primary/15">
-            <div className="mb-5 flex size-9 items-center justify-center rounded-lg bg-primary/12 text-primary">
+          <div className="flex min-h-36 items-center gap-3 rounded-xl bg-primary/8 p-4 ring-1 ring-inset ring-primary/15 sm:gap-4 sm:p-5">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/12 text-primary">
               <Crown className="size-4.5" />
             </div>
-            <p className="text-xs text-muted-foreground">전체 순위</p>
-            <p className="mt-1 text-3xl font-bold tracking-tight">
-              {ranking.rankingPosition ? `${formatScore(ranking.rankingPosition)}위` : "집계 전"}
-            </p>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">전체 순위</p>
+              <p className="mt-1 text-3xl font-bold tracking-tight">
+                {ranking.rankingPosition ? `${formatScore(ranking.rankingPosition)}위` : "집계 전"}
+              </p>
+            </div>
           </div>
-          <div className="rounded-xl bg-accent/55 p-4 ring-1 ring-inset ring-border/70">
-            <div className="mb-5 flex size-9 items-center justify-center rounded-lg bg-background/70 text-accent-foreground">
+          <div className="flex min-h-36 items-center gap-3 rounded-xl bg-accent/55 p-4 ring-1 ring-inset ring-border/70 sm:gap-4 sm:p-5">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-background/70 text-accent-foreground">
               <Gauge className="size-4.5" />
             </div>
-            <p className="text-xs text-muted-foreground">랭킹 점수</p>
-            <p className="mt-1 text-3xl font-bold tracking-tight">{formatScore(ranking.rankingScore)}</p>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">랭킹 점수</p>
+              <p className="mt-1 text-3xl font-bold tracking-tight">{formatScore(ranking.rankingScore)}</p>
+            </div>
           </div>
         </div>
 
