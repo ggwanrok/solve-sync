@@ -29,7 +29,7 @@ const installSteps = [
   {
     icon: ExternalLink,
     title: "Chrome 웹 스토어 열기",
-    description: "아래 ‘Chrome 웹 스토어에서 설치’ 버튼을 눌러 SolveSync 확장 프로그램 페이지를 여세요.",
+    description: "위 ‘Chrome 웹 스토어에서 설치’ 버튼을 눌러 SolveSync 확장 프로그램 페이지를 여세요.",
   },
   {
     icon: MousePointerClick,
@@ -102,18 +102,20 @@ export default async function ProgrammersGuidePage() {
         <div className="bg-gradient-to-br from-primary/12 via-accent/45 to-card p-6 sm:p-8">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={connected ? "default" : "secondary"}>
-              {connected ? `연동된 기기 ${devices.length}대` : "현재 미연동"}
+              {connected ? "연동됨" : "현재 미연동"}
             </Badge>
             <Badge variant="outline">데스크톱 Chrome</Badge>
           </div>
           <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <div className="flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-                <Chrome className="size-6" aria-hidden="true" />
+              <div className="flex items-center gap-3">
+                <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+                  <Chrome className="size-6" aria-hidden="true" />
+                </div>
+                <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">프로그래머스 풀이 자동 기록 연결하기</h1>
               </div>
-              <h1 className="mt-4 text-2xl font-bold tracking-tight sm:text-3xl">프로그래머스 풀이 자동 기록 연결하기</h1>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                Chrome 확장 프로그램이 프로그래머스의 정답 제출을 감지해 SolveSync로 자동 전송합니다. 처음 한 번만 설치하고 계정을 연결하면 됩니다.
+                Chrome 확장 프로그램이 프로그래머스의 정답 제출을 감지해 SolveSync로 자동 전송합니다.
               </p>
             </div>
             <Button
