@@ -36,6 +36,7 @@ as $$
   join public.solve_events event
     on event.user_id = friendship.friend_id
   where (select auth.uid()) is not null
+    and event.problem_type = 'algorithm'
     and event.accepted_at >= (bounds.first_day::timestamp at time zone 'Asia/Seoul')
     and event.accepted_at < ((bounds.today + 1)::timestamp at time zone 'Asia/Seoul')
   order by event.user_id, event.accepted_at;

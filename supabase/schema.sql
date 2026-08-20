@@ -475,6 +475,7 @@ begin
   select sm.user_id, count(distinct se.problem_id)::bigint
   from study_members sm
   left join solve_events se on se.user_id = sm.user_id
+    and se.problem_type = 'algorithm'
     and coalesce(se.difficulty, 0) >= target_min_difficulty
     and se.accepted_at >= case
       when target_period = 'daily' then (date_trunc('day', now() at time zone 'Asia/Seoul') at time zone 'Asia/Seoul')
@@ -562,6 +563,7 @@ begin
   join profiles profile on profile.id = history.user_id
   left join solve_events event
     on event.user_id = history.user_id
+    and event.problem_type = 'algorithm'
     and event.accepted_at >= periods.period_start
     and event.accepted_at < periods.period_end
   group by periods.period_start, periods.period_end, periods.period_number,
@@ -603,6 +605,7 @@ begin
       event.accepted_at,
       date_trunc(case when target_period = 'daily' then 'day' else 'week' end, event.accepted_at at time zone 'Asia/Seoul') as period_local
     from solve_events event
+    where event.problem_type = 'algorithm'
   )
   select
     event.period_local at time zone 'Asia/Seoul' as period_start,
@@ -664,6 +667,7 @@ begin
       select member.user_id, count(distinct event.problem_id)::bigint as solved_count
       from study_members member
       left join solve_events event on event.user_id = member.user_id
+        and event.problem_type = 'algorithm'
         and coalesce(event.difficulty, 0) >= target_room.min_difficulty
         and event.accepted_at >= current_period_start and event.accepted_at < current_period_end
       where member.study_id = target_study group by member.user_id
@@ -717,6 +721,7 @@ begin
     join study_membership_history history on history.study_id = target_study and history.joined_at < period.period_end and coalesce(history.left_at, 'infinity'::timestamptz) > period.period_start
     join profiles profile on profile.id = history.user_id
     left join solve_events event on event.user_id = history.user_id
+      and event.problem_type = 'algorithm'
       and coalesce(event.difficulty, 0) >= target_room.min_difficulty
       and event.accepted_at >= period.period_start and event.accepted_at < period.period_end
     group by period.period_start, period.period_end, period.period_number, history.user_id, history.role, profile.handle, profile.nickname, profile.avatar_url
@@ -749,6 +754,7 @@ begin
   if not exists(select 1 from study_membership_history history where history.study_id = target_study and history.user_id = target_user and history.joined_at < period_end and coalesce(history.left_at, 'infinity'::timestamptz) > period_start) then return; end if;
   return query select event.problem_id, event.title, event.url, event.language, event.difficulty, event.accepted_at
   from solve_events event where event.user_id = target_user
+    and event.problem_type = 'algorithm'
     and coalesce(event.difficulty, 0) >= target_min_difficulty
     and event.accepted_at >= period_start and event.accepted_at < period_end
   order by event.accepted_at desc;
@@ -874,6 +880,7 @@ as $$
         order by event.difficulty desc nulls last, event.accepted_at asc, event.id asc
       ) as difficulty_position
     from public.solve_events event
+    where event.problem_type = 'algorithm'
   ),
   aggregates as (
     select
@@ -990,6 +997,7 @@ as $$
   join public.solve_events event
     on event.user_id = friendship.friend_id
   where (select auth.uid()) is not null
+    and event.problem_type = 'algorithm'
     and event.accepted_at >= (bounds.first_day::timestamp at time zone 'Asia/Seoul')
     and event.accepted_at < ((bounds.today + 1)::timestamp at time zone 'Asia/Seoul')
   order by event.user_id, event.accepted_at;

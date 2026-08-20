@@ -35,6 +35,7 @@ as $$
         order by event.difficulty desc nulls last, event.accepted_at asc, event.id asc
       ) as difficulty_position
     from public.solve_events event
+    where event.problem_type = 'algorithm'
   ),
   aggregates as (
     select

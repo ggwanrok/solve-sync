@@ -70,6 +70,7 @@ export const getViewerSidebarSolves = cache(async () => {
     .from("solve_events")
     .select("title,language,difficulty,accepted_at,problem_id")
     .eq("user_id", user.id)
+    .eq("problem_type", "algorithm")
     .gte("accepted_at", `${firstDate}T00:00:00+09:00`)
     .order("accepted_at", { ascending: true })
 

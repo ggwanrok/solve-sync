@@ -149,6 +149,7 @@ begin
   join profiles profile on profile.id = history.user_id
   left join solve_events event
     on event.user_id = history.user_id
+    and event.problem_type = 'algorithm'
     and event.accepted_at >= periods.period_start
     and event.accepted_at < periods.period_end
   group by periods.period_start, periods.period_end, periods.period_number,

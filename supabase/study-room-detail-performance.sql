@@ -76,6 +76,7 @@ begin
       from study_members member
       left join solve_events event
         on event.user_id = member.user_id
+        and event.problem_type = 'algorithm'
         and event.accepted_at >= current_period_start
         and event.accepted_at < current_period_end
       where member.study_id = target_study
@@ -171,6 +172,7 @@ begin
     join profiles profile on profile.id = history.user_id
     left join solve_events event
       on event.user_id = history.user_id
+      and event.problem_type = 'algorithm'
       and event.accepted_at >= period.period_start
       and event.accepted_at < period.period_end
     group by period.period_start, period.period_end, period.period_number,
@@ -233,6 +235,7 @@ begin
   select event.problem_id, event.title, event.url, event.language, event.accepted_at
   from solve_events event
   where event.user_id = target_user
+    and event.problem_type = 'algorithm'
     and event.accepted_at >= period_start
     and event.accepted_at < period_end
   order by event.accepted_at desc;

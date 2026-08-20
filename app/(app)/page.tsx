@@ -1,4 +1,4 @@
-import { CheckCircle2, Flame } from "lucide-react"
+import { CheckCircle2, ExternalLink, Flame } from "lucide-react"
 import { redirect } from "next/navigation"
 import { LeaderboardCard, RankingSummaryCard, type DashboardRankingEntry, type ViewerRanking } from "@/components/dashboard-ranking"
 import { ProblemDifficultyBadge } from "@/components/difficulty-badge"
@@ -10,7 +10,7 @@ import { rankingBreakdown } from "@/lib/ranking"
 import { cn } from "@/lib/utils"
 import { getViewer, getViewerExtensions, getViewerProfile } from "@/lib/server/viewer"
 
-type SolveEvent = { id: string; title: string; language: string | null; difficulty: number | null; accepted_at: string; problem_id: string }
+type SolveEvent = { id: string; title: string; url: string; language: string | null; difficulty: number | null; accepted_at: string; problem_id: string }
 type RankingRpcRow = {
   ranking_position: number | string
   user_id: string
@@ -75,8 +75,9 @@ export default async function DashboardPage() {
     getViewerProfile(),
     supabase
       .from("solve_events")
-      .select("id,title,language,difficulty,accepted_at,problem_id")
+      .select("id,title,url,language,difficulty,accepted_at,problem_id")
       .eq("user_id", user.id)
+      .eq("problem_type", "algorithm")
       .order("accepted_at", { ascending: false }),
     supabase.rpc("dashboard_ranking", { top_limit: 10 }),
   ])
@@ -134,13 +135,21 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent className="flex flex-col gap-1">
             {solves.length ? solves.slice(0, 10).map((solve) => (
-              <div key={solve.id} className="rounded-lg px-2 py-2 hover:bg-accent/50">
+              <a
+                key={solve.id}
+                href={solve.url}
+                target="_blank"
+                rel="noreferrer"
+                className="block rounded-lg px-2 py-2 transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
                 <div className="flex min-w-0 items-center gap-2">
                   <p className="min-w-0 flex-1 truncate text-sm font-medium">{solve.title || `문제 ${solve.problem_id}`}</p>
                   <ProblemDifficultyBadge difficulty={solve.difficulty} />
+                  <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
                 </div>
                 <p className="text-xs text-muted-foreground">{solve.language && <>{solve.language} · </>}{new Date(solve.accepted_at).toLocaleDateString("ko-KR", { timeZone: APP_TIME_ZONE })}</p>
-              </div>
+                <span className="sr-only">새 탭에서 문제 열기</span>
+              </a>
             )) : <p className="py-8 text-center text-sm text-muted-foreground">아직 수집된 풀이가 없습니다.</p>}
           </CardContent>
         </Card>
