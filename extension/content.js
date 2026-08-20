@@ -29,6 +29,12 @@ function language() {
   const selected = document.querySelector('[aria-selected="true"], .language-selector .selected, select');
   return selected?.value || text(selected) || null;
 }
+function problemType(selectedLanguage) {
+  const normalized = String(selectedLanguage ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+  return ['mariadb', 'microsoft sql server', 'mssql', 'mysql', 'oracle', 'postgres', 'postgresql', 'sql', 'sql server', 'sqlite'].includes(normalized)
+    ? 'sql'
+    : 'algorithm';
+}
 function normalizedDifficulty(value) {
   const match = String(value ?? '').trim().match(/^(?:Lv\.?\s*)?([0-5])$/i);
   return match ? Number(match[1]) : null;
@@ -55,7 +61,8 @@ function eventFor(id) {
   const startKey = `algosync:programmers:started:${id}`;
   const startedAt = sessionStorage.getItem(startKey) || new Date().toISOString();
   const acceptedAt = new Date().toISOString();
-  return { startKey, event: { problemId: id, title: title(), url: location.origin + location.pathname, language: language(), difficulty: difficulty(), startedAt, acceptedAt, durationSeconds: Math.max(0, Math.round((Date.parse(acceptedAt) - Date.parse(startedAt)) / 1000)) } };
+  const selectedLanguage = language();
+  return { startKey, event: { problemId: id, title: title(), url: location.origin + location.pathname, language: selectedLanguage, problemType: problemType(selectedLanguage), difficulty: difficulty(), startedAt, acceptedAt, durationSeconds: Math.max(0, Math.round((Date.parse(acceptedAt) - Date.parse(startedAt)) / 1000)) } };
 }
 async function capture(requireSuccess = true) {
   const id = problemId(); const result = resultElement();

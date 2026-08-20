@@ -5,7 +5,7 @@ const vm = require('node:vm');
 
 const contentScript = readFileSync(new URL('../extension/content.js', `file://${__filename}`), 'utf8');
 
-async function captureEvent(challengeLevel) {
+async function captureEvent(challengeLevel, selectedLanguage = 'JavaScript') {
   const session = new Map();
   let sentMessage = null;
   const difficultyNodes = challengeLevel == null
@@ -29,7 +29,7 @@ async function captureEvent(challengeLevel) {
       title: '코딩테스트 연습 - 핸드폰 번호 가리기 | 프로그래머스 스쿨',
       querySelector(selector) {
         if (selector === '.breadcrumb li.active, .breadcrumb .active') return { innerText: '핸드폰 번호 가리기' };
-        if (selector === '[aria-selected="true"], .language-selector .selected, select') return { value: 'JavaScript' };
+        if (selector === '[aria-selected="true"], .language-selector .selected, select') return { value: selectedLanguage };
         return null;
       },
       querySelectorAll(selector) {
@@ -65,4 +65,16 @@ test('프로그래머스 난이도를 숫자 등급으로 전송한다', async (
 test('난이도 메타데이터가 없으면 null을 전송한다', async () => {
   const event = await captureEvent(null);
   assert.equal(event.difficulty, null);
+});
+
+test('일반 프로그래밍 언어는 알고리즘 풀이로 전송한다', async () => {
+  const event = await captureEvent('2', 'Python3');
+  assert.equal(event.problemType, 'algorithm');
+});
+
+test('SQL 언어는 SQL 풀이로 전송한다', async () => {
+  for (const language of ['MySQL', 'Oracle']) {
+    const event = await captureEvent('2', language);
+    assert.equal(event.problemType, 'sql');
+  }
 });

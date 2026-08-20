@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto"
 import { createClient } from "@supabase/supabase-js"
 import { NextResponse } from "next/server"
+import { isProblemType, problemTypeFromLanguage } from "@/lib/problem-type"
 
 export const runtime = "nodejs"
 
@@ -23,6 +24,11 @@ export async function POST(request: Request) {
 
   const title = String(input.title || "").trim().slice(0, 200)
   const language = input.language == null ? null : String(input.language).trim().slice(0, 50)
+  const submittedProblemType = input.problemType == null ? null : String(input.problemType).trim().toLowerCase()
+  if (submittedProblemType != null && !isProblemType(submittedProblemType)) {
+    return NextResponse.json({ error: "유효한 문제 유형이 필요합니다." }, { status: 400 })
+  }
+  const problemType = submittedProblemType || problemTypeFromLanguage(language)
   const difficulty = input.difficulty == null || input.difficulty === "" ? null : Number(input.difficulty)
   const durationSeconds = input.durationSeconds == null ? null : Number(input.durationSeconds)
   if (difficulty != null && (!Number.isInteger(difficulty) || difficulty < 0 || difficulty > 5)) {
@@ -64,6 +70,7 @@ export async function POST(request: Request) {
       title,
       url: String(input.url),
       language,
+      problem_type: problemType,
       difficulty,
       started_at: startedAt?.toISOString() || null,
       duration_seconds: durationSeconds,
@@ -73,15 +80,20 @@ export async function POST(request: Request) {
     .maybeSingle()
   if (error) return NextResponse.json({ error: "풀이 기록을 저장하지 못했습니다." }, { status: 500 })
 
-  // 이전에 저장된 동일 문제도 다시 제출되면 새 메타데이터로 난이도를 보강합니다.
-  if (!event && difficulty != null) {
+  // 이전에 저장된 동일 문제도 다시 제출되면 새 언어/유형/난이도 메타데이터로 보강합니다.
+  if (!event) {
+    const metadata: { problem_type: typeof problemType; language?: string; difficulty?: number } = {
+      problem_type: problemType,
+    }
+    if (language) metadata.language = language
+    if (difficulty != null) metadata.difficulty = difficulty
     const { error: updateError } = await supabase
       .from("solve_events")
-      .update({ difficulty })
+      .update(metadata)
       .eq("user_id", connection.user_id)
       .eq("platform", "programmers")
       .eq("problem_id", String(input.problemId))
-    if (updateError) return NextResponse.json({ error: "문제 난이도를 저장하지 못했습니다." }, { status: 500 })
+    if (updateError) return NextResponse.json({ error: "문제 메타데이터를 저장하지 못했습니다." }, { status: 500 })
   }
 
   await supabase.from("extension_connections").update({ last_seen_at: new Date().toISOString() }).eq("token_hash", hash(token))

@@ -165,6 +165,7 @@ create table if not exists public.solve_events (
   title text not null default '',
   url text not null,
   language text,
+  problem_type text not null default 'algorithm' check (problem_type in ('algorithm', 'sql')),
   difficulty smallint check (difficulty between 0 and 5),
   started_at timestamptz,
   duration_seconds integer,
@@ -175,6 +176,8 @@ create table if not exists public.solve_events (
 );
 create index if not exists solve_events_user_accepted_at
   on public.solve_events(user_id, accepted_at);
+create index if not exists solve_events_user_problem_type_accepted_at
+  on public.solve_events(user_id, problem_type, accepted_at desc);
 
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = '' as $$
@@ -768,8 +771,21 @@ begin
   select user_id into target_user from extension_connections where token_hash = auth_token_hash;
   if target_user is null then raise exception '유효하지 않은 익스텐션 토큰입니다.' using errcode = '28000'; end if;
   update extension_connections set last_seen_at = now() where token_hash = auth_token_hash;
-  insert into solve_events(user_id, problem_id, title, url, language, started_at, duration_seconds, accepted_at)
-  values(target_user, event_problem_id, left(event_title, 200), event_url, event_language, event_started_at, event_duration_seconds, event_accepted_at)
+  insert into solve_events(user_id, problem_id, title, url, language, problem_type, started_at, duration_seconds, accepted_at)
+  values(
+    target_user,
+    event_problem_id,
+    left(event_title, 200),
+    event_url,
+    event_language,
+    case
+      when lower(btrim(coalesce(event_language, ''))) in ('mariadb', 'microsoft sql server', 'mssql', 'mysql', 'oracle', 'postgres', 'postgresql', 'sql', 'sql server', 'sqlite') then 'sql'
+      else 'algorithm'
+    end,
+    event_started_at,
+    event_duration_seconds,
+    event_accepted_at
+  )
   on conflict(user_id, platform, problem_id) do nothing returning id into inserted_id;
   return jsonb_build_object('id', inserted_id, 'duplicate', inserted_id is null);
 end;
