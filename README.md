@@ -102,7 +102,7 @@ npm install
 
 기존 데이터베이스를 업데이트하는 경우 다중 기기 연결을 위해 먼저 `supabase/extension-multi-device.sql`을 실행합니다. 익스텐션에서 문제 난이도와 알고리즘/SQL 유형을 저장하려면 `supabase/solve-event-difficulty.sql`, `supabase/solve-event-problem-type.sql`을 차례로 실행합니다. 스터디룸 성능 개선을 적용하려면 `supabase/study-room-directory-pagination.sql`과 `supabase/study-room-detail-performance.sql`을 순서대로 실행한 뒤, 난이도 목표 기능을 위한 `supabase/study-difficulty-filter.sql`과 목록 필터를 위한 `supabase/study-directory-filters.sql`을 차례대로 실행합니다. 친구 삭제와 프로필 사진 저장소를 추가하려면 `supabase/profile-management.sql`을 실행하고, 친구 잔디 조회에는 `supabase/friend-contributions.sql`을 실행합니다. 프로필 한 줄 소개와 전체 랭킹 집계를 적용하려면 `supabase/profile-bio.sql`, `supabase/dashboard-ranking.sql` 순서로 실행합니다. 그 밖의 필요한 기능 SQL을 적용한 다음 `supabase/security-hardening.sql`을 마지막에 실행합니다. 스터디 라운지 메시지를 실시간으로 동기화하려면 `supabase/study-comments-realtime.sql`을 실행합니다.
 
-기존 DB에서 SQL 풀이를 저장만 하고 학습 지표에서 제외하려면 `supabase/solve-event-problem-type.sql` 적용 후 `supabase/study-difficulty-filter.sql`, `supabase/friend-contributions.sql`, `supabase/dashboard-ranking.sql`을 다시 실행합니다.
+기존 DB에서 SQL 풀이를 잔디에는 포함하되 랭킹과 스터디 집계에서 제외하려면 `supabase/solve-event-problem-type.sql` 적용 후 `supabase/study-difficulty-filter.sql`, `supabase/friend-contributions.sql`, `supabase/dashboard-ranking.sql`을 다시 실행합니다.
 
 ### 3. Google 로그인 구성
 
