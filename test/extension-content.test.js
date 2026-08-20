@@ -29,7 +29,7 @@ async function captureEvent(challengeLevel, selectedLanguage = 'JavaScript') {
       title: '코딩테스트 연습 - 핸드폰 번호 가리기 | 프로그래머스 스쿨',
       querySelector(selector) {
         if (selector === '.breadcrumb li.active, .breadcrumb .active') return { innerText: '핸드폰 번호 가리기' };
-        if (selector === '[aria-selected="true"], .language-selector .selected, select') return { value: selectedLanguage };
+        if (selector.startsWith('.dropdown-language .dropdown-toggle')) return { innerText: selectedLanguage };
         return null;
       },
       querySelectorAll(selector) {
@@ -65,6 +65,11 @@ test('프로그래머스 난이도를 숫자 등급으로 전송한다', async (
 test('난이도 메타데이터가 없으면 null을 전송한다', async () => {
   const event = await captureEvent(null);
   assert.equal(event.difficulty, null);
+});
+
+test('현재 프로그래머스 언어 드롭다운의 선택값을 전송한다', async () => {
+  const event = await captureEvent('2', 'MySQL');
+  assert.equal(event.language, 'MySQL');
 });
 
 test('일반 프로그래밍 언어는 알고리즘 풀이로 전송한다', async () => {

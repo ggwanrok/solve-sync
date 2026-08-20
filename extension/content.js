@@ -26,7 +26,7 @@ function title() {
   return headings.find((item) => !score.test(item) && !/코딩테스트|연습문제|제출|실행/.test(item)) || `문제 ${problemId()}`;
 }
 function language() {
-  const selected = document.querySelector('[aria-selected="true"], .language-selector .selected, select');
+  const selected = document.querySelector('.dropdown-language .dropdown-toggle, .dropdown-language [data-toggle="dropdown"], [aria-selected="true"], .language-selector .selected, select');
   return selected?.value || text(selected) || null;
 }
 function problemType(selectedLanguage) {
