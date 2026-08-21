@@ -251,7 +251,7 @@ $$;
 
 drop function if exists public.study_member_period_solve_events(uuid, uuid, timestamptz);
 create function public.study_member_period_solve_events(target_study uuid, target_user uuid, target_period_start timestamptz)
-returns table(problem_id text, title text, url text, language text, difficulty smallint, accepted_at timestamptz)
+returns table(problem_id text, title text, url text, language text, problem_type text, difficulty smallint, accepted_at timestamptz)
 language plpgsql stable security definer set search_path = public as $$
 declare
   target_period text;
@@ -271,7 +271,7 @@ begin
     and history.user_id = target_user and history.joined_at < period_end
     and coalesce(history.left_at, 'infinity'::timestamptz) > period_start) then return; end if;
 
-  return query select event.problem_id, event.title, event.url, event.language, event.difficulty, event.accepted_at
+  return query select event.problem_id, event.title, event.url, event.language, event.problem_type, event.difficulty, event.accepted_at
   from solve_events event where event.user_id = target_user
     and coalesce(event.difficulty, 0) >= target_min_difficulty
     and event.accepted_at >= period_start and event.accepted_at < period_end

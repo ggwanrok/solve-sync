@@ -1,3 +1,5 @@
+import type { ProblemType } from "@/lib/problem-type"
+
 export type StudyRoomProfile = {
   handle: string
   nickname: string
@@ -54,6 +56,7 @@ export type StudyPeriodProblemRow = {
   title: string
   url: string
   language: string | null
+  problem_type: ProblemType
   difficulty: number | null
   accepted_at: string
 }

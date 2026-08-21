@@ -194,7 +194,8 @@ begin
 end;
 $$;
 
-create or replace function public.study_member_period_solve_events(
+drop function if exists public.study_member_period_solve_events(uuid, uuid, timestamptz);
+create function public.study_member_period_solve_events(
   target_study uuid,
   target_user uuid,
   target_period_start timestamptz
@@ -204,6 +205,7 @@ returns table(
   title text,
   url text,
   language text,
+  problem_type text,
   accepted_at timestamptz
 )
 language plpgsql stable security definer set search_path = public as $$
@@ -230,7 +232,7 @@ begin
   ) then return; end if;
 
   return query
-  select event.problem_id, event.title, event.url, event.language, event.accepted_at
+  select event.problem_id, event.title, event.url, event.language, event.problem_type, event.accepted_at
   from solve_events event
   where event.user_id = target_user
     and event.accepted_at >= period_start

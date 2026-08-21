@@ -412,7 +412,7 @@ export function StudyProgress({
         title: problem.title,
         url: problem.url,
         language: problem.language,
-        problemType: problemTypeFromLanguage(problem.language),
+        problemType: problem.problem_type || problemTypeFromLanguage(problem.language),
         difficulty: problem.difficulty,
         acceptedAt: problem.accepted_at,
       }))
