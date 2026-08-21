@@ -2,6 +2,7 @@ export const RANKING_TOP_PROBLEM_LIMIT = 100
 export const RANKING_SOLVE_BONUS_MAX = 200
 export const RANKING_SOLVE_BONUS_DECAY = 0.997
 export const RANKING_DIFFICULTY_POINTS = [5, 10, 15, 20, 25, 30] as const
+export const SQL_RANKING_DIVISOR = 2
 
 type RankingDifficultyLevel = 0 | 1 | 2 | 3 | 4 | 5
 
@@ -9,6 +10,17 @@ export type RankingBreakdown = {
   rankingScore: number
   topProblemScore: number
   solveBonus: number
+  totalSolved: number
+  levelSolved: Record<RankingDifficultyLevel, number>
+  unknownSolved: number
+}
+
+export type CombinedRankingBreakdown = {
+  rankingScore: number
+  algorithmScore: number
+  sqlScore: number
+  algorithm: RankingBreakdown
+  sql: RankingBreakdown
   totalSolved: number
   levelSolved: Record<RankingDifficultyLevel, number>
   unknownSolved: number
@@ -56,5 +68,30 @@ export function rankingBreakdown(difficulties: readonly unknown[]): RankingBreak
     totalSolved: difficulties.length,
     levelSolved,
     unknownSolved,
+  }
+}
+
+export function combinedRankingBreakdown(difficulties: {
+  algorithm: readonly unknown[]
+  sql: readonly unknown[]
+}): CombinedRankingBreakdown {
+  const algorithm = rankingBreakdown(difficulties.algorithm)
+  const sql = rankingBreakdown(difficulties.sql)
+  const levelSolved: Record<RankingDifficultyLevel, number> = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+
+  for (let level = 0; level <= 5; level += 1) {
+    const normalizedLevel = level as RankingDifficultyLevel
+    levelSolved[normalizedLevel] = algorithm.levelSolved[normalizedLevel] + sql.levelSolved[normalizedLevel]
+  }
+
+  return {
+    rankingScore: algorithm.rankingScore + Math.floor(sql.rankingScore / SQL_RANKING_DIVISOR),
+    algorithmScore: algorithm.rankingScore,
+    sqlScore: sql.rankingScore,
+    algorithm,
+    sql,
+    totalSolved: algorithm.totalSolved + sql.totalSolved,
+    levelSolved,
+    unknownSolved: algorithm.unknownSolved + sql.unknownSolved,
   }
 }

@@ -6,11 +6,12 @@ import { GettingStartedGuide } from "@/components/getting-started-guide"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { addCalendarDays, APP_TIME_ZONE, dayKey } from "@/lib/calendar"
-import { rankingBreakdown } from "@/lib/ranking"
+import { combinedRankingBreakdown } from "@/lib/ranking"
+import type { ProblemType } from "@/lib/problem-type"
 import { cn } from "@/lib/utils"
 import { getViewer, getViewerExtensions, getViewerProfile } from "@/lib/server/viewer"
 
-type SolveEvent = { id: string; title: string; url: string; language: string | null; difficulty: number | null; accepted_at: string; problem_id: string }
+type SolveEvent = { id: string; title: string; url: string; language: string | null; problem_type: ProblemType; difficulty: number | null; accepted_at: string; problem_id: string }
 type RankingRpcRow = {
   ranking_position: number | string
   user_id: string
@@ -19,8 +20,10 @@ type RankingRpcRow = {
   bio: string | null
   avatar_url: string | null
   ranking_score: number | string
-  top_100_score: number | string
-  solved_bonus: number | string
+  algorithm_score: number | string
+  sql_score: number | string
+  algorithm_solved: number | string
+  sql_solved: number | string
   total_solved: number | string
   level_0_solved: number | string
   level_1_solved: number | string
@@ -40,8 +43,10 @@ function normalizeRankingEntry(row: RankingRpcRow): DashboardRankingEntry {
     bio: row.bio || "",
     avatarUrl: row.avatar_url,
     rankingScore: Number(row.ranking_score),
-    top100Score: Number(row.top_100_score),
-    solvedBonus: Number(row.solved_bonus),
+    algorithmScore: Number(row.algorithm_score),
+    sqlScore: Number(row.sql_score),
+    algorithmSolved: Number(row.algorithm_solved),
+    sqlSolved: Number(row.sql_solved),
     totalSolved: Number(row.total_solved),
     levelSolved: [
       Number(row.level_0_solved),
@@ -75,9 +80,8 @@ export default async function DashboardPage() {
     getViewerProfile(),
     supabase
       .from("solve_events")
-      .select("id,title,url,language,difficulty,accepted_at,problem_id")
+      .select("id,title,url,language,problem_type,difficulty,accepted_at,problem_id")
       .eq("user_id", user.id)
-      .eq("problem_type", "algorithm")
       .order("accepted_at", { ascending: false }),
     supabase.rpc("dashboard_ranking", { top_limit: 10 }),
   ])
@@ -85,7 +89,10 @@ export default async function DashboardPage() {
   if (rankingError) console.error("dashboard ranking failed", rankingError)
   const rankingEntries = ((rankingData || []) as RankingRpcRow[]).map(normalizeRankingEntry)
   const viewerEntry = rankingEntries.find((entry) => entry.userId === user.id)
-  const localRanking = rankingBreakdown(solves.map((solve) => solve.difficulty))
+  const localRanking = combinedRankingBreakdown({
+    algorithm: solves.filter((solve) => solve.problem_type === "algorithm").map((solve) => solve.difficulty),
+    sql: solves.filter((solve) => solve.problem_type === "sql").map((solve) => solve.difficulty),
+  })
   const viewerRanking: ViewerRanking = viewerEntry || {
     rankingPosition: null,
     userId: user.id,
@@ -94,8 +101,10 @@ export default async function DashboardPage() {
     bio: profile?.bio || "",
     avatarUrl: profile?.avatar_url || null,
     rankingScore: localRanking.rankingScore,
-    top100Score: localRanking.topProblemScore,
-    solvedBonus: localRanking.solveBonus,
+    algorithmScore: localRanking.algorithmScore,
+    sqlScore: localRanking.sqlScore,
+    algorithmSolved: localRanking.algorithm.totalSolved,
+    sqlSolved: localRanking.sql.totalSolved,
     totalSolved: localRanking.totalSolved,
     levelSolved: [
       localRanking.levelSolved[0],
@@ -144,6 +153,7 @@ export default async function DashboardPage() {
               >
                 <div className="flex min-w-0 items-center gap-2">
                   <p className="min-w-0 flex-1 truncate text-sm font-medium">{solve.title || `문제 ${solve.problem_id}`}</p>
+                  <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">{solve.problem_type === "sql" ? "SQL" : "알고리즘"}</Badge>
                   <ProblemDifficultyBadge difficulty={solve.difficulty} />
                   <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
                 </div>

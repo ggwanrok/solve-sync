@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { UserAvatar } from "@/components/user-avatar"
 import { cn } from "@/lib/utils"
+import { problemTypeFromLanguage, type ProblemType } from "@/lib/problem-type"
 import type { StudyHistoryPageData, StudyPeriodProblemRow } from "@/lib/study-room-data"
 import { createClient } from "@/utils/supabase/client"
 
@@ -26,6 +27,7 @@ export type StudyProgressProblem = {
   title: string
   url: string
   language: string | null
+  problemType: ProblemType
   difficulty: number | null
   acceptedAt: string
 }
@@ -111,6 +113,7 @@ function ProblemList({ id, problems, open, loading }: { id: string; problems: St
                     <div className="min-w-0 flex-1">
                       <div className="flex min-w-0 items-center gap-2">
                         <p className="min-w-0 flex-1 truncate text-sm font-medium">{problem.title || `문제 ${problem.problemId}`}</p>
+                        <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">{problem.problemType === "sql" ? "SQL" : "알고리즘"}</Badge>
                         <ProblemDifficultyBadge difficulty={problem.difficulty} />
                       </div>
                       <p className="text-[11px] text-muted-foreground">
@@ -409,6 +412,7 @@ export function StudyProgress({
         title: problem.title,
         url: problem.url,
         language: problem.language,
+        problemType: problemTypeFromLanguage(problem.language),
         difficulty: problem.difficulty,
         acceptedAt: problem.accepted_at,
       }))

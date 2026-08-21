@@ -10,8 +10,10 @@ returns table(
   bio text,
   avatar_url text,
   ranking_score bigint,
-  top_100_score bigint,
-  solved_bonus bigint,
+  algorithm_score bigint,
+  sql_score bigint,
+  algorithm_solved bigint,
+  sql_solved bigint,
   total_solved bigint,
   level_0_solved bigint,
   level_1_solved bigint,
@@ -29,26 +31,30 @@ as $$
   with difficulty_ranked as (
     select
       event.user_id,
+      event.problem_type,
       event.difficulty,
       row_number() over (
-        partition by event.user_id
+        partition by event.user_id, event.problem_type
         order by event.difficulty desc nulls last, event.accepted_at asc, event.id asc
       ) as difficulty_position
     from public.solve_events event
-    where event.problem_type = 'algorithm'
+    where event.problem_type in ('algorithm', 'sql')
   ),
-  aggregates as (
+  type_aggregates as (
     select
       solve.user_id,
+      solve.problem_type,
       count(*)::bigint as total_solved,
-      coalesce(sum(
-        case
-          when solve.difficulty_position <= 100 and solve.difficulty is not null
-            then (solve.difficulty + 1) * 5
-          else 0
-        end
-      ), 0)::bigint as top_100_score,
-      round(200 * (1 - power(0.997::numeric, count(*)::numeric)))::bigint as solved_bonus,
+      (
+        coalesce(sum(
+          case
+            when solve.difficulty_position <= 100 and solve.difficulty is not null
+              then (solve.difficulty + 1) * 5
+            else 0
+          end
+        ), 0)
+        + round(200 * (1 - power(0.997::numeric, count(*)::numeric)))
+      )::bigint as type_score,
       count(*) filter (where solve.difficulty = 0)::bigint as level_0_solved,
       count(*) filter (where solve.difficulty = 1)::bigint as level_1_solved,
       count(*) filter (where solve.difficulty = 2)::bigint as level_2_solved,
@@ -57,7 +63,25 @@ as $$
       count(*) filter (where solve.difficulty = 5)::bigint as level_5_solved,
       count(*) filter (where solve.difficulty is null)::bigint as unknown_solved
     from difficulty_ranked solve
-    group by solve.user_id
+    group by solve.user_id, solve.problem_type
+  ),
+  user_aggregates as (
+    select
+      aggregate.user_id,
+      coalesce(max(aggregate.type_score) filter (where aggregate.problem_type = 'algorithm'), 0)::bigint as algorithm_score,
+      coalesce(max(aggregate.type_score) filter (where aggregate.problem_type = 'sql'), 0)::bigint as sql_score,
+      coalesce(max(aggregate.total_solved) filter (where aggregate.problem_type = 'algorithm'), 0)::bigint as algorithm_solved,
+      coalesce(max(aggregate.total_solved) filter (where aggregate.problem_type = 'sql'), 0)::bigint as sql_solved,
+      coalesce(sum(aggregate.total_solved), 0)::bigint as total_solved,
+      coalesce(sum(aggregate.level_0_solved), 0)::bigint as level_0_solved,
+      coalesce(sum(aggregate.level_1_solved), 0)::bigint as level_1_solved,
+      coalesce(sum(aggregate.level_2_solved), 0)::bigint as level_2_solved,
+      coalesce(sum(aggregate.level_3_solved), 0)::bigint as level_3_solved,
+      coalesce(sum(aggregate.level_4_solved), 0)::bigint as level_4_solved,
+      coalesce(sum(aggregate.level_5_solved), 0)::bigint as level_5_solved,
+      coalesce(sum(aggregate.unknown_solved), 0)::bigint as unknown_solved
+    from type_aggregates aggregate
+    group by aggregate.user_id
   ),
   scores as (
     select
@@ -66,9 +90,14 @@ as $$
       profile.nickname,
       profile.bio,
       profile.avatar_url,
-      coalesce(aggregate.top_100_score, 0)::bigint as top_100_score,
-      coalesce(aggregate.solved_bonus, 0)::bigint as solved_bonus,
-      (coalesce(aggregate.top_100_score, 0) + coalesce(aggregate.solved_bonus, 0))::bigint as ranking_score,
+      (
+        coalesce(aggregate.algorithm_score, 0)
+        + coalesce(aggregate.sql_score, 0) / 2
+      )::bigint as ranking_score,
+      coalesce(aggregate.algorithm_score, 0)::bigint as algorithm_score,
+      coalesce(aggregate.sql_score, 0)::bigint as sql_score,
+      coalesce(aggregate.algorithm_solved, 0)::bigint as algorithm_solved,
+      coalesce(aggregate.sql_solved, 0)::bigint as sql_solved,
       coalesce(aggregate.total_solved, 0)::bigint as total_solved,
       coalesce(aggregate.level_0_solved, 0)::bigint as level_0_solved,
       coalesce(aggregate.level_1_solved, 0)::bigint as level_1_solved,
@@ -78,13 +107,14 @@ as $$
       coalesce(aggregate.level_5_solved, 0)::bigint as level_5_solved,
       coalesce(aggregate.unknown_solved, 0)::bigint as unknown_solved
     from public.profiles profile
-    left join aggregates aggregate on aggregate.user_id = profile.id
+    left join user_aggregates aggregate on aggregate.user_id = profile.id
     where profile.handle is not null
   ),
   ranked as (
     select
       row_number() over (
-        order by score.ranking_score desc, score.top_100_score desc, score.total_solved desc, score.handle asc
+        order by score.ranking_score desc, score.algorithm_score desc, score.sql_score desc,
+          score.total_solved desc, score.handle asc
       ) as ranking_position,
       score.*
     from scores score
@@ -97,8 +127,10 @@ as $$
     ranked.bio,
     ranked.avatar_url,
     ranked.ranking_score,
-    ranked.top_100_score,
-    ranked.solved_bonus,
+    ranked.algorithm_score,
+    ranked.sql_score,
+    ranked.algorithm_solved,
+    ranked.sql_solved,
     ranked.total_solved,
     ranked.level_0_solved,
     ranked.level_1_solved,

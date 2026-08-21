@@ -1,6 +1,6 @@
 # SolveSync
 
-> 푸는 순간 기록되고, 함께라서 꾸준해지는 알고리즘 스터디 플랫폼
+> 푸는 순간 기록되고, 함께라서 꾸준해지는 코딩테스트 스터디 플랫폼
 
 SolveSync(솔브싱크)는 프로그래머스 풀이 기록을 자동으로 모으고, 친구와 스터디 멤버가 함께 목표를 이어갈 수 있도록 만든 서비스입니다.
 
@@ -12,6 +12,7 @@ SolveSync(솔브싱크)는 프로그래머스 풀이 기록을 자동으로 모�
 
 - **풀이 자동 기록** — 프로그래머스에서 정답을 제출하면 문제, 난이도, 언어, 풀이 시각과 소요 시간을 자동으로 저장합니다.
 - **성장 대시보드** — 누적 풀이와 최근 활동, 기여 그래프로 알고리즘 학습 흐름을 확인합니다.
+- **유형별 랭킹** — 알고리즘과 SQL 점수를 각각 산출하고 `알고리즘 점수 + SQL 점수 / 2`로 순위를 계산합니다.
 - **친구 연결** — 고유한 `@핸들`로 사용자를 찾고 친구 요청을 주고받습니다.
 - **스터디룸** — 일간 또는 주간 목표와 최소 문제 난이도를 정하고 멤버별 달성 현황을 함께 확인합니다.
 - **공개·비공개 스터디** — 누구나 참여하는 공개방과 비밀번호로 보호되는 비공개방을 만들 수 있습니다.
@@ -65,6 +66,7 @@ Chrome 웹 스토어에서 [SolveSync 확장 프로그램](https://chromewebstor
 - 목표에 반영할 최소 문제 난이도를 `0단계 이상`부터 `5단계 이상`까지 설정할 수 있습니다.
 - 비공개방은 8자 이상의 비밀번호로 보호됩니다.
 - 스터디 멤버의 목표 달성 현황과 풀이 수를 함께 확인할 수 있습니다.
+- 알고리즘과 SQL 풀이가 모두 스터디 목표에 반영됩니다.
 - 라운지에서 멤버들과 학습 상황이나 문제 풀이 이야기를 나눌 수 있습니다.
 
 ## 동작 방식
@@ -102,7 +104,7 @@ npm install
 
 기존 데이터베이스를 업데이트하는 경우 다중 기기 연결을 위해 먼저 `supabase/extension-multi-device.sql`을 실행합니다. 익스텐션에서 문제 난이도와 알고리즘/SQL 유형을 저장하려면 `supabase/solve-event-difficulty.sql`, `supabase/solve-event-problem-type.sql`을 차례로 실행합니다. 스터디룸 성능 개선을 적용하려면 `supabase/study-room-directory-pagination.sql`과 `supabase/study-room-detail-performance.sql`을 순서대로 실행한 뒤, 난이도 목표 기능을 위한 `supabase/study-difficulty-filter.sql`과 목록 필터를 위한 `supabase/study-directory-filters.sql`을 차례대로 실행합니다. 친구 삭제와 프로필 사진 저장소를 추가하려면 `supabase/profile-management.sql`을 실행하고, 친구 잔디 조회에는 `supabase/friend-contributions.sql`을 실행합니다. 프로필 한 줄 소개와 전체 랭킹 집계를 적용하려면 `supabase/profile-bio.sql`, `supabase/dashboard-ranking.sql` 순서로 실행합니다. 그 밖의 필요한 기능 SQL을 적용한 다음 `supabase/security-hardening.sql`을 마지막에 실행합니다. 스터디 라운지 메시지를 실시간으로 동기화하려면 `supabase/study-comments-realtime.sql`을 실행합니다.
 
-기존 DB에서 SQL 풀이를 잔디에는 포함하되 랭킹과 스터디 집계에서 제외하려면 `supabase/solve-event-problem-type.sql` 적용 후 `supabase/study-difficulty-filter.sql`, `supabase/friend-contributions.sql`, `supabase/dashboard-ranking.sql`을 다시 실행합니다.
+기존 DB에서 SQL 풀이를 스터디 집계에 포함하고 유형별 랭킹 산식을 적용하려면 `supabase/solve-event-problem-type.sql` 적용 후 `supabase/study-difficulty-filter.sql`, `supabase/dashboard-ranking.sql`을 순서대로 다시 실행합니다. 랭킹 산식은 유형별로 난이도 상위 100문제와 풀이 보너스를 독립 계산한 뒤 `알고리즘 점수 + (SQL 점수 / 2)`를 최종 점수로 사용하며, SQL 점수 나눗셈의 소수점은 버립니다.
 
 ### 3. Google 로그인 구성
 

@@ -14,7 +14,6 @@ begin
   select sm.user_id, count(distinct se.problem_id)::bigint
   from study_members sm
   left join solve_events se on se.user_id = sm.user_id
-    and se.problem_type = 'algorithm'
     and se.accepted_at >= case
       when target_period = 'daily' then (date_trunc('day', now() at time zone 'Asia/Seoul') at time zone 'Asia/Seoul')
       else (date_trunc('week', now() at time zone 'Asia/Seoul') at time zone 'Asia/Seoul')

@@ -33,7 +33,6 @@ begin
       event.accepted_at,
       date_trunc(case when target_period = 'daily' then 'day' else 'week' end, event.accepted_at at time zone 'Asia/Seoul') as period_local
     from solve_events event
-    where event.problem_type = 'algorithm'
   )
   select
     event.period_local at time zone 'Asia/Seoul' as period_start,

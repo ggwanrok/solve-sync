@@ -14,8 +14,10 @@ export type DashboardRankingEntry = {
   bio: string
   avatarUrl: string | null
   rankingScore: number
-  top100Score: number
-  solvedBonus: number
+  algorithmScore: number
+  sqlScore: number
+  algorithmSolved: number
+  sqlSolved: number
   totalSolved: number
   levelSolved: [number, number, number, number, number, number]
   unknownSolved: number
@@ -133,6 +135,9 @@ export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
             <div className="min-w-0">
               <p className="text-xs text-muted-foreground">랭킹 점수</p>
               <p className="mt-1 text-3xl font-bold tracking-tight">{formatScore(ranking.rankingScore)}</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                알고리즘 {formatScore(ranking.algorithmScore)} + SQL {formatScore(ranking.sqlScore)} ÷ 2
+              </p>
             </div>
           </div>
         </div>
@@ -141,7 +146,7 @@ export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
           <div className="flex items-end justify-between gap-3">
             <div>
               <p className="flex items-center gap-1.5 text-sm font-medium"><BarChart3 className="size-4 text-primary" />단계별 풀이</p>
-              <p className="mt-1 text-xs text-muted-foreground">난이도별 풀이 비중</p>
+              <p className="mt-1 text-xs text-muted-foreground">알고리즘 {formatScore(ranking.algorithmSolved)}문제 · SQL {formatScore(ranking.sqlSolved)}문제</p>
             </div>
             {ranking.unknownSolved > 0 && <span className="text-[11px] text-muted-foreground">난이도 미확인 {ranking.unknownSolved}문제</span>}
           </div>
