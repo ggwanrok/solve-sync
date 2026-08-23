@@ -241,7 +241,7 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
                 <div className="flex flex-col gap-3 border-t pt-5 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-start gap-2 text-xs text-muted-foreground"><Lightbulb className="mt-0.5 size-3.5 shrink-0 text-primary" /><span>한 문제당 하나의 메모가 유지되며, 다시 저장하면 기존 메모가 수정됩니다.</span></div>
                   <Button type="button" onClick={save} disabled={savingId === selected.id} className="sm:min-w-28">
-                    {savingId === selected.id ? <><Loader2 className="animate-spin" />저장 중</> : dirtyIds.has(selected.id) ? <><NotebookPen />메모 저장</> : <><Check />저장됨</>}
+                    {savingId === selected.id ? <><Loader2 className="animate-spin" />저장 중</> : dirtyIds.has(selected.id) ? <><NotebookPen />저장</> : <><Check />저장</>}
                   </Button>
                 </div>
               </CardContent>
