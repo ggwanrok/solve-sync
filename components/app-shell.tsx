@@ -1,6 +1,6 @@
 "use client"
 
-import { LayoutDashboard, Users, BookOpen, Chrome, Menu, Puzzle, RefreshCw } from "lucide-react"
+import { LayoutDashboard, Users, BookOpen, Chrome, Menu, NotebookPen, Puzzle, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
@@ -19,6 +19,7 @@ const nav = [
   { href: "/", label: "대시보드", icon: LayoutDashboard },
   { href: "/friends", label: "친구", icon: Users },
   { href: "/study", label: "스터디룸", icon: BookOpen },
+  { href: "/notes", label: "문제 메모", icon: NotebookPen },
 ]
 
 function NavLinks({ pendingFriendRequestCount, onNavigate }: { pendingFriendRequestCount: number; onNavigate?: () => void }) {
@@ -104,6 +105,8 @@ export function AppShell({ children, user, contributions }: { children: React.Re
       ? "친구"
       : pathname.startsWith("/study")
         ? "스터디룸"
+        : pathname.startsWith("/notes")
+          ? "문제 메모"
         : pathname === "/programmers"
           ? "연동 안내"
         : null

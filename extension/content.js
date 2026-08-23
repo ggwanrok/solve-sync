@@ -47,6 +47,44 @@ function difficulty() {
     || candidates[0];
   return normalizedDifficulty(metadata?.dataset?.challengeLevel);
 }
+function normalizedBlockText(node) {
+  return (node?.innerText || node?.textContent || '').replace(/\r/g, '').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+function problemContent() {
+  const selectors = [
+    '.challenge-content .guide-section-description',
+    '.challenge-content .guide-section',
+    '.challenge-description',
+    '[class*="problem-description" i]',
+  ];
+  for (const selector of selectors) {
+    const parts = [...document.querySelectorAll(selector)]
+      .map(normalizedBlockText)
+      .filter((value, index, values) => value.length >= 10 && values.indexOf(value) === index);
+    if (parts.length) return parts.join('\n\n').slice(0, 30000);
+  }
+  return null;
+}
+function solutionCode() {
+  const lineSelectors = [
+    '.monaco-editor .view-lines .view-line',
+    '.CodeMirror-code .CodeMirror-line',
+    '.ace_text-layer .ace_line',
+  ];
+  const candidates = lineSelectors.map((selector) => [...document.querySelectorAll(selector)]
+    .map((node) => (node.textContent || '').replace(/\u00a0/g, ' '))
+    .join('\n')
+    .trimEnd())
+    .filter(Boolean);
+
+  const editorTextareas = [...document.querySelectorAll('.monaco-editor textarea, .CodeMirror textarea, [class*="editor" i] textarea')]
+    .map((node) => String(node.value || '').trimEnd())
+    .filter(Boolean);
+  candidates.push(...editorTextareas);
+
+  if (!candidates.length) return null;
+  return candidates.sort((left, right) => right.length - left.length)[0].slice(0, 50000);
+}
 function resultElement() {
   const modalResult = document.querySelector('div.modal-header > h4, #modal-dialog h4, .modal-header h4, [class*="modal" i] h4');
   if (modalResult && SUCCESS_TEXT.test(text(modalResult)) && !FAILURE_TEXT.test(text(modalResult))) return modalResult;
@@ -62,7 +100,7 @@ function eventFor(id) {
   const startedAt = sessionStorage.getItem(startKey) || new Date().toISOString();
   const acceptedAt = new Date().toISOString();
   const selectedLanguage = language();
-  return { startKey, event: { problemId: id, title: title(), url: location.origin + location.pathname, language: selectedLanguage, problemType: problemType(selectedLanguage), difficulty: difficulty(), startedAt, acceptedAt, durationSeconds: Math.max(0, Math.round((Date.parse(acceptedAt) - Date.parse(startedAt)) / 1000)) } };
+  return { startKey, event: { problemId: id, title: title(), url: location.origin + location.pathname, language: selectedLanguage, problemType: problemType(selectedLanguage), difficulty: difficulty(), problemContent: problemContent(), solutionCode: solutionCode(), startedAt, acceptedAt, durationSeconds: Math.max(0, Math.round((Date.parse(acceptedAt) - Date.parse(startedAt)) / 1000)) } };
 }
 async function capture(requireSuccess = true) {
   const id = problemId(); const result = resultElement();

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "SolveSync",
-  "version": "0.6.1",
-  "description": "프로그래머스 정답을 감지해 SolveSync에 기록합니다.",
+  "version": "0.7.0",
+  "description": "프로그래머스 정답과 풀이 코드를 감지해 SolveSync에 기록합니다.",
   "permissions": ["storage", "alarms", "identity"],
   "optional_host_permissions": ["https://solve-sync.vercel.app/*"],
   "background": { "service_worker": "background.js", "type": "module" },

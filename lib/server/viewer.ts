@@ -1,6 +1,7 @@
 import { cache } from "react"
 import { addCalendarDays, dayKey } from "@/lib/calendar"
 import { createClient } from "@/utils/supabase/server"
+import type { ProblemMemoRecord, SolvedProblemNote } from "@/lib/problem-memo"
 
 export const getViewer = cache(async () => {
   const supabase = await createClient()
@@ -74,4 +75,96 @@ export const getViewerSidebarSolves = cache(async () => {
     .order("accepted_at", { ascending: true })
 
   return (data || []) as ViewerSidebarSolve[]
+})
+
+type SolveRow = {
+  id: string
+  problem_id: string
+  title: string
+  url: string
+  language: string | null
+  problem_type: "algorithm" | "sql"
+  difficulty: number | null
+  accepted_at: string
+  solution_code: string | null
+}
+
+type MemoRow = {
+  problem_id: string
+  perceived_difficulty: ProblemMemoRecord["perceivedDifficulty"]
+  algorithm_tags: string
+  core_condition: string
+  solution_approach: string
+  quick_approach: string
+  tips: string
+  mistake_notes: string
+  similar_problems: string
+  updated_at: string
+}
+
+export const getViewerProblemNotes = cache(async () => {
+  const { supabase, user } = await getViewer()
+  if (!user) return [] as SolvedProblemNote[]
+
+  const { data: solves, error: solveError } = await supabase
+    .from("solve_events")
+    .select("id,problem_id,title,url,language,problem_type,difficulty,accepted_at,solution_code")
+    .eq("user_id", user.id)
+    .eq("platform", "programmers")
+    .order("accepted_at", { ascending: false })
+    .limit(500)
+  if (solveError) {
+    console.error("problem memo solves failed", solveError)
+    return [] as SolvedProblemNote[]
+  }
+
+  const solveRows = (solves || []) as SolveRow[]
+  if (!solveRows.length) return [] as SolvedProblemNote[]
+
+  const problemIds = solveRows.map((solve) => solve.problem_id)
+  const [{ data: memos, error: memoError }, { data: problems, error: problemError }] = await Promise.all([
+    supabase
+      .from("problem_memos")
+      .select("problem_id,perceived_difficulty,algorithm_tags,core_condition,solution_approach,quick_approach,tips,mistake_notes,similar_problems,updated_at")
+      .eq("user_id", user.id)
+      .eq("platform", "programmers")
+      .in("problem_id", problemIds),
+    supabase
+      .from("problem_catalog")
+      .select("problem_id,content")
+      .eq("platform", "programmers")
+      .in("problem_id", problemIds),
+  ])
+  if (memoError) console.error("problem memos failed", memoError)
+  if (problemError) console.error("problem catalog failed", problemError)
+
+  const memoByProblem = new Map((memos || []).map((memo) => [(memo as MemoRow).problem_id, memo as MemoRow]))
+  const contentByProblem = new Map((problems || []).map((problem) => [String(problem.problem_id), problem.content as string | null]))
+
+  return solveRows.map((solve) => {
+    const memo = memoByProblem.get(solve.problem_id)
+    return {
+      id: solve.id,
+      problemId: solve.problem_id,
+      title: solve.title || `문제 ${solve.problem_id}`,
+      url: solve.url,
+      language: solve.language,
+      problemType: solve.problem_type,
+      difficulty: solve.difficulty,
+      acceptedAt: solve.accepted_at,
+      solutionCode: solve.solution_code,
+      problemContent: contentByProblem.get(solve.problem_id) || null,
+      memo: memo ? {
+        perceivedDifficulty: memo.perceived_difficulty,
+        algorithmTags: memo.algorithm_tags,
+        coreCondition: memo.core_condition,
+        solutionApproach: memo.solution_approach,
+        quickApproach: memo.quick_approach,
+        tips: memo.tips,
+        mistakeNotes: memo.mistake_notes,
+        similarProblems: memo.similar_problems,
+        updatedAt: memo.updated_at,
+      } : null,
+    }
+  }) satisfies SolvedProblemNote[]
 })

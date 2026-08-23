@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { getViewer } from "@/lib/server/viewer"
 import { createAdminClient } from "@/utils/supabase/admin"
+import { normalizeProblemMemoInput, type ProblemMemoInput } from "@/lib/problem-memo"
 
 async function userClient() {
   const { supabase, user } = await getViewer()
@@ -141,6 +142,44 @@ export async function completeGettingStartedGuide() {
   const { error } = await supabase.from("profiles").update({ guide_completed_at: new Date().toISOString() }).eq("id", user.id)
   if (error) throw new Error(error.message)
   revalidatePath("/")
+}
+
+export async function saveProblemMemo(input: ProblemMemoInput) {
+  const normalized = normalizeProblemMemoInput(input)
+  if (!normalized) return { ok: false as const, message: "저장할 문제 정보가 올바르지 않습니다." }
+
+  const { supabase, user } = await userClient()
+  const { data: solve, error: solveError } = await supabase
+    .from("solve_events")
+    .select("problem_id")
+    .eq("user_id", user.id)
+    .eq("platform", "programmers")
+    .eq("problem_id", normalized.problemId)
+    .maybeSingle()
+  if (solveError || !solve) return { ok: false as const, message: "내가 풀이한 문제에서만 메모를 작성할 수 있습니다." }
+
+  const updatedAt = new Date().toISOString()
+  const { error } = await supabase.from("problem_memos").upsert({
+    user_id: user.id,
+    platform: "programmers",
+    problem_id: normalized.problemId,
+    perceived_difficulty: normalized.perceivedDifficulty,
+    algorithm_tags: normalized.algorithmTags,
+    core_condition: normalized.coreCondition,
+    solution_approach: normalized.solutionApproach,
+    quick_approach: normalized.quickApproach,
+    tips: normalized.tips,
+    mistake_notes: normalized.mistakeNotes,
+    similar_problems: normalized.similarProblems,
+    updated_at: updatedAt,
+  }, { onConflict: "user_id,platform,problem_id" })
+  if (error) {
+    console.error("problem memo save failed", { userId: user.id, problemId: normalized.problemId, code: error.code, message: error.message })
+    return { ok: false as const, message: "메모를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요." }
+  }
+
+  revalidatePath("/notes")
+  return { ok: true as const, updatedAt }
 }
 
 export async function deleteStudyRoom(studyId: string) {

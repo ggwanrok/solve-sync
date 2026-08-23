@@ -5,7 +5,7 @@ const vm = require('node:vm');
 
 const contentScript = readFileSync(new URL('../extension/content.js', `file://${__filename}`), 'utf8');
 
-async function captureEvent(challengeLevel, selectedLanguage = 'JavaScript') {
+async function captureEvent(challengeLevel, selectedLanguage = 'JavaScript', artifacts = {}) {
   const session = new Map();
   let sentMessage = null;
   const difficultyNodes = challengeLevel == null
@@ -34,6 +34,12 @@ async function captureEvent(challengeLevel, selectedLanguage = 'JavaScript') {
       },
       querySelectorAll(selector) {
         if (selector === '[data-challenge-level]') return difficultyNodes;
+        if (selector === '.challenge-content .guide-section-description' && artifacts.problemContent) {
+          return artifacts.problemContent.map((value) => ({ innerText: value, textContent: value }));
+        }
+        if (selector === '.monaco-editor .view-lines .view-line' && artifacts.solutionLines) {
+          return artifacts.solutionLines.map((value) => ({ textContent: value }));
+        }
         return [];
       },
     },
@@ -82,4 +88,15 @@ test('SQL 언어는 SQL 풀이로 전송한다', async () => {
     const event = await captureEvent('2', language);
     assert.equal(event.problemType, 'sql');
   }
+});
+
+test('문제 내용과 풀이 코드를 정답 이벤트에 함께 담는다', async () => {
+  const event = await captureEvent('2', 'JavaScript', {
+    problemContent: ['문제 설명\n전화번호의 일부를 가립니다.', '제한 조건\n길이는 4 이상입니다.'],
+    solutionLines: ['function solution(phoneNumber) {', '  return phoneNumber.slice(-4);', '}'],
+  });
+
+  assert.match(event.problemContent, /전화번호의 일부/);
+  assert.match(event.problemContent, /제한 조건/);
+  assert.equal(event.solutionCode, 'function solution(phoneNumber) {\n  return phoneNumber.slice(-4);\n}');
 });
