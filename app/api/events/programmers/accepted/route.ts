@@ -24,8 +24,6 @@ export async function POST(request: Request) {
 
   const title = String(input.title || "").trim().slice(0, 200)
   const language = input.language == null ? null : String(input.language).trim().slice(0, 50)
-  const problemContent = input.problemContent == null ? null : String(input.problemContent).trim().slice(0, 30_000) || null
-  const solutionCode = input.solutionCode == null ? null : String(input.solutionCode).slice(0, 50_000) || null
   const submittedProblemType = input.problemType == null ? null : String(input.problemType).trim().toLowerCase()
   if (submittedProblemType != null && !isProblemType(submittedProblemType)) {
     return NextResponse.json({ error: "유효한 문제 유형이 필요합니다." }, { status: 400 })
@@ -64,29 +62,6 @@ export async function POST(request: Request) {
   if (connectionError) return NextResponse.json({ error: "연동 정보를 확인하지 못했습니다." }, { status: 500 })
   if (!connection) return NextResponse.json({ error: "유효하지 않은 연동 토큰입니다." }, { status: 401 })
 
-  const problemRecord: {
-    platform: string
-    problem_id: string
-    title: string
-    url: string
-    difficulty: number | null
-    updated_at: string
-    content?: string
-  } = {
-    platform: "programmers",
-    problem_id: String(input.problemId),
-    title,
-    url: String(input.url),
-    difficulty,
-    updated_at: new Date().toISOString(),
-  }
-  if (problemContent) problemRecord.content = problemContent
-
-  const { error: problemError } = await supabase
-    .from("problem_catalog")
-    .upsert(problemRecord, { onConflict: "platform,problem_id", defaultToNull: false })
-  if (problemError) return NextResponse.json({ error: "문제 정보를 저장하지 못했습니다." }, { status: 500 })
-
   const { data: event, error } = await supabase
     .from("solve_events")
     .upsert({
@@ -100,7 +75,6 @@ export async function POST(request: Request) {
       started_at: startedAt?.toISOString() || null,
       duration_seconds: durationSeconds,
       accepted_at: acceptedAt.toISOString(),
-      solution_code: solutionCode,
     }, { onConflict: "user_id,platform,problem_id", ignoreDuplicates: true })
     .select("id")
     .maybeSingle()
@@ -108,12 +82,11 @@ export async function POST(request: Request) {
 
   // 이전에 저장된 동일 문제도 다시 제출되면 새 언어/유형/난이도 메타데이터로 보강합니다.
   if (!event) {
-    const metadata: { problem_type: typeof problemType; language?: string; difficulty?: number; solution_code?: string } = {
+    const metadata: { problem_type: typeof problemType; language?: string; difficulty?: number } = {
       problem_type: problemType,
     }
     if (language) metadata.language = language
     if (difficulty != null) metadata.difficulty = difficulty
-    if (solutionCode) metadata.solution_code = solutionCode
     const { error: updateError } = await supabase
       .from("solve_events")
       .update(metadata)

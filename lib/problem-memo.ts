@@ -39,8 +39,6 @@ export type SolvedProblemNote = {
   problemType: "algorithm" | "sql"
   difficulty: number | null
   acceptedAt: string
-  solutionCode: string | null
-  problemContent: string | null
   memo: ProblemMemoRecord | null
 }
 

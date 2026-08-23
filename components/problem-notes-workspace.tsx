@@ -3,18 +3,14 @@
 import { useMemo, useState } from "react"
 import Link from "next/link"
 import {
-  BookOpenText,
   Check,
   ChevronRight,
-  Code2,
   ExternalLink,
-  FileQuestion,
   Lightbulb,
   Loader2,
   NotebookPen,
   Search,
   Sparkles,
-  TriangleAlert,
 } from "lucide-react"
 import { toast } from "sonner"
 import { saveProblemMemo } from "@/app/actions"
@@ -63,54 +59,6 @@ function dateLabel(value: string) {
     month: "short",
     day: "numeric",
   }).format(new Date(value))
-}
-
-function ProblemReference({ problem }: { problem: SolvedProblemNote }) {
-  return (
-    <div className="grid gap-4 xl:grid-cols-2">
-      <Card className="min-w-0" size="sm">
-        <CardHeader className="border-b">
-          <CardTitle className="flex items-center gap-2">
-            <BookOpenText className="size-4 text-primary" />
-            문제 내용
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {problem.problemContent ? (
-            <div className="max-h-72 overflow-auto whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
-              {problem.problemContent}
-            </div>
-          ) : (
-            <div className="flex min-h-32 flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-muted/15 px-5 text-center">
-              <FileQuestion className="size-6 text-muted-foreground" />
-              <p className="text-sm font-medium">저장된 문제 내용이 없습니다</p>
-              <p className="text-xs leading-relaxed text-muted-foreground">새 버전의 확장 프로그램으로 다음 정답을 기록하면 문제 내용도 함께 보관됩니다.</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className="min-w-0" size="sm">
-        <CardHeader className="border-b">
-          <CardTitle className="flex items-center gap-2">
-            <Code2 className="size-4 text-primary" />
-            내 풀이 코드
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {problem.solutionCode ? (
-            <pre className="max-h-72 overflow-auto rounded-lg bg-muted/55 p-4 text-xs leading-5"><code>{problem.solutionCode}</code></pre>
-          ) : (
-            <div className="flex min-h-32 flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-muted/15 px-5 text-center">
-              <Code2 className="size-6 text-muted-foreground" />
-              <p className="text-sm font-medium">저장된 풀이 코드가 없습니다</p>
-              <p className="text-xs leading-relaxed text-muted-foreground">기존 풀이에는 코드가 없을 수 있어요. 문제를 다시 제출하면 이후 기록부터 함께 표시됩니다.</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  )
 }
 
 export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: SolvedProblemNote[] }) {
@@ -173,9 +121,7 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
     return (
       <div className="mx-auto flex max-w-3xl flex-col gap-6">
         <header>
-          <div className="flex items-center gap-2 text-primary"><NotebookPen className="size-5" /><span className="text-sm font-medium">문제 메모</span></div>
-          <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">내 풀이를 다시 내 것으로</h1>
-          <p className="mt-2 text-sm text-muted-foreground">풀이의 핵심과 실수 패턴을 문제별로 기록하고 복습하세요.</p>
+          <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight sm:text-3xl"><NotebookPen className="size-6 text-primary" />문제 메모</h1>
         </header>
         <Card>
           <CardContent className="flex flex-col items-center gap-4 py-14 text-center">
@@ -191,11 +137,7 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-5">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2 text-primary"><NotebookPen className="size-5" /><span className="text-sm font-medium">문제 메모</span></div>
-          <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">내 풀이를 다시 내 것으로</h1>
-          <p className="mt-2 text-sm text-muted-foreground">핵심 조건과 실수 패턴을 정리해 다음 풀이의 출발점을 만드세요.</p>
-        </div>
+        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight sm:text-3xl"><NotebookPen className="size-6 text-primary" />문제 메모</h1>
         <div className="flex gap-2 text-xs">
           <Badge variant="outline">풀이 {problems.length}개</Badge>
           <Badge variant="secondary">메모 {writtenCount}개</Badge>
@@ -242,7 +184,7 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
 
         {selected && draft && (
           <div className="min-w-0 space-y-5">
-            <section className="rounded-xl border bg-gradient-to-br from-primary/8 via-card to-card p-5 sm:p-6">
+            <section className="rounded-xl border bg-card p-5 sm:p-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
@@ -256,8 +198,6 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
                 <Button render={<a href={selected.url} target="_blank" rel="noreferrer" />} nativeButton={false} variant="outline" className="shrink-0">문제 열기 <ExternalLink /></Button>
               </div>
             </section>
-
-            <ProblemReference problem={selected} />
 
             <Card>
               <CardHeader className="border-b">
@@ -307,12 +247,6 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
               </CardContent>
             </Card>
 
-            {!selected.problemContent && !selected.solutionCode && (
-              <div className="flex items-start gap-3 rounded-xl border border-warning/25 bg-warning/8 p-4 text-xs leading-relaxed text-muted-foreground">
-                <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" />
-                <p>문제 내용과 코드는 새 확장 프로그램에서 수집됩니다. 기존 풀이도 메모 작성에는 제한이 없으며, 해당 문제를 다시 정답 제출하면 참고 정보가 보강됩니다.</p>
-              </div>
-            )}
           </div>
         )}
       </div>

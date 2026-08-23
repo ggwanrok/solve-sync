@@ -1,26 +1,5 @@
 begin;
 
-alter table public.solve_events
-  add column if not exists solution_code text;
-
-alter table public.solve_events drop constraint if exists solve_events_solution_code_length;
-alter table public.solve_events
-  add constraint solve_events_solution_code_length
-  check (solution_code is null or char_length(solution_code) <= 50000);
-
-create table if not exists public.problem_catalog (
-  platform text not null default 'programmers',
-  problem_id text not null,
-  title text not null default '',
-  url text not null,
-  content text,
-  difficulty smallint check (difficulty between 0 and 5),
-  updated_at timestamptz not null default now(),
-  primary key (platform, problem_id),
-  constraint problem_catalog_title_length check (char_length(title) <= 200),
-  constraint problem_catalog_content_length check (content is null or char_length(content) <= 30000)
-);
-
 create table if not exists public.problem_memos (
   user_id uuid not null references public.profiles(id) on delete cascade,
   platform text not null default 'programmers',
@@ -50,12 +29,7 @@ create table if not exists public.problem_memos (
 create index if not exists problem_memos_user_updated_at
   on public.problem_memos(user_id, updated_at desc);
 
-alter table public.problem_catalog enable row level security;
 alter table public.problem_memos enable row level security;
-
-drop policy if exists problem_catalog_read_authenticated on public.problem_catalog;
-create policy problem_catalog_read_authenticated
-  on public.problem_catalog for select to authenticated using (true);
 
 drop policy if exists problem_memos_self on public.problem_memos;
 create policy problem_memos_self
@@ -63,8 +37,6 @@ create policy problem_memos_self
   using (user_id = (select auth.uid()))
   with check (user_id = (select auth.uid()));
 
-revoke all on public.problem_catalog from authenticated;
-grant select on public.problem_catalog to authenticated;
 revoke all on public.problem_memos from authenticated;
 grant select, insert, update, delete on public.problem_memos to authenticated;
 

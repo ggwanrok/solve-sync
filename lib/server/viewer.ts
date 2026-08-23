@@ -86,7 +86,6 @@ type SolveRow = {
   problem_type: "algorithm" | "sql"
   difficulty: number | null
   accepted_at: string
-  solution_code: string | null
 }
 
 type MemoRow = {
@@ -108,7 +107,7 @@ export const getViewerProblemNotes = cache(async () => {
 
   const { data: solves, error: solveError } = await supabase
     .from("solve_events")
-    .select("id,problem_id,title,url,language,problem_type,difficulty,accepted_at,solution_code")
+    .select("id,problem_id,title,url,language,problem_type,difficulty,accepted_at")
     .eq("user_id", user.id)
     .eq("platform", "programmers")
     .order("accepted_at", { ascending: false })
@@ -122,24 +121,15 @@ export const getViewerProblemNotes = cache(async () => {
   if (!solveRows.length) return [] as SolvedProblemNote[]
 
   const problemIds = solveRows.map((solve) => solve.problem_id)
-  const [{ data: memos, error: memoError }, { data: problems, error: problemError }] = await Promise.all([
-    supabase
-      .from("problem_memos")
-      .select("problem_id,perceived_difficulty,algorithm_tags,core_condition,solution_approach,quick_approach,tips,mistake_notes,similar_problems,updated_at")
-      .eq("user_id", user.id)
-      .eq("platform", "programmers")
-      .in("problem_id", problemIds),
-    supabase
-      .from("problem_catalog")
-      .select("problem_id,content")
-      .eq("platform", "programmers")
-      .in("problem_id", problemIds),
-  ])
+  const { data: memos, error: memoError } = await supabase
+    .from("problem_memos")
+    .select("problem_id,perceived_difficulty,algorithm_tags,core_condition,solution_approach,quick_approach,tips,mistake_notes,similar_problems,updated_at")
+    .eq("user_id", user.id)
+    .eq("platform", "programmers")
+    .in("problem_id", problemIds)
   if (memoError) console.error("problem memos failed", memoError)
-  if (problemError) console.error("problem catalog failed", problemError)
 
   const memoByProblem = new Map((memos || []).map((memo) => [(memo as MemoRow).problem_id, memo as MemoRow]))
-  const contentByProblem = new Map((problems || []).map((problem) => [String(problem.problem_id), problem.content as string | null]))
 
   return solveRows.map((solve) => {
     const memo = memoByProblem.get(solve.problem_id)
@@ -152,8 +142,6 @@ export const getViewerProblemNotes = cache(async () => {
       problemType: solve.problem_type,
       difficulty: solve.difficulty,
       acceptedAt: solve.accepted_at,
-      solutionCode: solve.solution_code,
-      problemContent: contentByProblem.get(solve.problem_id) || null,
       memo: memo ? {
         perceivedDifficulty: memo.perceived_difficulty,
         algorithmTags: memo.algorithm_tags,
