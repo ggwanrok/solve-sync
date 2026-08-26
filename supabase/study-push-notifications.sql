@@ -229,7 +229,7 @@ begin
   from public.profiles profile
   where profile.id = current_user_id;
 
-  notification_title := target_room.name || ' · 콕 찌르기';
+  notification_title := target_room.name;
   notification_body := sender_name || '님이 회원님을 콕 찔렀습니다.';
   notification_url := '/study/' || target_study::text;
 
@@ -264,8 +264,8 @@ begin
     candidate.study_id,
     candidate.user_id,
     'goal_reminder',
-    candidate.room_name || ' · 목표 마감까지 6시간',
-    '목표 달성까지 ' || (candidate.goal_count - candidate.solved_count)::text || '문제 남았습니다.',
+    candidate.room_name,
+    '목표 마감까지 6시간 남았어요. 달성까지 ' || (candidate.goal_count - candidate.solved_count)::text || '문제 남았습니다.',
     '/study/' || candidate.study_id::text,
     'goal-reminder:' || candidate.study_id::text || ':' || candidate.user_id::text || ':' || extract(epoch from candidate.period_start)::bigint::text
   from (
