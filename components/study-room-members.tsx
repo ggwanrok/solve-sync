@@ -149,34 +149,38 @@ export function StudyRoomMembers({
                   </div>
                   <p className="truncate text-xs text-muted-foreground">{member.profile?.handle && `@${member.profile.handle}`}</p>
                 </div>
-                <div className="flex shrink-0 flex-col items-end gap-1" aria-live="polite">
-                  {canPoke && (
-                    <Button
-                      type="button"
-                      size="xs"
-                      variant="secondary"
-                      disabled={pending || pokedRecently}
-                      onClick={() => pokeMember(member)}
-                    >
-                      {pending ? <LoaderCircle className="animate-spin" /> : <BellRing />}
-                      {pending ? "전송 중" : pokedRecently ? "콕 완료" : "콕 찌르기"}
-                    </Button>
-                  )}
-                  {status === "self" && <Badge variant="secondary">나</Badge>}
-                  {status === "friend" && <Badge variant="outline" className="gap-1 text-primary"><UserCheck className="size-3" />친구</Badge>}
-                  {status === "outgoing_pending" && <Badge variant="secondary">요청 보냄</Badge>}
-                  {status === "incoming_pending" && (
-                    <Button type="button" size="xs" variant="outline" disabled={pending} onClick={() => acceptFriend(member)}>
-                      {pending ? <LoaderCircle className="animate-spin" /> : <UserCheck />}
-                      {pending ? "수락 중" : "친구 수락"}
-                    </Button>
-                  )}
-                  {status === "none" && (
-                    <Button type="button" size="xs" variant="outline" disabled={pending || !member.profile?.handle} onClick={() => requestFriend(member)}>
-                      {pending ? <LoaderCircle className="animate-spin" /> : <UserPlus />}
-                      {pending ? "요청 중" : "친구 신청"}
-                    </Button>
-                  )}
+                <div className="grid h-13 shrink-0 grid-rows-2 justify-items-end gap-1" aria-live="polite">
+                  <div className="flex h-6 items-center">
+                    {status === "self" && <Badge variant="secondary">나</Badge>}
+                    {status === "friend" && <Badge variant="outline" className="gap-1 text-primary"><UserCheck className="size-3" />친구</Badge>}
+                    {status === "outgoing_pending" && <Badge variant="secondary">요청 보냄</Badge>}
+                    {status === "incoming_pending" && (
+                      <Button type="button" size="xs" variant="outline" disabled={pending} onClick={() => acceptFriend(member)}>
+                        {pending ? <LoaderCircle className="animate-spin" /> : <UserCheck />}
+                        {pending ? "수락 중" : "친구 수락"}
+                      </Button>
+                    )}
+                    {status === "none" && (
+                      <Button type="button" size="xs" variant="outline" disabled={pending || !member.profile?.handle} onClick={() => requestFriend(member)}>
+                        {pending ? <LoaderCircle className="animate-spin" /> : <UserPlus />}
+                        {pending ? "요청 중" : "친구 신청"}
+                      </Button>
+                    )}
+                  </div>
+                  <div className="flex h-6 items-center">
+                    {canPoke && (
+                      <Button
+                        type="button"
+                        size="xs"
+                        variant="secondary"
+                        disabled={pending || pokedRecently}
+                        onClick={() => pokeMember(member)}
+                      >
+                        {pending ? <LoaderCircle className="animate-spin" /> : <BellRing />}
+                        {pending ? "전송 중" : pokedRecently ? "콕 완료" : "콕 찌르기"}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </li>
             )

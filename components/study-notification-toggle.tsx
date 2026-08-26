@@ -80,21 +80,18 @@ export function StudyNotificationToggle({ studyId, initialEnabled }: { studyId: 
   }
 
   return (
-    <div className="flex flex-col items-start gap-1 sm:items-end">
-      <Button
-        type="button"
-        size="sm"
-        variant={enabled ? "secondary" : "outline"}
-        aria-label={enabled ? "이 스터디의 알림 끄기" : "이 스터디의 알림 켜기"}
-        aria-pressed={enabled}
-        onClick={toggleNotifications}
-        disabled={pending}
-        className="gap-1.5"
-      >
-        {pending ? <LoaderCircle className="animate-spin" /> : enabled ? <Bell /> : <BellOff />}
-        {pending ? "설정 중" : enabled ? "스터디 알림 켜짐" : "스터디 알림 켜기"}
-      </Button>
-      <p className="text-[11px] text-muted-foreground">마감 6시간 전 알림 · 콕 찌르기</p>
-    </div>
+    <Button
+      type="button"
+      size="sm"
+      variant={enabled ? "secondary" : "outline"}
+      aria-label={enabled ? "이 스터디의 알림 끄기" : "이 스터디의 알림 켜기"}
+      aria-pressed={enabled}
+      onClick={toggleNotifications}
+      disabled={pending}
+      className="gap-1.5"
+    >
+      {pending ? <LoaderCircle className="animate-spin" /> : enabled ? <Bell /> : <BellOff />}
+      {pending ? "설정 중" : enabled ? "스터디 알림 켜짐" : "스터디 알림 켜기"}
+    </Button>
   )
 }
