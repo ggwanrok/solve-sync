@@ -13,6 +13,27 @@ function applicationServerKey(value: string) {
   return Uint8Array.from(atob(base64), (character) => character.charCodeAt(0))
 }
 
+function usesApplicationServerKey(subscription: PushSubscription, expectedKey: Uint8Array<ArrayBuffer>) {
+  const currentKey = subscription.options.applicationServerKey
+  if (!currentKey) return true
+
+  const currentBytes = new Uint8Array(currentKey)
+  return currentBytes.length === expectedKey.length
+    && currentBytes.every((value, index) => value === expectedKey[index])
+}
+
+function pushSetupError(error: unknown) {
+  if (error instanceof DOMException) {
+    if (error.name === "NotAllowedError") {
+      return new Error("브라우저 설정에서 이 사이트의 알림을 허용해 주세요.")
+    }
+    if (error.name === "InvalidStateError" || error.name === "AbortError") {
+      return new Error("브라우저 알림을 준비하지 못했습니다. 잠시 후 다시 시도해 주세요.")
+    }
+  }
+  return error instanceof Error ? error : new Error("브라우저 알림을 연결하지 못했습니다.")
+}
+
 async function errorMessage(response: Response, fallback: string) {
   try {
     const result = await response.json() as { error?: string }
@@ -41,12 +62,28 @@ export function StudyNotificationToggle({ studyId, initialEnabled }: { studyId: 
       throw new Error("브라우저 알림 권한을 허용해야 스터디 알림을 켤 수 있습니다.")
     }
 
-    const registration = await navigator.serviceWorker.register("/push-sw.js", { scope: "/" })
-    const existingSubscription = await registration.pushManager.getSubscription()
-    const subscription = existingSubscription || await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: applicationServerKey(publicKey),
-    })
+    const expectedKey = applicationServerKey(publicKey)
+    let subscription: PushSubscription
+    try {
+      await navigator.serviceWorker.register("/push-sw.js", { scope: "/" })
+      // A newly registered worker is not always active yet. Subscribing before
+      // `ready` resolves makes the first attempt fail with InvalidStateError.
+      const registration = await navigator.serviceWorker.ready
+      const existingSubscription = await registration.pushManager.getSubscription()
+
+      if (existingSubscription && !usesApplicationServerKey(existingSubscription, expectedKey)) {
+        await existingSubscription.unsubscribe()
+      }
+
+      subscription = existingSubscription && usesApplicationServerKey(existingSubscription, expectedKey)
+        ? existingSubscription
+        : await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: expectedKey,
+          })
+    } catch (error) {
+      throw pushSetupError(error)
+    }
 
     const response = await authenticatedFetch("/api/push/subscriptions", {
       method: "POST",

@@ -5,6 +5,7 @@ export type WebPushPayload = {
   body: string
   url: string
   tag: string
+  urgency?: "very-low" | "low" | "normal" | "high"
 }
 
 export type StoredPushSubscription = {
@@ -39,7 +40,7 @@ export async function sendWebPush(subscription: StoredPushSubscription, payload:
     JSON.stringify(payload),
     {
       TTL: 6 * 60 * 60,
-      urgency: "normal",
+      urgency: payload.urgency || "normal",
       vapidDetails: config,
     },
   )

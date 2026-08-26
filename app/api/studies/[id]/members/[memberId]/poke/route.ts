@@ -43,6 +43,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       body: notification.body,
       url: notification.url,
       tag: `poke-${notification.id}`,
+      urgency: "high",
     })
     if (delivery.sentCount === 0) {
       await admin.from("study_notifications").delete().eq("id", notification.id)
