@@ -64,7 +64,7 @@ export function ContributionGraph({ data, compact = false }: { data: Contributio
   return (
     <TooltipProvider delay={100}>
       <div className={cn("w-full", compact ? "overflow-hidden" : "overflow-x-auto")}>
-        <div className={cn("flex min-w-max flex-col gap-2", compact && "items-center")}>
+        <div className={cn("flex w-max flex-col gap-2", compact && "mx-auto items-center")}>
           {!compact && <div className="flex gap-[3px] text-xs text-muted-foreground">
             <span aria-hidden className="mr-1 w-5 shrink-0" />
             {weeks.map((week, weekIndex) => (
@@ -107,9 +107,36 @@ export function ContributionGraph({ data, compact = false }: { data: Contributio
                         />
                       }
                     />
-                    <TooltipContent side="top" className="max-w-72 text-xs">
-                      <p className="font-medium">{displayDate(day.date)}</p>
-                      {day.problems.length ? <ul className="mt-1.5 space-y-1">{day.problems.map((problem, index) => <li key={`${problem.title}-${index}`} className="flex items-center gap-2"><span className="max-w-40 truncate">{problem.title}</span><ProblemDifficultyBadge difficulty={problem.difficulty} className="text-[10px]" />{problem.language && <span className="text-muted-foreground">{problem.language}</span>}</li>)}</ul> : <p className="mt-1 text-muted-foreground">푼 문제 없음</p>}
+                    <TooltipContent
+                      side="top"
+                      sideOffset={8}
+                      className="block w-72 max-w-[calc(100vw-2rem)] overflow-hidden p-0 text-xs"
+                    >
+                      <div className="flex items-center justify-between gap-3 border-b bg-muted/40 px-3 py-2">
+                        <time dateTime={day.date} className="whitespace-nowrap font-semibold">
+                          {displayDate(day.date)}
+                        </time>
+                        <span className="shrink-0 text-[11px] text-muted-foreground">
+                          {day.problems.length ? `${day.problems.length}문제` : "활동 없음"}
+                        </span>
+                      </div>
+                      {day.problems.length ? (
+                        <ul className="max-h-56 space-y-1 overflow-y-auto p-1.5">
+                          {day.problems.map((problem, index) => (
+                            <li key={`${problem.title}-${index}`} className="rounded-md px-2 py-1.5 hover:bg-muted/50">
+                              <p className="break-words font-medium leading-4">{problem.title}</p>
+                              <div className="mt-1 flex min-w-0 items-center gap-1.5">
+                                <ProblemDifficultyBadge difficulty={problem.difficulty} className="text-[10px]" />
+                                {problem.language && (
+                                  <span className="truncate text-[11px] text-muted-foreground">{problem.language}</span>
+                                )}
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="px-3 py-2.5 text-muted-foreground">이날 푼 문제가 없어요.</p>
+                      )}
                     </TooltipContent>
                   </Tooltip>
                 })}
