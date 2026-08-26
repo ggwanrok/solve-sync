@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Crown, LoaderCircle, UserCheck, UserPlus } from "lucide-react"
+import { BellRing, Crown, LoaderCircle, UserCheck, UserPlus } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { respondFriendRequest, sendFriendRequest } from "@/app/actions"
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { UserAvatar } from "@/components/user-avatar"
+import { authenticatedFetch } from "@/lib/authenticated-fetch"
 import type { StudyRoomProfile } from "@/lib/study-room-data"
 
 export type StudyMemberFriendStatus = "self" | "friend" | "none" | "outgoing_pending" | "incoming_pending"
@@ -19,6 +20,9 @@ export type StudyRoomMemberWithFriendStatus = {
   profile: StudyRoomProfile | null
   friendStatus: StudyMemberFriendStatus
   friendRequestId?: string
+  notificationsEnabled: boolean
+  solvedCount: number
+  lastPokedAt: string | null
 }
 
 function memberName(profile: StudyRoomProfile | null) {
@@ -28,15 +32,20 @@ function memberName(profile: StudyRoomProfile | null) {
 export function StudyRoomMembers({
   studyId,
   members,
+  goalCount,
+  currentUserNotificationsEnabled,
 }: {
   studyId: string
   members: StudyRoomMemberWithFriendStatus[]
+  goalCount: number
+  currentUserNotificationsEnabled: boolean
 }) {
   const router = useRouter()
   const [statuses, setStatuses] = useState<Record<string, StudyMemberFriendStatus>>(
     Object.fromEntries(members.map((member) => [member.userId, member.friendStatus])),
   )
   const [pendingMemberId, setPendingMemberId] = useState<string | null>(null)
+  const [pokedMemberIds, setPokedMemberIds] = useState<Set<string>>(new Set())
 
   async function requestFriend(member: StudyRoomMemberWithFriendStatus) {
     if (!member.profile?.handle) return
@@ -92,6 +101,22 @@ export function StudyRoomMembers({
     }
   }
 
+  async function pokeMember(member: StudyRoomMemberWithFriendStatus) {
+    setPendingMemberId(member.userId)
+    try {
+      const response = await authenticatedFetch(`/api/studies/${studyId}/members/${member.userId}/poke`, { method: "POST" })
+      const result = await response.json() as { error?: string }
+      if (!response.ok) return toast.error(result.error || "콕 찌르기 알림을 보내지 못했습니다.")
+
+      setPokedMemberIds((current) => new Set(current).add(member.userId))
+      toast.success(`${memberName(member.profile)}님을 콕 찔렀어요.`)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "콕 찌르기 알림을 보내지 못했습니다.")
+    } finally {
+      setPendingMemberId(null)
+    }
+  }
+
   return (
     <Card className="h-fit">
       <CardHeader>
@@ -104,6 +129,11 @@ export function StudyRoomMembers({
             const name = memberName(member.profile)
             const status = statuses[member.userId]
             const pending = pendingMemberId === member.userId
+            const pokedRecently = pokedMemberIds.has(member.userId) || member.lastPokedAt != null
+            const canPoke = status !== "self"
+              && currentUserNotificationsEnabled
+              && member.notificationsEnabled
+              && member.solvedCount < goalCount
 
             return (
               <li key={member.userId} className="flex items-center gap-3 px-4 py-3">
@@ -119,7 +149,19 @@ export function StudyRoomMembers({
                   </div>
                   <p className="truncate text-xs text-muted-foreground">{member.profile?.handle && `@${member.profile.handle}`}</p>
                 </div>
-                <div className="shrink-0" aria-live="polite">
+                <div className="flex shrink-0 flex-col items-end gap-1" aria-live="polite">
+                  {canPoke && (
+                    <Button
+                      type="button"
+                      size="xs"
+                      variant="secondary"
+                      disabled={pending || pokedRecently}
+                      onClick={() => pokeMember(member)}
+                    >
+                      {pending ? <LoaderCircle className="animate-spin" /> : <BellRing />}
+                      {pending ? "전송 중" : pokedRecently ? "콕 완료" : "콕 찌르기"}
+                    </Button>
+                  )}
                   {status === "self" && <Badge variant="secondary">나</Badge>}
                   {status === "friend" && <Badge variant="outline" className="gap-1 text-primary"><UserCheck className="size-3" />친구</Badge>}
                   {status === "outgoing_pending" && <Badge variant="secondary">요청 보냄</Badge>}

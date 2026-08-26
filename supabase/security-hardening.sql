@@ -10,8 +10,13 @@ grant select(id, owner_id, name, description, emoji, weekly_goal, max_members, i
   on public.study_rooms to authenticated;
 
 revoke all on public.study_members from authenticated;
-grant select on public.study_members to authenticated;
+grant select(study_id, user_id, role, joined_at) on public.study_members to authenticated;
 revoke all on public.study_membership_history from anon, authenticated;
+
+-- 푸시 구독과 발송 기록은 서버 전용이며 스터디별 동의 여부는 RPC로만 변경한다.
+revoke all on public.push_subscriptions from public, anon, authenticated;
+revoke all on public.study_notifications from public, anon, authenticated;
+grant all on public.push_subscriptions, public.study_notifications to service_role;
 
 -- 기기 토큰은 승인 코드 교환 API만 발급하고 사용자는 자신의 연결 조회/해제만 허용한다.
 revoke all on public.extension_connections from authenticated;
@@ -42,6 +47,10 @@ revoke execute on function public.study_member_goal_progress(uuid) from public, 
 revoke execute on function public.study_goal_history(uuid) from public, anon;
 revoke execute on function public.study_member_solve_events(uuid) from public, anon;
 revoke execute on function public.study_room_directory(text, text, integer, integer, integer[], boolean) from public, anon;
+revoke execute on function public.set_study_notifications(uuid, boolean) from public, anon;
+revoke execute on function public.study_room_notification_settings(uuid) from public, anon;
+revoke execute on function public.create_study_poke(uuid, uuid) from public, anon;
+revoke execute on function public.claim_study_goal_reminders() from public, anon, authenticated;
 
 -- 풀이 기록은 Vercel 서버의 Secret Key 경로만 사용한다.
 revoke execute on function public.record_programmers_event(text, text, text, text, text, timestamptz, integer, timestamptz)

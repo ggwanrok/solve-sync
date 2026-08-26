@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   description: "Solve-Sync 서비스 소개와 개인정보의 수집, 이용, 보관 및 보호 방법을 안내합니다.",
 }
 
-const effectiveDate = "2026년 8월 19일"
+const effectiveDate = "2026년 8월 26일"
 const contactEmail = process.env.PRIVACY_CONTACT_EMAIL
 
 const sections = [
@@ -152,7 +152,7 @@ export default function AboutPage() {
                 <li>Google OAuth를 통한 회원 식별, 로그인 및 인증 세션 관리</li>
                 <li>고유 닉네임, 프로필과 대시보드 제공</li>
                 <li>프로그래머스 풀이 기록 수집 및 학습 통계 제공</li>
-                <li>친구 요청, 스터디룸 참여, 목표 진행도 및 댓글 기능 제공</li>
+                <li>친구 요청, 스터디룸 참여, 목표 진행도, 댓글 및 선택형 푸시 알림 기능 제공</li>
                 <li>부정 이용 방지, 보안 유지, 오류 분석과 서비스 개선</li>
               </ul>
             </PolicySection>
@@ -165,6 +165,7 @@ export default function AboutPage() {
                 <DataItem title="회원·프로필" items="Google 계정 식별자, 이메일, 이름, 프로필 이미지, 고유 닉네임, 한 줄 소개" purpose="회원 식별, 로그인, 서비스 내 프로필 표시" />
                 <DataItem title="풀이 연동" items="문제 ID·제목·URL, 언어, 풀이 시작·정답 시각, 소요 시간, 기기 이름, 기기별 연동 토큰의 해시값과 마지막 통신 시각" purpose="풀이 자동 기록, 다중 기기 연결, 대시보드와 스터디 진행도 제공" />
                 <DataItem title="친구·스터디" items="친구 요청 및 관계, 스터디 가입·탈퇴 이력, 방 정보·목표·접근 확인, 작성한 댓글" purpose="친구 및 스터디 협업 기능 제공" />
+                <DataItem title="푸시 알림" items="스터디별 알림 동의, 브라우저 푸시 구독 주소와 암호화 키, 브라우저 정보, 목표 알림 및 콕 찌르기 발송 기록" purpose="목표 마감 및 스터디 구성원 독려 알림 전달, 중복·과도한 발송 방지" />
                 <DataItem title="자동 생성 정보" items="인증 쿠키, IP 주소, 접속 일시, 브라우저·기기 정보, 이용 및 오류 기록" purpose="세션 유지, 보안, 장애 대응 및 서비스 개선" />
               </div>
               <p>회원 정보는 Google 로그인과 온보딩 과정에서, 풀이 정보는 이용자가 연결한 Chrome 확장 프로그램에서, 활동 정보는 서비스 기능을 이용하는 과정에서 수집됩니다.</p>
@@ -175,6 +176,7 @@ export default function AboutPage() {
               <ul className="list-disc space-y-2 pl-5 marker:text-primary">
                 <li><strong className="font-medium text-foreground">회원·풀이·친구·스터디 정보:</strong> 회원 탈퇴 시까지</li>
                 <li><strong className="font-medium text-foreground">연동 정보:</strong> 연동 해제, 토큰 재발급 또는 회원 탈퇴 시까지</li>
+                <li><strong className="font-medium text-foreground">푸시 구독·발송 기록:</strong> 구독 만료·알림 해제 또는 회원 탈퇴 시까지. 만료된 구독은 발송 과정에서 확인되는 즉시 삭제</li>
                 <li><strong className="font-medium text-foreground">인증 쿠키:</strong> 로그아웃 또는 세션 만료 시까지</li>
                 <li><strong className="font-medium text-foreground">접속·오류 기록:</strong> 보안과 장애 대응에 필요한 기간 또는 관계 법령과 인프라 제공자의 정책에 따른 기간</li>
               </ul>
@@ -195,6 +197,7 @@ export default function AboutPage() {
                   </a>
                 ))}
               </div>
+              <p>웹 푸시 알림을 허용하면 이용 중인 브라우저 제공자의 푸시 전송 서비스가 구독 주소와 알림 전달 정보를 처리할 수 있으며, 해당 처리는 브라우저 및 운영체제 제공자의 정책을 따릅니다.</p>
               <p>법령에 근거가 있거나 이용자가 별도로 동의한 경우에는 고지된 범위 안에서 개인정보를 제공할 수 있습니다.</p>
             </PolicySection>
 
