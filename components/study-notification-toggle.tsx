@@ -2,7 +2,7 @@
 
 import { Bell, BellOff, LoaderCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { authenticatedFetch } from "@/lib/authenticated-fetch"
@@ -43,60 +43,93 @@ async function errorMessage(response: Response, fallback: string) {
   }
 }
 
+async function connectThisBrowser() {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+    throw new Error("이 브라우저는 웹 푸시 알림을 지원하지 않습니다.")
+  }
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+  if (!publicKey) throw new Error("웹 푸시 공개 키가 설정되지 않았습니다.")
+
+  const permission = Notification.permission === "granted"
+    ? "granted"
+    : await Notification.requestPermission()
+  if (permission !== "granted") {
+    throw new Error("브라우저 알림 권한을 허용해야 스터디 알림을 켤 수 있습니다.")
+  }
+
+  const expectedKey = applicationServerKey(publicKey)
+  let subscription: PushSubscription
+  try {
+    await navigator.serviceWorker.register("/push-sw.js", { scope: "/" })
+    // A newly registered worker is not always active yet. Subscribing before
+    // `ready` resolves makes the first attempt fail with InvalidStateError.
+    const registration = await navigator.serviceWorker.ready
+    const existingSubscription = await registration.pushManager.getSubscription()
+
+    if (existingSubscription && !usesApplicationServerKey(existingSubscription, expectedKey)) {
+      await existingSubscription.unsubscribe()
+    }
+
+    subscription = existingSubscription && usesApplicationServerKey(existingSubscription, expectedKey)
+      ? existingSubscription
+      : await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: expectedKey,
+        })
+  } catch (error) {
+    throw pushSetupError(error)
+  }
+
+  const response = await authenticatedFetch("/api/push/subscriptions", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(subscription.toJSON()),
+  })
+  if (!response.ok) throw new Error(await errorMessage(response, "브라우저 알림을 연결하지 못했습니다."))
+}
+
+type BrowserConnection = "checking" | "connected" | "disconnected"
+
 export function StudyNotificationToggle({ studyId, initialEnabled }: { studyId: string; initialEnabled: boolean }) {
   const router = useRouter()
   const [enabled, setEnabled] = useState(initialEnabled)
   const [pending, setPending] = useState(false)
+  const [browserConnection, setBrowserConnection] = useState<BrowserConnection>(initialEnabled ? "checking" : "disconnected")
 
-  async function connectThisBrowser() {
-    if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
-      throw new Error("이 브라우저는 웹 푸시 알림을 지원하지 않습니다.")
-    }
-    const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-    if (!publicKey) throw new Error("웹 푸시 공개 키가 설정되지 않았습니다.")
-
-    const permission = Notification.permission === "granted"
-      ? "granted"
-      : await Notification.requestPermission()
-    if (permission !== "granted") {
-      throw new Error("브라우저 알림 권한을 허용해야 스터디 알림을 켤 수 있습니다.")
-    }
-
-    const expectedKey = applicationServerKey(publicKey)
-    let subscription: PushSubscription
-    try {
-      await navigator.serviceWorker.register("/push-sw.js", { scope: "/" })
-      // A newly registered worker is not always active yet. Subscribing before
-      // `ready` resolves makes the first attempt fail with InvalidStateError.
-      const registration = await navigator.serviceWorker.ready
-      const existingSubscription = await registration.pushManager.getSubscription()
-
-      if (existingSubscription && !usesApplicationServerKey(existingSubscription, expectedKey)) {
-        await existingSubscription.unsubscribe()
+  useEffect(() => {
+    let cancelled = false
+    const synchronizeBrowser = async () => {
+      if (!initialEnabled || !("Notification" in window) || Notification.permission !== "granted") {
+        if (!cancelled) setBrowserConnection("disconnected")
+        return
       }
 
-      subscription = existingSubscription && usesApplicationServerKey(existingSubscription, expectedKey)
-        ? existingSubscription
-        : await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: expectedKey,
-          })
-    } catch (error) {
-      throw pushSetupError(error)
+      try {
+        await connectThisBrowser()
+        if (!cancelled) setBrowserConnection("connected")
+      } catch {
+        if (!cancelled) setBrowserConnection("disconnected")
+      }
     }
+    void synchronizeBrowser()
 
-    const response = await authenticatedFetch("/api/push/subscriptions", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(subscription.toJSON()),
-    })
-    if (!response.ok) throw new Error(await errorMessage(response, "브라우저 알림을 연결하지 못했습니다."))
-  }
+    return () => {
+      cancelled = true
+    }
+  }, [initialEnabled])
 
   async function toggleNotifications() {
+    const connectsEnabledStudy = enabled && browserConnection !== "connected"
     const nextEnabled = !enabled
     setPending(true)
     try {
+      if (connectsEnabledStudy) {
+        await connectThisBrowser()
+        setBrowserConnection("connected")
+        toast.success("이 브라우저에 스터디 알림을 연결했습니다.")
+        return
+      }
+
       if (nextEnabled) await connectThisBrowser()
 
       const response = await authenticatedFetch(`/api/studies/${studyId}/notifications`, {
@@ -107,7 +140,8 @@ export function StudyNotificationToggle({ studyId, initialEnabled }: { studyId: 
       if (!response.ok) throw new Error(await errorMessage(response, "스터디 알림 설정을 변경하지 못했습니다."))
 
       setEnabled(nextEnabled)
-      toast.success(nextEnabled ? "이 스터디의 알림을 켰습니다." : "이 스터디의 알림을 껐습니다.")
+      setBrowserConnection(nextEnabled ? "connected" : "disconnected")
+      toast.success(nextEnabled ? "이 스터디의 알림을 켰습니다." : "이 스터디의 알림을 꺐습니다.")
       router.refresh()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "스터디 알림 설정을 변경하지 못했습니다.")
@@ -116,19 +150,31 @@ export function StudyNotificationToggle({ studyId, initialEnabled }: { studyId: 
     }
   }
 
+  const needsBrowserConnection = enabled && browserConnection === "disconnected"
+  const checkingConnection = enabled && browserConnection === "checking"
+  const buttonLabel = pending
+    ? "설정 중"
+    : checkingConnection
+      ? "연결 확인 중"
+      : needsBrowserConnection
+        ? "이 브라우저 연결"
+        : enabled
+          ? "스터디 알림 켜짐"
+          : "스터디 알림 켜기"
+
   return (
     <Button
       type="button"
       size="sm"
-      variant={enabled ? "secondary" : "outline"}
-      aria-label={enabled ? "이 스터디의 알림 끄기" : "이 스터디의 알림 켜기"}
-      aria-pressed={enabled}
+      variant={enabled && !needsBrowserConnection ? "secondary" : "outline"}
+      aria-label={needsBrowserConnection ? "이 브라우저에 스터디 알림 연결하기" : enabled ? "이 스터디의 알림 끄기" : "이 스터디의 알림 켜기"}
+      aria-pressed={enabled && browserConnection === "connected"}
       onClick={toggleNotifications}
-      disabled={pending}
+      disabled={pending || checkingConnection}
       className="gap-1.5"
     >
-      {pending ? <LoaderCircle className="animate-spin" /> : enabled ? <Bell /> : <BellOff />}
-      {pending ? "설정 중" : enabled ? "스터디 알림 켜짐" : "스터디 알림 켜기"}
+      {pending || checkingConnection ? <LoaderCircle className="animate-spin" /> : enabled && !needsBrowserConnection ? <Bell /> : <BellOff />}
+      {buttonLabel}
     </Button>
   )
 }
