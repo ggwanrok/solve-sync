@@ -138,10 +138,11 @@ VAPID_PRIVATE_KEY=
 VAPID_SUBJECT=mailto:privacy@example.com
 CRON_SECRET=
 SOLVESYNC_EXTENSION_IDS=
+NEXT_PUBLIC_SOLVESYNC_EXTENSION_ID=dgghaooaokpafdhjgieajelgbilacmkd
 PRIVACY_CONTACT_EMAIL=privacy@example.com
 ```
 
-`NEXT_PUBLIC_*` 변수는 브라우저에서 사용하는 공개 설정입니다. `SUPABASE_SECRET_KEY`, `VAPID_PRIVATE_KEY`, `CRON_SECRET`, 데이터베이스 비밀번호와 Google Client Secret에는 절대 `NEXT_PUBLIC_` 접두사를 붙이거나 Git에 커밋하지 마세요. Chrome Web Store에 배포한 뒤에는 `SOLVESYNC_EXTENSION_IDS`에 확정된 확장 프로그램 ID를 입력합니다. 여러 ID는 쉼표로 구분하며, 압축해제 설치로 개발하는 동안에는 비워둘 수 있습니다. `PRIVACY_CONTACT_EMAIL`은 `/about` 개인정보 처리방침에 표시할 운영자 문의 주소입니다.
+`NEXT_PUBLIC_*` 변수는 브라우저에서 사용하는 공개 설정입니다. `SUPABASE_SECRET_KEY`, `VAPID_PRIVATE_KEY`, `CRON_SECRET`, 데이터베이스 비밀번호와 Google Client Secret에는 절대 `NEXT_PUBLIC_` 접두사를 붙이거나 Git에 커밋하지 마세요. Chrome Web Store에 배포한 뒤에는 `SOLVESYNC_EXTENSION_IDS`에 확정된 확장 프로그램 ID를 입력합니다. 여러 ID는 쉼표로 구분하며, 압축해제 설치로 개발하는 동안에는 비워둘 수 있습니다. `NEXT_PUBLIC_SOLVESYNC_EXTENSION_ID`에는 웹 앱이 현재 브라우저의 연동 상태를 확인할 배포 확장 프로그램 ID를 입력합니다. `PRIVACY_CONTACT_EMAIL`은 `/about` 개인정보 처리방침에 표시할 운영자 문의 주소입니다.
 
 웹 푸시용 VAPID 키는 최초 한 번 생성하고 로컬과 Vercel 배포 환경에 같은 값을 등록합니다. 키를 바꾸면 기존 브라우저 구독을 다시 받아야 합니다.
 

@@ -1,11 +1,14 @@
 {
   "manifest_version": 3,
   "name": "SolveSync",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "프로그래머스 정답을 감지해 SolveSync에 기록합니다.",
   "permissions": ["storage", "alarms", "identity"],
   "optional_host_permissions": ["https://solve-sync.vercel.app/*"],
   "background": { "service_worker": "background.js", "type": "module" },
+  "externally_connectable": {
+    "matches": ["https://solve-sync.vercel.app/*"]
+  },
   "content_scripts": [{ "matches": ["https://programmers.co.kr/*", "https://school.programmers.co.kr/*"], "js": ["content.js"], "run_at": "document_idle" }],
   "action": { "default_title": "SolveSync", "default_popup": "popup.html" },
   "options_page": "options.html"

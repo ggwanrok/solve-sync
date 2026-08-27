@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation"
 import { useCallback, useRef, useState } from "react"
 import { toast } from "sonner"
 import { authenticatedFetch } from "@/lib/authenticated-fetch"
+import { extensionBrowserStatusCopy, type ExtensionBrowserStatus } from "@/components/extension-browser-connection"
 import { ProfileImageCropDialog } from "@/components/profile-image-crop-dialog"
 import { UserAvatar } from "@/components/user-avatar"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -22,11 +24,11 @@ export type ExtensionDevice = {
 }
 
 export type AccountUser = {
+  id: string
   name: string
   handle: string
   bio: string
   avatarUrl: string | null
-  extensionConnected?: boolean
   extensionDevices?: ExtensionDevice[]
 }
 
@@ -34,7 +36,7 @@ function formatDate(value: string) {
   return new Date(value).toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" })
 }
 
-export function AccountDialog({ user }: { user: AccountUser }) {
+export function AccountDialog({ user, browserExtensionStatus }: { user: AccountUser; browserExtensionStatus: ExtensionBrowserStatus }) {
   const router = useRouter()
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const [devices, setDevices] = useState(user.extensionDevices || [])
@@ -47,6 +49,7 @@ export function AccountDialog({ user }: { user: AccountUser }) {
   const [revokingDevice, setRevokingDevice] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const browserStatusCopy = extensionBrowserStatusCopy[browserExtensionStatus]
 
   const saveProfile = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -230,6 +233,16 @@ export function AccountDialog({ user }: { user: AccountUser }) {
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">각 PC의 SolveSync 확장 프로그램에서 ‘계정 연결’을 누르면 이 목록에 추가됩니다.</p>
             </div>
             <MonitorSmartphone className="size-5 shrink-0 text-muted-foreground" />
+          </div>
+
+          <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border bg-muted/20 p-3">
+            <div className="min-w-0">
+              <p className="text-sm font-medium">현재 브라우저</p>
+              <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">{browserStatusCopy.description}</p>
+            </div>
+            <Badge variant={browserExtensionStatus === "connected" ? "default" : "secondary"} className="shrink-0">
+              {browserStatusCopy.label}
+            </Badge>
           </div>
 
           {devices.length ? (

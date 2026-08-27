@@ -1,6 +1,6 @@
 "use client"
 
-import { LayoutDashboard, Users, BookOpen, Chrome, Menu, NotebookPen, Puzzle, RefreshCw } from "lucide-react"
+import { LayoutDashboard, Users, BookOpen, Chrome, Menu, NotebookPen, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useState, useTransition } from "react"
@@ -8,6 +8,7 @@ import { Logo } from "@/components/logo"
 import { ContributionGraph, type ContributionDay } from "@/components/contribution-graph"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { AccountDialog, type AccountUser } from "@/components/account-dialog"
+import { ExtensionBrowserBadge, useExtensionBrowserStatus } from "@/components/extension-browser-connection"
 import { UserAvatar } from "@/components/user-avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -99,6 +100,8 @@ export function AppShell({ children, user, contributions }: { children: React.Re
   const [refreshPending, startRefreshTransition] = useTransition()
   const pathname = usePathname()
   const router = useRouter()
+  const extensionConnectionVersion = (user.extensionDevices || []).map((device) => device.installationId).join(",")
+  const browserExtensionStatus = useExtensionBrowserStatus(user.id, extensionConnectionVersion)
   const refreshLabel = pathname === "/"
     ? "대시보드"
     : pathname === "/friends"
@@ -166,12 +169,9 @@ export function AppShell({ children, user, contributions }: { children: React.Re
                 <span className="hidden sm:inline">새로고침</span>
               </Button>
             )}
-            <Badge variant="outline" className="hidden gap-1.5 md:flex">
-              <Puzzle className={cn("size-3.5", user.extensionConnected ? "text-primary" : "text-muted-foreground")} />
-              프로그래머스 {user.extensionConnected ? "연동" : "미연동"}
-            </Badge>
+            <ExtensionBrowserBadge status={browserExtensionStatus} className="hidden md:flex" />
             <ThemeToggle />
-            <AccountDialog user={user} />
+            <AccountDialog user={user} browserExtensionStatus={browserExtensionStatus} />
           </div>
         </header>
 

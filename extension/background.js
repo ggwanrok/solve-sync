@@ -223,6 +223,43 @@ async function disconnectAccount() {
   return { ok: true, ...await getSyncStatus() };
 }
 
+async function getExternalConnectionStatus() {
+  const data = await chrome.storage.local.get({ token: '', [CONNECTION_KEY]: null });
+  if (!data.token) {
+    return { installed: true, connected: false, authRequired: false, connection: data[CONNECTION_KEY] || null };
+  }
+
+  try {
+    const response = await fetch(`${API_BASE.replace(/\/$/, '')}/api/extension/connect/current`, {
+      headers: { authorization: `Bearer ${data.token}` },
+    });
+    const result = await parseResponse(response);
+    if (response.status === 401) {
+      await updateSyncState({ authRequired: true });
+      return { installed: true, connected: false, authRequired: true, connection: data[CONNECTION_KEY] || null };
+    }
+    if (!response.ok) {
+      return { installed: true, connected: false, unavailable: true, error: result.error || '연동 상태를 확인하지 못했습니다.' };
+    }
+
+    await updateSyncState({ authRequired: false });
+    return {
+      installed: true,
+      connected: true,
+      authRequired: false,
+      accountId: result.accountId,
+      connection: result.connection || data[CONNECTION_KEY] || null,
+    };
+  } catch (error) {
+    return {
+      installed: true,
+      connected: false,
+      unavailable: true,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
 async function parseResponse(response) {
   try {
     return await response.json();
@@ -447,6 +484,21 @@ chrome.runtime.onMessage.addListener((message, _sender, respond) => {
       .catch((error) => respond({ error: error.message }));
     return true;
   }
+});
+
+chrome.runtime.onMessageExternal.addListener((message, sender, respond) => {
+  let trustedOrigin = false;
+  try {
+    trustedOrigin = Boolean(sender.url) && new URL(sender.url).origin === new URL(API_BASE).origin;
+  } catch {
+    trustedOrigin = false;
+  }
+  if (!trustedOrigin || message?.type !== 'GET_CONNECTION_STATUS') return;
+
+  getExternalConnectionStatus()
+    .then(respond)
+    .catch((error) => respond({ installed: true, connected: false, unavailable: true, error: error instanceof Error ? error.message : String(error) }));
+  return true;
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
