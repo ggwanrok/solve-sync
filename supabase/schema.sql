@@ -453,7 +453,7 @@ begin
       and notification.study_id = target_study
       and notification.sender_id = auth.uid()
       and notification.recipient_id = member.user_id
-      and notification.created_at > now() - interval '6 hours'
+      and notification.created_at > now() - interval '10 minutes'
   ) poke on true
   where member.study_id = target_study
   order by member.joined_at, member.user_id;
@@ -554,9 +554,9 @@ begin
       and notification.study_id = target_study
       and notification.sender_id = current_user_id
       and notification.recipient_id = target_user
-      and notification.created_at > now() - interval '6 hours'
+      and notification.created_at > now() - interval '10 minutes'
   ) then
-    raise exception '같은 멤버는 6시간에 한 번만 콕 찌를 수 있습니다.';
+    raise exception '같은 멤버는 10분에 한 번만 콕 찌를 수 있습니다.';
   end if;
 
   day_start := date_trunc('day', now() at time zone 'Asia/Seoul') at time zone 'Asia/Seoul';

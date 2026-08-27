@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { BellRing, Crown, LoaderCircle, UserCheck, UserPlus } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -11,6 +11,8 @@ import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/componen
 import { UserAvatar } from "@/components/user-avatar"
 import { authenticatedFetch } from "@/lib/authenticated-fetch"
 import type { StudyRoomProfile } from "@/lib/study-room-data"
+
+const POKE_COOLDOWN_MS = 10 * 60 * 1000
 
 export type StudyMemberFriendStatus = "self" | "friend" | "none" | "outgoing_pending" | "incoming_pending"
 
@@ -50,6 +52,19 @@ export function StudyRoomMembers({
   )
   const [pendingMemberId, setPendingMemberId] = useState<string | null>(null)
   const [pokedMemberIds, setPokedMemberIds] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    const nextExpiration = members.reduce<number | null>((earliest, member) => {
+      if (!member.lastPokedAt) return earliest
+      const expiration = Date.parse(member.lastPokedAt) + POKE_COOLDOWN_MS
+      if (!Number.isFinite(expiration)) return earliest
+      return earliest == null ? expiration : Math.min(earliest, expiration)
+    }, null)
+    if (nextExpiration == null) return
+
+    const timeout = window.setTimeout(() => router.refresh(), Math.max(0, nextExpiration - Date.now() + 250))
+    return () => window.clearTimeout(timeout)
+  }, [members, router])
 
   async function requestFriend(member: StudyRoomMemberWithFriendStatus) {
     if (!member.profile?.handle) return
@@ -113,6 +128,13 @@ export function StudyRoomMembers({
       if (!response.ok) return toast.error(result.error || "콕 찌르기 알림을 보내지 못했습니다.")
 
       setPokedMemberIds((current) => new Set(current).add(member.userId))
+      window.setTimeout(() => {
+        setPokedMemberIds((current) => {
+          const next = new Set(current)
+          next.delete(member.userId)
+          return next
+        })
+      }, POKE_COOLDOWN_MS)
       toast.success(`${memberName(member.profile)}님을 콕 찔렀어요.`)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "콕 찌르기 알림을 보내지 못했습니다.")
@@ -154,7 +176,7 @@ export function StudyRoomMembers({
                 : member.solvedCount >= goalCount
                   ? "이미 이번 목표를 달성한 멤버예요."
                   : pokedRecently
-                    ? "같은 멤버는 6시간에 한 번만 콕 찌를 수 있어요."
+                    ? "같은 멤버는 10분에 한 번만 콕 찌를 수 있어요."
                     : undefined
 
             return (
