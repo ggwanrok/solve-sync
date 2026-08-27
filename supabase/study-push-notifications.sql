@@ -119,9 +119,6 @@ declare
   sender_enabled boolean;
   receiver_enabled boolean;
   sender_name text;
-  period_start timestamptz;
-  period_end timestamptz;
-  solved_count bigint;
   day_start timestamptz;
   notification_id uuid := gen_random_uuid();
   notification_title text;
@@ -142,7 +139,7 @@ begin
     pg_catalog.hashtextextended('study-poke:' || greatest(current_user_id::text, target_user::text), 0)
   );
 
-  select room.id, room.name, room.goal_period, room.goal_count, room.min_difficulty
+  select room.id, room.name
   into target_room
   from public.study_rooms room
   where room.id = target_study;
@@ -173,26 +170,6 @@ begin
     where subscription.user_id = target_user
   ) then
     raise exception '상대방의 브라우저 알림 연결이 만료되었습니다.';
-  end if;
-
-  period_start := date_trunc(
-    case when target_room.goal_period = 'daily' then 'day' else 'week' end,
-    now() at time zone 'Asia/Seoul'
-  ) at time zone 'Asia/Seoul';
-  period_end := (
-    period_start at time zone 'Asia/Seoul'
-    + case when target_room.goal_period = 'daily' then interval '1 day' else interval '1 week' end
-  ) at time zone 'Asia/Seoul';
-
-  select count(distinct event.problem_id)::bigint
-  into solved_count
-  from public.solve_events event
-  where event.user_id = target_user
-    and coalesce(event.difficulty, 0) >= target_room.min_difficulty
-    and event.accepted_at >= period_start
-    and event.accepted_at < period_end;
-  if solved_count >= target_room.goal_count then
-    raise exception '이미 이번 목표를 달성한 멤버입니다.';
   end if;
 
   if exists(

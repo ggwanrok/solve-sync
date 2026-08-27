@@ -77,7 +77,6 @@ export default async function StudyDetailPage({ params }: { params: Promise<{ id
       friendRequestId: incomingRequestIds.get(member.userId),
       notificationsEnabled: notificationSettings.get(member.userId)?.enabled || false,
       lastPokedAt: notificationSettings.get(member.userId)?.lastPokedAt || null,
-      solvedCount: progressByUser.get(member.userId) || 0,
     }
   })
 
@@ -108,7 +107,7 @@ export default async function StudyDetailPage({ params }: { params: Promise<{ id
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2"><StudyProgress studyId={id} goalPeriod={room.goalPeriod} goalCount={room.goalCount} currentMembers={currentProgressMembers} currentPeriod={detail.currentPeriod} canViewProgress={isMember} /></div>
         <div className="flex flex-col gap-6">
-          <StudyRoomMembers studyId={id} members={membersWithFriendStatus} goalCount={room.goalCount} currentUserId={user!.id} isCurrentUserMember={isMember} currentUserNotificationsEnabled={currentUserNotificationsEnabled} />
+          <StudyRoomMembers studyId={id} members={membersWithFriendStatus} currentUserId={user!.id} isCurrentUserMember={isMember} currentUserNotificationsEnabled={currentUserNotificationsEnabled} />
           {isMember ? <StudyLounge studyId={id} currentUserId={user!.id} memberProfiles={memberProfiles} /> : <Card className="h-fit"><CardContent className="p-5 text-center"><p className="text-sm font-medium">스터디 라운지는 멤버 전용입니다.</p><p className="mt-1 text-xs text-muted-foreground">참여하면 멤버들과 메시지를 나눌 수 있어요.</p></CardContent></Card>}
         </div>
       </div>

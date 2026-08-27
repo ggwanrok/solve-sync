@@ -23,7 +23,6 @@ export type StudyRoomMemberWithFriendStatus = {
   friendStatus: StudyMemberFriendStatus
   friendRequestId?: string
   notificationsEnabled: boolean
-  solvedCount: number
   lastPokedAt: string | null
 }
 
@@ -34,14 +33,12 @@ function memberName(profile: StudyRoomProfile | null) {
 export function StudyRoomMembers({
   studyId,
   members,
-  goalCount,
   currentUserId,
   isCurrentUserMember,
   currentUserNotificationsEnabled,
 }: {
   studyId: string
   members: StudyRoomMemberWithFriendStatus[]
-  goalCount: number
   currentUserId: string
   isCurrentUserMember: boolean
   currentUserNotificationsEnabled: boolean
@@ -159,25 +156,20 @@ export function StudyRoomMembers({
             const showPoke = isCurrentUserMember && member.userId !== currentUserId
             const canPoke = currentUserNotificationsEnabled
               && member.notificationsEnabled
-              && member.solvedCount < goalCount
             const pokeLabel = pending
               ? "전송 중"
               : pokedRecently
                 ? "콕 완료"
                 : !currentUserNotificationsEnabled || !member.notificationsEnabled
                   ? "알림 꺼짐"
-                  : member.solvedCount >= goalCount
-                    ? "목표 달성"
-                    : "콕 찌르기"
+                  : "콕 찌르기"
             const pokeDisabledReason = !currentUserNotificationsEnabled
               ? "내 스터디 알림을 켜면 콕 찌르기를 보낼 수 있어요."
               : !member.notificationsEnabled
                 ? "상대방이 이 스터디의 알림을 켜야 해요."
-                : member.solvedCount >= goalCount
-                  ? "이미 이번 목표를 달성한 멤버예요."
-                  : pokedRecently
-                    ? "같은 멤버는 10분에 한 번만 콕 찌를 수 있어요."
-                    : undefined
+                : pokedRecently
+                  ? "같은 멤버는 10분에 한 번만 콕 찌를 수 있어요."
+                  : undefined
 
             return (
               <li key={member.userId} className="flex items-center gap-3 px-4 py-3">

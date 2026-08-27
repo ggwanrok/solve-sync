@@ -188,7 +188,7 @@ export function StudyNotificationToggle({ studyId, initialEnabled }: { studyId: 
     if (!response.ok) throw new Error(await errorMessage(response, "스터디 알림 설정을 변경하지 못했습니다."))
 
     setEnabled(nextEnabled)
-    toast.success(nextEnabled ? "이 스터디의 알림을 켰습니다." : "이 스터디의 알림을 꺐습니다.")
+    toast.success(nextEnabled ? "이 스터디의 알림을 켰습니다." : "이 스터디의 알림을 껐습니다.")
     router.refresh()
   }
 
