@@ -97,6 +97,7 @@ function SidebarContent({ user, contributions, onNavigate }: { user: ShellUser; 
 
 export function AppShell({ children, user, contributions }: { children: React.ReactNode; user: ShellUser; contributions: ContributionDay[] }) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [refreshPending, setRefreshPending] = useState(false)
   const pathname = usePathname()
   const extensionConnectionVersion = (user.extensionDevices || []).map((device) => device.installationId).join(",")
   const browserExtensionStatus = useExtensionBrowserStatus(user.id, extensionConnectionVersion)
@@ -113,7 +114,10 @@ export function AppShell({ children, user, contributions }: { children: React.Re
         : null
 
   function refreshCurrentPage() {
-    window.location.reload()
+    setRefreshPending(true)
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => window.location.reload())
+    })
   }
 
   return (
@@ -160,9 +164,11 @@ export function AppShell({ children, user, contributions }: { children: React.Re
                 size="sm"
                 className="gap-1.5"
                 onClick={refreshCurrentPage}
+                disabled={refreshPending}
+                aria-busy={refreshPending}
                 aria-label={`${refreshLabel} 새로고침`}
               >
-                <RefreshCw />
+                <RefreshCw className={refreshPending ? "animate-spin" : undefined} />
                 <span className="hidden sm:inline">새로고침</span>
               </Button>
             )}
