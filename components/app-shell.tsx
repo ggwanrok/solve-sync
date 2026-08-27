@@ -2,8 +2,8 @@
 
 import { LayoutDashboard, Users, BookOpen, Chrome, Menu, NotebookPen, RefreshCw } from "lucide-react"
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import { useState, useTransition } from "react"
+import { usePathname } from "next/navigation"
+import { useState } from "react"
 import { Logo } from "@/components/logo"
 import { ContributionGraph, type ContributionDay } from "@/components/contribution-graph"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -97,9 +97,7 @@ function SidebarContent({ user, contributions, onNavigate }: { user: ShellUser; 
 
 export function AppShell({ children, user, contributions }: { children: React.ReactNode; user: ShellUser; contributions: ContributionDay[] }) {
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [refreshPending, startRefreshTransition] = useTransition()
   const pathname = usePathname()
-  const router = useRouter()
   const extensionConnectionVersion = (user.extensionDevices || []).map((device) => device.installationId).join(",")
   const browserExtensionStatus = useExtensionBrowserStatus(user.id, extensionConnectionVersion)
   const refreshLabel = pathname === "/"
@@ -115,7 +113,7 @@ export function AppShell({ children, user, contributions }: { children: React.Re
         : null
 
   function refreshCurrentPage() {
-    startRefreshTransition(() => router.refresh())
+    window.location.reload()
   }
 
   return (
@@ -162,10 +160,9 @@ export function AppShell({ children, user, contributions }: { children: React.Re
                 size="sm"
                 className="gap-1.5"
                 onClick={refreshCurrentPage}
-                disabled={refreshPending}
                 aria-label={`${refreshLabel} 새로고침`}
               >
-                <RefreshCw className={refreshPending ? "animate-spin" : undefined} />
+                <RefreshCw />
                 <span className="hidden sm:inline">새로고침</span>
               </Button>
             )}
