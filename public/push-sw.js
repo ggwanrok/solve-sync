@@ -17,7 +17,7 @@ self.addEventListener("push", (event) => {
     body,
     tag,
     icon: "/apple-icon.png",
-    badge: "/icon-light-32x32.png",
+    badge: "/icon-192.png",
     data: { url },
   }))
 })
