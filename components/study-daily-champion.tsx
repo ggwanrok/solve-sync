@@ -15,29 +15,29 @@ export function StudyDailyChampionBanner({ champions, className }: { champions: 
   const visibleChampions = champions.slice(0, 2)
 
   return (
-    <div className={cn("flex max-w-sm items-center gap-3 rounded-xl border border-border/70 bg-muted/35 px-3 py-2", className)}>
-      <span className="h-7 w-0.5 shrink-0 rounded-full bg-primary/70" aria-hidden="true" />
+    <div className={cn("flex max-w-md items-center gap-3.5 overflow-hidden rounded-2xl border border-primary/20 bg-primary/[0.075] px-4 py-3 shadow-sm", className)}>
       <div className="flex shrink-0 -space-x-2">
         {visibleChampions.map((champion) => (
           <UserAvatar
             key={champion.userId}
             name={championName(champion)}
             imageUrl={champion.avatarUrl}
-            className="size-8 border-2 border-card"
+            className="size-11 border-2 border-background shadow-sm"
           />
         ))}
         {champions.length > 2 && (
-          <span className="relative flex size-8 items-center justify-center rounded-full border-2 border-card bg-secondary text-[10px] font-semibold text-muted-foreground">
+          <span className="relative flex size-11 items-center justify-center rounded-full border-2 border-background bg-secondary text-[10px] font-semibold text-muted-foreground shadow-sm">
             +{champions.length - 2}
           </span>
         )}
       </div>
-      <div className="min-w-0">
-        <p className="text-[9px] font-semibold tracking-[0.14em] text-muted-foreground">TODAY&apos;S TOP SOLVER</p>
-        <p className="mt-0.5 truncate text-sm font-semibold leading-none">{nameLabel}</p>
+      <div className="min-w-0 flex-1">
+        <span className="inline-flex rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold text-primary-foreground">오늘의 풀이왕</span>
+        <p className="mt-1.5 truncate text-base font-semibold leading-none tracking-tight">{nameLabel}</p>
       </div>
-      <div className="ml-auto shrink-0 rounded-lg bg-background px-2 py-1 text-sm font-semibold tabular-nums text-primary ring-1 ring-border/70">
-        {primaryChampion.solvedCount}<span className="ml-0.5 text-[10px] font-medium text-muted-foreground">문제</span>
+      <div className="shrink-0 border-l border-primary/15 pl-3 text-right">
+        <p className="text-2xl font-bold leading-none tabular-nums text-primary">{primaryChampion.solvedCount}</p>
+        <p className="mt-1 text-[10px] font-medium text-muted-foreground">문제 해결</p>
       </div>
     </div>
   )
