@@ -1,8 +1,9 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import {
+  ArrowLeft,
   Check,
   ChevronRight,
   ExternalLink,
@@ -71,6 +72,8 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
   ))
   const [dirtyIds, setDirtyIds] = useState<Set<string>>(new Set())
   const [savingId, setSavingId] = useState<string | null>(null)
+  const [mobileEditorOpen, setMobileEditorOpen] = useState(false)
+  const editorHeadingRef = useRef<HTMLHeadingElement>(null)
 
   const selected = problems.find((problem) => problem.id === selectedId) || problems[0] || null
   const draft = selected ? drafts[selected.id] || initialDraft(selected) : null
@@ -90,6 +93,26 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
     if (!selected) return
     setDrafts((current) => ({ ...current, [selected.id]: { ...current[selected.id], [key]: value } }))
     setDirtyIds((current) => new Set(current).add(selected.id))
+  }
+
+  function scrollToWorkspaceTop() {
+    if (!window.matchMedia("(max-width: 767px)").matches) return
+    const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"
+    window.scrollTo({ top: 0, behavior })
+  }
+
+  function selectProblem(problemId: string) {
+    setSelectedId(problemId)
+    setMobileEditorOpen(true)
+    window.requestAnimationFrame(() => {
+      scrollToWorkspaceTop()
+      window.requestAnimationFrame(() => editorHeadingRef.current?.focus({ preventScroll: true }))
+    })
+  }
+
+  function showProblemList() {
+    setMobileEditorOpen(false)
+    window.requestAnimationFrame(scrollToWorkspaceTop)
   }
 
   async function save() {
@@ -144,8 +167,8 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
         </div>
       </header>
 
-      <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[19rem_minmax(0,1fr)]">
-        <Card className="min-w-0 lg:sticky lg:top-21">
+      <div className="grid min-w-0 items-start gap-5 md:grid-cols-[16rem_minmax(0,1fr)]">
+        <Card className={cn("min-w-0 md:sticky md:top-21", mobileEditorOpen && "hidden md:flex")}>
           <CardHeader className="border-b">
             <CardTitle>풀이한 문제</CardTitle>
             <CardDescription>메모할 문제를 선택하세요.</CardDescription>
@@ -166,7 +189,7 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
                   <button
                     key={problem.id}
                     type="button"
-                    onClick={() => setSelectedId(problem.id)}
+                    onClick={() => selectProblem(problem.id)}
                     className={cn("group flex w-full items-center gap-2 rounded-lg px-2.5 py-2.5 text-left transition-colors", selected?.id === problem.id ? "bg-primary/10 text-foreground" : "hover:bg-muted/60")}
                   >
                     <span className={cn("flex size-7 shrink-0 items-center justify-center rounded-full", problem.memo ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>{problem.memo ? <Check className="size-3.5" /> : <NotebookPen className="size-3.5" />}</span>
@@ -183,7 +206,15 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
         </Card>
 
         {selected && draft && (
-          <div className="min-w-0 space-y-5">
+          <div className={cn("min-w-0 space-y-5 pb-20 md:pb-0", !mobileEditorOpen && "hidden md:block")}>
+            <div className="sticky top-16 z-20 -mx-4 flex min-w-0 items-center gap-2 border-y bg-background/95 px-4 py-3 backdrop-blur md:hidden">
+              <Button type="button" variant="ghost" size="sm" className="-ml-2" onClick={showProblemList}>
+                <ArrowLeft />문제 목록
+              </Button>
+              <span className="min-w-0 flex-1 truncate text-right text-xs font-medium text-muted-foreground">{selected.title}</span>
+              {dirtyIds.has(selected.id) && <Badge variant="secondary" className="shrink-0">저장 전</Badge>}
+            </div>
+
             <section className="rounded-xl border bg-card p-5 sm:p-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
@@ -192,7 +223,7 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
                     <Badge variant="outline">{selected.problemType === "sql" ? "SQL" : "알고리즘"}</Badge>
                     {selected.language && <Badge variant="outline">{selected.language}</Badge>}
                   </div>
-                  <h2 className="mt-3 text-xl font-bold tracking-tight sm:text-2xl">{selected.title}</h2>
+                  <h2 ref={editorHeadingRef} tabIndex={-1} className="mt-3 text-xl font-bold tracking-tight outline-none sm:text-2xl">{selected.title}</h2>
                   <p className="mt-1 text-xs text-muted-foreground">{dateLabel(selected.acceptedAt)} 해결 · 문제 #{selected.problemId}</p>
                 </div>
                 <Button render={<a href={selected.url} target="_blank" rel="noreferrer" />} nativeButton={false} variant="outline" className="shrink-0">문제 열기 <ExternalLink /></Button>
@@ -240,13 +271,18 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
 
                 <div className="flex flex-col gap-3 border-t pt-5 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-start gap-2 text-xs text-muted-foreground"><Lightbulb className="mt-0.5 size-3.5 shrink-0 text-primary" /><span>한 문제당 하나의 메모가 유지되며, 다시 저장하면 기존 메모가 수정됩니다.</span></div>
-                  <Button type="button" onClick={save} disabled={savingId === selected.id} className="sm:min-w-28">
+                  <Button type="button" onClick={save} disabled={savingId === selected.id} className="hidden sm:min-w-28 md:inline-flex">
                     {savingId === selected.id ? <><Loader2 className="animate-spin" />저장 중</> : dirtyIds.has(selected.id) ? <><NotebookPen />저장</> : <><Check />저장</>}
                   </Button>
                 </div>
               </CardContent>
             </Card>
 
+            <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(0,0,0,0.08)] backdrop-blur md:hidden">
+              <Button type="button" onClick={save} disabled={savingId === selected.id} className="h-11 w-full">
+                {savingId === selected.id ? <><Loader2 className="animate-spin" />저장 중</> : dirtyIds.has(selected.id) ? <><NotebookPen />메모 저장</> : <><Check />저장</>}
+              </Button>
+            </div>
           </div>
         )}
       </div>
