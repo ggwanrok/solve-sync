@@ -10,6 +10,7 @@ export const maxDuration = 60
 type ClaimedReminder = {
   notification_id: string
   recipient_id: string
+  notification_type: "goal_reminder" | "goal_missed" | "weekly_summary"
   title: string
   body: string
   url: string
@@ -27,7 +28,7 @@ export async function GET(request: Request) {
   const admin = createAdminClient()
   if (!admin) return NextResponse.json({ error: "서버 설정이 완료되지 않았습니다." }, { status: 503 })
 
-  const { data, error } = await admin.rpc("claim_study_goal_reminders")
+  const { data, error } = await admin.rpc("claim_study_notifications")
   if (error) {
     console.error("study goal reminder claim failed", { code: error.code, message: error.message })
     return NextResponse.json({ error: "목표 알림 대상을 계산하지 못했습니다." }, { status: 500 })
@@ -43,7 +44,7 @@ export async function GET(request: Request) {
         title: reminder.title,
         body: reminder.body,
         url: reminder.url,
-        tag: `goal-${reminder.notification_id}`,
+        tag: `study-${reminder.notification_type}-${reminder.notification_id}`,
       })
       if (delivery.sentCount > 0) {
         const { error: updateError } = await admin

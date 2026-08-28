@@ -2,15 +2,16 @@ import { AppShell } from "@/components/app-shell"
 import { type ContributionDay } from "@/components/contribution-graph"
 import { redirect } from "next/navigation"
 import { addCalendarDays, dayKey } from "@/lib/calendar"
-import { getPendingFriendRequestCount, getViewer, getViewerExtensions, getViewerProfile, getViewerSidebarSolves } from "@/lib/server/viewer"
+import { getPendingFriendRequestCount, getViewer, getViewerExtensions, getViewerProfile, getViewerSidebarSolves, getViewerStudyNotifications } from "@/lib/server/viewer"
 
 export default async function AppGroupLayout({ children }: { children: React.ReactNode }) {
-  const [{ user }, profile, extensions, pendingFriendRequestCount, sidebarSolves] = await Promise.all([
+  const [{ user }, profile, extensions, pendingFriendRequestCount, sidebarSolves, notificationInbox] = await Promise.all([
     getViewer(),
     getViewerProfile(),
     getViewerExtensions(),
     getPendingFriendRequestCount(),
     getViewerSidebarSolves(),
+    getViewerStudyNotifications(),
   ])
   if (!user) redirect("/login")
   if (!profile?.handle) redirect("/onboarding")
@@ -48,5 +49,5 @@ export default async function AppGroupLayout({ children }: { children: React.Rea
       connectedAt: device.created_at,
       lastSeenAt: device.last_seen_at,
     })),
-  }} contributions={sidebarContributions}>{children}</AppShell>
+  }} contributions={sidebarContributions} notificationInbox={notificationInbox}>{children}</AppShell>
 }

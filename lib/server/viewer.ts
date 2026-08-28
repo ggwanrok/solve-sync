@@ -2,6 +2,7 @@ import { cache } from "react"
 import { addCalendarDays, dayKey } from "@/lib/calendar"
 import { createClient } from "@/utils/supabase/server"
 import type { ProblemMemoRecord, SolvedProblemNote } from "@/lib/problem-memo"
+import type { StudyNotification, StudyNotificationInbox, StudyNotificationType } from "@/lib/study-notification"
 
 export const getViewer = cache(async () => {
   const supabase = await createClient()
@@ -52,6 +53,43 @@ export const getPendingFriendRequestCount = cache(async () => {
     return 0
   }
   return count || 0
+})
+
+type StudyNotificationRow = {
+  id: string
+  study_id: string
+  type: StudyNotificationType
+  title: string
+  body: string
+  url: string
+  created_at: string
+  read_at: string | null
+}
+
+export const getViewerStudyNotifications = cache(async (): Promise<StudyNotificationInbox> => {
+  const { supabase, user } = await getViewer()
+  if (!user) return { items: [], unreadCount: 0 }
+
+  const [notifications, unread] = await Promise.all([
+    supabase.rpc("my_study_notifications", { result_limit: 30 }),
+    supabase.rpc("unread_study_notification_count"),
+  ])
+  if (notifications.error || unread.error) {
+    console.error("study notification inbox failed", notifications.error || unread.error)
+    return { items: [], unreadCount: 0 }
+  }
+
+  const items: StudyNotification[] = ((notifications.data || []) as StudyNotificationRow[]).map((item) => ({
+    id: item.id,
+    studyId: item.study_id,
+    type: item.type,
+    title: item.title,
+    body: item.body,
+    url: item.url,
+    createdAt: item.created_at,
+    readAt: item.read_at,
+  }))
+  return { items, unreadCount: Number(unread.data) || 0 }
 })
 
 export type ViewerSidebarSolve = {

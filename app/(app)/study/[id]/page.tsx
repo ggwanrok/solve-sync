@@ -8,11 +8,12 @@ import { StudyRoomPasswordForm } from "@/components/study-room-password-form"
 import { StudyRoomMembershipActions } from "@/components/study-room-membership-actions"
 import { StudyRoomMembers, type StudyMemberFriendStatus } from "@/components/study-room-members"
 import { StudyNotificationToggle } from "@/components/study-notification-toggle"
+import { StudyDailyChampionBanner } from "@/components/study-daily-champion"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { getViewer } from "@/lib/server/viewer"
-import type { StudyRoomDetailData } from "@/lib/study-room-data"
+import type { StudyDailyChampion, StudyRoomDetailData } from "@/lib/study-room-data"
 
 export default async function StudyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -32,6 +33,7 @@ export default async function StudyDetailPage({ params }: { params: Promise<{ id
   const outgoingRequestIds = new Map<string, string>()
   const incomingRequestIds = new Map<string, string>()
   const notificationSettings = new Map<string, { enabled: boolean; lastPokedAt: string | null }>()
+  let dailyChampions: StudyDailyChampion[] = []
 
   if (user && otherMemberIds.length > 0) {
     const [friendships, outgoingRequests, incomingRequests] = await Promise.all([
@@ -48,13 +50,28 @@ export default async function StudyDetailPage({ params }: { params: Promise<{ id
   }
 
   if (isMember) {
-    const { data: settings, error: settingsError } = await supabase.rpc("study_room_notification_settings", { target_study: id })
+    const [settingsResult, championResult] = await Promise.all([
+      supabase.rpc("study_room_notification_settings", { target_study: id }),
+      supabase.rpc("study_daily_champions", { target_study: id }),
+    ])
+    const { data: settings, error: settingsError } = settingsResult
     if (settingsError) throw new Error(`스터디 알림 설정을 불러오지 못했습니다: ${settingsError.message}`)
     for (const setting of settings || []) {
       notificationSettings.set(setting.user_id, {
         enabled: Boolean(setting.notifications_enabled),
         lastPokedAt: setting.last_poked_at || null,
       })
+    }
+    if (championResult.error) {
+      console.error("daily study champion failed", championResult.error)
+    } else {
+      dailyChampions = ((championResult.data || []) as Array<{ user_id: string; handle: string; nickname: string; avatar_url: string | null; solved_count: number }>).map((champion) => ({
+        userId: champion.user_id,
+        handle: champion.handle,
+        nickname: champion.nickname,
+        avatarUrl: champion.avatar_url,
+        solvedCount: Number(champion.solved_count),
+      }))
     }
   }
 
@@ -103,7 +120,7 @@ export default async function StudyDetailPage({ params }: { params: Promise<{ id
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><Button render={<Link href="/study" />} nativeButton={false} variant="ghost" size="sm" className="-ml-2 w-fit gap-1.5 text-muted-foreground"><ArrowLeft className="size-4" />스터디룸 목록</Button><StudyRoomMembershipActions studyId={id} isOwner={room.ownerId === user?.id} isMember={isMember} /></div>
-      <Card><CardContent className="flex flex-col gap-5 p-6"><div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><div className="flex items-center gap-2"><h1 className="text-xl font-bold">{room.name}</h1>{room.ownerId === user?.id && <Badge variant="secondary" className="gap-1"><Crown className="size-3" />리더</Badge>}</div><p className="mt-1 text-sm text-muted-foreground">{room.description}</p><div className="mt-3 flex flex-wrap gap-2 text-sm"><span className="rounded-lg bg-primary/10 px-2.5 py-1 font-medium text-primary">{room.goalPeriod === "daily" ? "매일" : "매주"} {room.goalCount}문제</span><span className="rounded-lg bg-muted px-2.5 py-1 font-medium">Lv.{room.minDifficulty} 이상</span><span className="flex items-center gap-1 text-muted-foreground"><Users className="size-4" />{detail.members.length}명</span></div></div><div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">{isMember && <StudyNotificationToggle studyId={id} initialEnabled={currentUserNotificationsEnabled} />}{!isMember && <JoinStudyRoomButton studyId={id} />}</div></div></CardContent></Card>
+      <Card><CardContent className="p-6"><div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-center"><div className="min-w-0"><div className="flex items-center gap-2"><h1 className="truncate text-xl font-bold">{room.name}</h1>{room.ownerId === user?.id && <Badge variant="secondary" className="gap-1"><Crown className="size-3" />리더</Badge>}</div><p className="mt-1 text-sm text-muted-foreground">{room.description}</p><div className="mt-3 flex flex-wrap gap-2 text-sm"><span className="rounded-lg bg-primary/10 px-2.5 py-1 font-medium text-primary">{room.goalPeriod === "daily" ? "매일" : "매주"} {room.goalCount}문제</span><span className="rounded-lg bg-muted px-2.5 py-1 font-medium">Lv.{room.minDifficulty} 이상</span><span className="flex items-center gap-1 text-muted-foreground"><Users className="size-4" />{detail.members.length}명</span></div></div><StudyDailyChampionBanner champions={dailyChampions} className="w-full lg:w-72" /><div className="flex shrink-0 flex-col items-start gap-2 lg:items-end">{isMember && <StudyNotificationToggle studyId={id} initialEnabled={currentUserNotificationsEnabled} />}{!isMember && <JoinStudyRoomButton studyId={id} />}</div></div></CardContent></Card>
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2"><StudyProgress studyId={id} goalPeriod={room.goalPeriod} goalCount={room.goalCount} currentMembers={currentProgressMembers} currentPeriod={detail.currentPeriod} canViewProgress={isMember} /></div>
         <div className="flex flex-col gap-6">

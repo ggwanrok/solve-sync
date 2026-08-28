@@ -9,10 +9,12 @@ import { ContributionGraph, type ContributionDay } from "@/components/contributi
 import { ThemeToggle } from "@/components/theme-toggle"
 import { AccountDialog, type AccountUser } from "@/components/account-dialog"
 import { ExtensionBrowserBadge, useExtensionBrowserStatus } from "@/components/extension-browser-connection"
+import { NotificationCenter } from "@/components/notification-center"
 import { UserAvatar } from "@/components/user-avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import type { StudyNotificationInbox } from "@/lib/study-notification"
 
 export type ShellUser = AccountUser & { pendingFriendRequestCount: number }
 
@@ -95,7 +97,7 @@ function SidebarContent({ user, contributions, onNavigate }: { user: ShellUser; 
   )
 }
 
-export function AppShell({ children, user, contributions }: { children: React.ReactNode; user: ShellUser; contributions: ContributionDay[] }) {
+export function AppShell({ children, user, contributions, notificationInbox }: { children: React.ReactNode; user: ShellUser; contributions: ContributionDay[]; notificationInbox: StudyNotificationInbox }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [refreshPending, setRefreshPending] = useState(false)
   const pathname = usePathname()
@@ -173,6 +175,7 @@ export function AppShell({ children, user, contributions }: { children: React.Re
               </Button>
             )}
             <ExtensionBrowserBadge status={browserExtensionStatus} className="hidden md:flex" />
+            <NotificationCenter key={`${notificationInbox.unreadCount}:${notificationInbox.items[0]?.id || "empty"}:${notificationInbox.items[0]?.readAt || "unread"}`} inbox={notificationInbox} />
             <ThemeToggle />
             <AccountDialog user={user} browserExtensionStatus={browserExtensionStatus} />
           </div>

@@ -18,6 +18,8 @@ SolveSync(솔브싱크)는 프로그래머스 풀이 기록을 자동으로 모�
 - **공개·비공개 스터디** — 누구나 참여하는 공개방과 비밀번호로 보호되는 비공개방을 만들 수 있습니다.
 - **스터디 라운지** — 같은 스터디의 멤버들과 댓글을 남기고 실시간으로 대화합니다.
 - **스터디 푸시 알림** — 방별로 알림을 켜면 목표 마감 6시간 전 미달성 알림을 받고, 함께 알림을 켠 멤버끼리 ‘콕 찌르기’를 보낼 수 있습니다.
+- **앱 내 알림함** — 목표 마감, 목표 미달, 주간 결과와 ‘콕 찌르기’를 한곳에서 확인하고 읽음 상태를 관리합니다.
+- **오늘의 풀이왕** — 스터디룸에서 그날 가장 많이 푼 멤버를 동점까지 함께 보여줍니다.
 
 ## 이용 방법
 
@@ -103,7 +105,7 @@ npm install
 
 새 Supabase 프로젝트를 만든 뒤 Dashboard의 **SQL Editor**에서 `supabase/schema.sql` 전체를 실행합니다. 이 파일에는 테이블, 함수, 트리거, RLS 정책과 권한 설정이 포함되어 있습니다.
 
-기존 데이터베이스를 업데이트하는 경우 다중 기기 연결을 위해 먼저 `supabase/extension-multi-device.sql`을 실행합니다. 익스텐션에서 문제 난이도와 알고리즘/SQL 유형을 저장하려면 `supabase/solve-event-difficulty.sql`, `supabase/solve-event-problem-type.sql`을 차례로 실행합니다. 스터디룸 성능 개선을 적용하려면 `supabase/study-room-directory-pagination.sql`과 `supabase/study-room-detail-performance.sql`을 순서대로 실행한 뒤, 난이도 목표 기능을 위한 `supabase/study-difficulty-filter.sql`과 목록 필터를 위한 `supabase/study-directory-filters.sql`을 차례대로 실행합니다. 친구 삭제와 프로필 사진 저장소를 추가하려면 `supabase/profile-management.sql`을 실행하고, 친구 잔디 조회에는 `supabase/friend-contributions.sql`을 실행합니다. 프로필 한 줄 소개와 전체 랭킹 집계를 적용하려면 `supabase/profile-bio.sql`, `supabase/dashboard-ranking.sql` 순서로 실행합니다. 스터디 푸시 알림에는 `supabase/study-push-notifications.sql`을 실행하며, 기존 설치의 콕 재전송 제한을 10분으로 바꾸고 목표 달성자 제한을 없애려면 `supabase/study-poke-cooldown.sql`을 추가로 실행합니다. 그 밖의 필요한 기능 SQL을 적용한 다음 `supabase/security-hardening.sql`을 마지막에 실행합니다. 스터디 라운지 메시지를 실시간으로 동기화하려면 `supabase/study-comments-realtime.sql`을 실행합니다.
+기존 데이터베이스를 업데이트하는 경우 다중 기기 연결을 위해 먼저 `supabase/extension-multi-device.sql`을 실행합니다. 익스텐션에서 문제 난이도와 알고리즘/SQL 유형을 저장하려면 `supabase/solve-event-difficulty.sql`, `supabase/solve-event-problem-type.sql`을 차례로 실행합니다. 스터디룸 성능 개선을 적용하려면 `supabase/study-room-directory-pagination.sql`과 `supabase/study-room-detail-performance.sql`을 순서대로 실행한 뒤, 난이도 목표 기능을 위한 `supabase/study-difficulty-filter.sql`과 목록 필터를 위한 `supabase/study-directory-filters.sql`을 차례대로 실행합니다. 친구 삭제와 프로필 사진 저장소를 추가하려면 `supabase/profile-management.sql`을 실행하고, 친구 잔디 조회에는 `supabase/friend-contributions.sql`을 실행합니다. 프로필 한 줄 소개와 전체 랭킹 집계를 적용하려면 `supabase/profile-bio.sql`, `supabase/dashboard-ranking.sql` 순서로 실행합니다. 스터디 푸시 알림에는 `supabase/study-push-notifications.sql`을 실행하며, 기존 설치의 콕 재전송 제한을 10분으로 바꾸고 목표 달성자 제한을 없애려면 `supabase/study-poke-cooldown.sql`을 추가로 실행합니다. 앱 내 알림함과 오늘의 풀이왕에는 `supabase/in-app-study-notifications.sql`을 실행합니다. 그 밖의 필요한 기능 SQL을 적용한 다음 `supabase/security-hardening.sql`을 마지막에 실행합니다. 스터디 라운지 메시지를 실시간으로 동기화하려면 `supabase/study-comments-realtime.sql`을 실행합니다.
 
 기존 DB에서 SQL 풀이를 스터디 집계에 포함하고 유형별 랭킹 산식을 적용하려면 `supabase/solve-event-problem-type.sql` 적용 후 `supabase/study-difficulty-filter.sql`, `supabase/dashboard-ranking.sql`을 순서대로 다시 실행합니다. 랭킹 산식은 유형별로 난이도 상위 100문제와 풀이 보너스를 독립 계산한 뒤 `알고리즘 점수 + (SQL 점수 / 2)`를 최종 점수로 사용하며, SQL 점수 나눗셈의 소수점은 버립니다.
 
@@ -150,7 +152,7 @@ PRIVACY_CONTACT_EMAIL=privacy@example.com
 npx web-push generate-vapid-keys
 ```
 
-`VAPID_SUBJECT`에는 운영자 이메일을 `mailto:` 형식으로 입력합니다. `CRON_SECRET`에는 충분히 긴 임의 문자열을 넣으면 Vercel이 `vercel.json`에 등록된 매시간 예약 작업을 호출할 때 인증 헤더로 전달합니다. 예약 작업은 한국 시간 기준으로 단위 기간 마감 6시간 전 구간에 들어온 미달성 멤버에게만 한 번 발송합니다.
+`VAPID_SUBJECT`에는 운영자 이메일을 `mailto:` 형식으로 입력합니다. `CRON_SECRET`에는 충분히 긴 임의 문자열을 넣으면 Vercel이 `vercel.json`에 등록된 예약 작업을 호출할 때 인증 헤더로 전달합니다. 예약 작업은 목표 마감 알림을 만들고, 종료된 목표 결과와 주간 요약을 알림함에 쌓은 뒤 푸시를 켠 멤버에게 전달합니다.
 
 ### 5. 개발 서버 실행
 

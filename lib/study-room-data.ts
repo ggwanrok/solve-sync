@@ -31,6 +31,14 @@ export type StudyRoomDetailData = {
   currentPeriod: { start: string; end: string } | null
 }
 
+export type StudyDailyChampion = {
+  userId: string
+  handle: string
+  nickname: string
+  avatarUrl: string | null
+  solvedCount: number
+}
+
 export type StudyHistoryRow = {
   period_start: string
   period_end: string
