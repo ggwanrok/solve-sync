@@ -264,7 +264,7 @@ function HistoryCard({
   goalPeriod,
   goalCount,
   open,
-  openMemberKey,
+  openMemberKeys,
   problemsByKey,
   loadingProblemKeys,
   onToggle,
@@ -274,7 +274,7 @@ function HistoryCard({
   goalPeriod: "daily" | "weekly"
   goalCount: number
   open: boolean
-  openMemberKey: string | null
+  openMemberKeys: ReadonlySet<string>
   problemsByKey: Record<string, StudyProgressProblem[]>
   loadingProblemKeys: Record<string, boolean>
   onToggle: () => void
@@ -319,7 +319,7 @@ function HistoryCard({
                     key={memberKey}
                     member={member}
                     goalCount={goalCount}
-                    open={openMemberKey === memberKey}
+                    open={openMemberKeys.has(memberKey)}
                     problems={problemsByKey[memberKey] || []}
                     loadingProblems={Boolean(loadingProblemKeys[memberKey])}
                     onToggle={() => onToggleMember(member)}
@@ -356,9 +356,9 @@ export function StudyProgress({
   const [historyTotalPages, setHistoryTotalPages] = useState(0)
   const [historyLoaded, setHistoryLoaded] = useState(false)
   const [loadingHistory, setLoadingHistory] = useState(false)
-  const [openCurrentMember, setOpenCurrentMember] = useState<string | null>(null)
+  const [openCurrentMembers, setOpenCurrentMembers] = useState<Set<string>>(() => new Set())
   const [openHistoryPeriod, setOpenHistoryPeriod] = useState<string | null>(null)
-  const [openHistoryMember, setOpenHistoryMember] = useState<string | null>(null)
+  const [openHistoryMembers, setOpenHistoryMembers] = useState<Set<string>>(() => new Set())
   const [problemsByKey, setProblemsByKey] = useState<Record<string, StudyProgressProblem[]>>({})
   const [loadingProblemKeys, setLoadingProblemKeys] = useState<Record<string, boolean>>({})
   const currentProgressSignature = currentMembers.map((member) => `${member.userId}:${member.solvedCount}`).join("|")
@@ -388,7 +388,7 @@ export function StudyProgress({
       setHistoryTotalPages(Number(payload?.totalPages || 0))
       setHistoryLoaded(true)
       setOpenHistoryPeriod(null)
-      setOpenHistoryMember(null)
+      setOpenHistoryMembers(new Set())
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "지난 기록을 불러오지 못했습니다.")
     } finally {
@@ -425,37 +425,44 @@ export function StudyProgress({
   }, [loadingProblemKeys, problemsByKey, studyId])
 
   useEffect(() => {
-    const member = currentMembers.find((entry) => entry.userId === openCurrentMember)
-    if (!currentPeriod || !member) return
+    if (!currentPeriod) return
+    const openMembers = currentMembers.filter((member) => openCurrentMembers.has(member.userId))
+    if (!openMembers.length) return
 
     const timeout = window.setTimeout(() => {
-      void loadProblems(member.userId, currentPeriod.start, `${currentPeriod.start}:${member.userId}:${member.solvedCount}`)
+      for (const member of openMembers) {
+        void loadProblems(member.userId, currentPeriod.start, `${currentPeriod.start}:${member.userId}:${member.solvedCount}`)
+      }
     }, 0)
     return () => window.clearTimeout(timeout)
-  }, [currentPeriod, currentMembers, currentProgressSignature, loadProblems, openCurrentMember])
+  }, [currentPeriod, currentMembers, currentProgressSignature, loadProblems, openCurrentMembers])
 
   function toggleCurrentMember(member: CurrentStudyProgressMember) {
-    if (openCurrentMember === member.userId) {
-      setOpenCurrentMember(null)
-      return
-    }
-    setOpenCurrentMember(member.userId)
-    if (currentPeriod) void loadProblems(member.userId, currentPeriod.start, `${currentPeriod.start}:${member.userId}:${member.solvedCount}`)
+    const opening = !openCurrentMembers.has(member.userId)
+    setOpenCurrentMembers((current) => {
+      const next = new Set(current)
+      if (next.has(member.userId)) next.delete(member.userId)
+      else next.add(member.userId)
+      return next
+    })
+    if (opening && currentPeriod) void loadProblems(member.userId, currentPeriod.start, `${currentPeriod.start}:${member.userId}:${member.solvedCount}`)
   }
 
   function toggleHistoryMember(member: StudyProgressHistoryEntry) {
     const key = `${member.periodStart}:${member.userId}`
-    if (openHistoryMember === key) {
-      setOpenHistoryMember(null)
-      return
-    }
-    setOpenHistoryMember(key)
-    void loadProblems(member.userId, member.periodStart, key)
+    const opening = !openHistoryMembers.has(key)
+    setOpenHistoryMembers((current) => {
+      const next = new Set(current)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+    if (opening) void loadProblems(member.userId, member.periodStart, key)
   }
 
   function toggleHistoryPeriod(periodStart: string) {
     setOpenHistoryPeriod((current) => current === periodStart ? null : periodStart)
-    setOpenHistoryMember(null)
+    setOpenHistoryMembers(new Set())
   }
 
   const historyPeriods = Array.from(
@@ -489,7 +496,7 @@ export function StudyProgress({
         goalCount={goalCount}
         progressLabel={`${currentLabel} 풀이`}
         showProgress={canViewProgress}
-        open={openCurrentMember === member.userId}
+        open={openCurrentMembers.has(member.userId)}
         problems={problemsByKey[problemKey] || []}
         loadingProblems={Boolean(loadingProblemKeys[problemKey])}
         onToggle={() => toggleCurrentMember(member)}
@@ -566,7 +573,7 @@ export function StudyProgress({
                   goalPeriod={goalPeriod}
                   goalCount={goalCount}
                   open={openHistoryPeriod === period.periodStart}
-                  openMemberKey={openHistoryMember}
+                  openMemberKeys={openHistoryMembers}
                   problemsByKey={problemsByKey}
                   loadingProblemKeys={loadingProblemKeys}
                   onToggle={() => toggleHistoryPeriod(period.periodStart)}
