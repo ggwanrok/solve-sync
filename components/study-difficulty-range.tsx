@@ -8,7 +8,7 @@ export function StudyDifficultyRange({ defaultValue }: { defaultValue: Difficult
   const [value, setValue] = useState<DifficultyLevel>(defaultValue)
 
   return (
-    <div className="rounded-lg border bg-muted/20 px-4 py-3">
+    <div className="rounded-xl bg-muted/55 px-4 py-3">
       <div>
         <p className="text-sm font-medium">Lv.{value}부터 Lv.5까지</p>
         <p className="mt-0.5 text-xs text-muted-foreground">왼쪽 기준점을 움직여 검색할 최소 난이도를 정하세요.</p>

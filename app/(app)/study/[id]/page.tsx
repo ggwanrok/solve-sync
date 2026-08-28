@@ -110,7 +110,7 @@ export default async function StudyDetailPage({ params }: { params: Promise<{ id
 
   if (!canView) {
     return (
-      <div className="mx-auto flex max-w-6xl flex-col gap-6">
+      <div className="page-container">
         <Button render={<Link href="/study" />} nativeButton={false} variant="ghost" size="sm" className="-ml-2 w-fit gap-1.5 text-muted-foreground"><ArrowLeft className="size-4" />스터디룸 목록</Button>
         <StudyRoomPasswordForm studyId={id} roomName={room.name} />
       </div>
@@ -118,9 +118,9 @@ export default async function StudyDetailPage({ params }: { params: Promise<{ id
   }
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><Button render={<Link href="/study" />} nativeButton={false} variant="ghost" size="sm" className="-ml-2 w-fit gap-1.5 text-muted-foreground"><ArrowLeft className="size-4" />스터디룸 목록</Button><StudyRoomMembershipActions studyId={id} isOwner={room.ownerId === user?.id} isMember={isMember} /></div>
-      <Card className="py-0"><CardContent className="px-6 py-5"><div className="flex flex-col gap-4 lg:flex-row lg:items-center"><div className="min-w-0 lg:max-w-[42%]"><div className="flex items-center gap-2"><h1 className="truncate text-xl font-bold">{room.name}</h1>{room.ownerId === user?.id && <Badge variant="secondary" className="gap-1"><Crown className="size-3" />리더</Badge>}</div><p className="mt-1 text-sm text-muted-foreground">{room.description}</p><div className="mt-3 flex flex-wrap gap-2 text-sm"><span className="rounded-lg bg-primary/10 px-2.5 py-1 font-medium text-primary">{room.goalPeriod === "daily" ? "매일" : "매주"} {room.goalCount}문제</span><span className="rounded-lg bg-muted px-2.5 py-1 font-medium">Lv.{room.minDifficulty} 이상</span><span className="flex items-center gap-1 text-muted-foreground"><Users className="size-4" />{detail.members.length}명</span></div></div><StudyDailyChampionBanner champions={dailyChampions} className="w-full lg:ml-6 lg:w-80" /><div className="flex shrink-0 flex-col items-start gap-2 lg:ml-auto lg:items-end">{isMember && <StudyNotificationToggle studyId={id} initialEnabled={currentUserNotificationsEnabled} />}{!isMember && <JoinStudyRoomButton studyId={id} />}</div></div></CardContent></Card>
+    <div className="page-container">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><Button render={<Link href="/study" />} nativeButton={false} variant="ghost" size="sm" className="-ml-3 w-fit gap-1.5"><ArrowLeft className="size-4" />스터디룸 목록</Button><StudyRoomMembershipActions studyId={id} isOwner={room.ownerId === user?.id} isMember={isMember} /></div>
+      <Card className="py-0"><CardContent className="p-5 sm:p-6"><div className="flex flex-col gap-5 lg:flex-row lg:items-center"><div className="min-w-0 lg:max-w-[42%]"><div className="flex items-center gap-2"><h1 className="truncate text-2xl font-bold tracking-[-0.035em]">{room.name}</h1>{room.ownerId === user?.id && <Badge variant="secondary" className="gap-1"><Crown className="size-3" />리더</Badge>}</div><p className="mt-2 text-sm leading-6 text-muted-foreground">{room.description}</p><div className="mt-4 flex flex-wrap gap-2 text-sm"><span className="rounded-xl bg-primary/10 px-3 py-1.5 font-semibold text-primary">{room.goalPeriod === "daily" ? "매일" : "매주"} {room.goalCount}문제</span><span className="rounded-xl bg-muted px-3 py-1.5 font-semibold">Lv.{room.minDifficulty} 이상</span><span className="flex items-center gap-1.5 px-1 text-muted-foreground"><Users className="size-4" />{detail.members.length}명</span></div></div><StudyDailyChampionBanner champions={dailyChampions} className="w-full lg:ml-6 lg:w-80" /><div className="flex shrink-0 flex-col items-start gap-2 lg:ml-auto lg:items-end">{isMember && <StudyNotificationToggle studyId={id} initialEnabled={currentUserNotificationsEnabled} />}{!isMember && <JoinStudyRoomButton studyId={id} />}</div></div></CardContent></Card>
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2"><StudyProgress studyId={id} goalPeriod={room.goalPeriod} goalCount={room.goalCount} currentMembers={currentProgressMembers} currentPeriod={detail.currentPeriod} canViewProgress={isMember} /></div>
         <div className="flex flex-col gap-6">

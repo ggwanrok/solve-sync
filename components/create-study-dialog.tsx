@@ -83,7 +83,7 @@ export function CreateStudyDialog() {
           {/* Rule selector */}
           <div className="flex flex-col gap-2">
             <Label>스터디 규칙</Label>
-            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-muted/40 p-3">
+            <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-muted/55 p-3">
               <Select value={unit} onValueChange={(v) => setUnit(v as "일" | "주")}>
                 <SelectTrigger className="w-24 bg-background">
                   <SelectValue />
@@ -94,7 +94,7 @@ export function CreateStudyDialog() {
                 </SelectContent>
               </Select>
               <span className="text-sm text-muted-foreground">당</span>
-              <div className="flex items-center rounded-lg border border-border bg-background">
+              <div className="flex items-center rounded-xl bg-card shadow-sm ring-1 ring-foreground/10">
                 <Button
                   type="button"
                   variant="ghost"
@@ -144,7 +144,7 @@ export function CreateStudyDialog() {
 
           <div className="flex flex-col gap-2">
             <Label>공개 설정</Label>
-            <button type="button" onClick={() => { setIsPrivate((value) => !value); setPassword("") }} className="flex items-center justify-between rounded-xl border p-3 text-left">
+            <button type="button" onClick={() => { setIsPrivate((value) => !value); setPassword("") }} className="flex items-center justify-between rounded-2xl bg-muted/55 p-4 text-left transition-colors hover:bg-muted">
               <div><p className="text-sm font-medium">비공개 스터디룸</p><p className="text-xs text-muted-foreground">참여할 때 비밀번호가 필요합니다.</p></div>
               <span className={`relative h-6 w-11 rounded-full transition-colors ${isPrivate ? "bg-primary" : "bg-muted"}`}><span className={`absolute top-1 size-4 rounded-full bg-white transition-transform ${isPrivate ? "translate-x-6" : "translate-x-1"}`} /></span>
             </button>

@@ -38,7 +38,7 @@ export function StudyRoomMembershipActions({ studyId, isOwner, isMember }: { stu
   }
 
   return (
-    <div className="w-full rounded-xl border border-destructive/30 bg-destructive/5 p-3 sm:w-auto sm:min-w-80">
+    <div className="w-full rounded-2xl bg-destructive/5 p-4 ring-1 ring-destructive/20 sm:w-auto sm:min-w-80">
       <p className="text-xs leading-relaxed text-destructive">{description}</p>
       <div className="mt-3 flex justify-end gap-2">
         <Button type="button" variant="outline" size="sm" onClick={() => setConfirming(false)} disabled={pending}>취소</Button>

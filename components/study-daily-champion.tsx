@@ -1,3 +1,4 @@
+import { Crown } from "lucide-react"
 import { UserAvatar } from "@/components/user-avatar"
 import type { StudyDailyChampion } from "@/lib/study-room-data"
 import { cn } from "@/lib/utils"
@@ -15,7 +16,7 @@ export function StudyDailyChampionBanner({ champions, className }: { champions: 
   const visibleChampions = champions.slice(0, 2)
 
   return (
-    <div className={cn("flex max-w-md items-center gap-3.5 overflow-hidden rounded-2xl border border-primary/20 bg-primary/[0.075] px-4 py-3 shadow-sm", className)}>
+    <div className={cn("flex max-w-md items-center gap-3.5 overflow-hidden rounded-2xl bg-primary/[0.075] px-4 py-3.5", className)}>
       <div className="flex shrink-0 -space-x-2">
         {visibleChampions.map((champion) => (
           <UserAvatar
@@ -32,12 +33,12 @@ export function StudyDailyChampionBanner({ champions, className }: { champions: 
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <span className="inline-flex rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold text-primary-foreground">오늘의 풀이왕</span>
-        <p className="mt-1.5 truncate text-base font-semibold leading-none tracking-tight">{nameLabel}</p>
+        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-primary"><Crown className="size-3" />오늘의 풀이왕</span>
+        <p className="mt-1 truncate text-base font-semibold leading-tight tracking-tight">{nameLabel}</p>
       </div>
-      <div className="shrink-0 border-l border-primary/15 pl-3 text-right">
-        <p className="text-2xl font-bold leading-none tabular-nums text-primary">{primaryChampion.solvedCount}</p>
-        <p className="mt-1 text-[10px] font-medium text-muted-foreground">문제 해결</p>
+      <div className="shrink-0 rounded-xl bg-card/80 px-3 py-2 text-center shadow-sm">
+        <p className="text-xl font-bold leading-none tabular-nums text-primary">{primaryChampion.solvedCount}</p>
+        <p className="mt-1 text-[9px] font-semibold text-muted-foreground">문제</p>
       </div>
     </div>
   )

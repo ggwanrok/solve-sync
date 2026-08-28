@@ -50,7 +50,7 @@ export function StudyRoomEntryButton({
         nativeButton={false}
         variant="ghost"
         size="sm"
-        className="h-8 gap-1 text-xs"
+        className="h-9 gap-1.5 text-xs"
         aria-disabled={pending}
       >
         {pending ? "이동 중..." : joined ? "입장" : "둘러보기"}

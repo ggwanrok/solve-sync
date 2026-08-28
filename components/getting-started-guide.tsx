@@ -36,7 +36,7 @@ export function GettingStartedGuide({ deviceConnected }: { deviceConnected: bool
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="getting-started-title">
-      <div className="w-full max-w-lg rounded-2xl border bg-popover p-5 text-popover-foreground shadow-xl">
+      <div className="w-full max-w-lg rounded-3xl bg-popover p-6 text-popover-foreground shadow-[0_24px_80px_rgba(15,23,42,0.2)] ring-1 ring-foreground/[0.055]">
         <div>
           <h2 id="getting-started-title" className="text-lg font-semibold">솔브싱크 시작하기</h2>
           <p className="mt-1 text-sm text-muted-foreground">프로그래머스 풀이 기록을 가져오려면 이 브라우저의 확장 프로그램을 계정에 연결해 주세요.</p>
@@ -45,7 +45,7 @@ export function GettingStartedGuide({ deviceConnected }: { deviceConnected: bool
           {steps.map((item, index) => {
             const active = index === step
             const done = index < step
-            return <div key={item.title} className={`flex gap-3 rounded-xl border p-4 ${active ? "border-primary/40 bg-primary/5" : "bg-muted/20"}`}><div className={`flex size-9 shrink-0 items-center justify-center rounded-full ${done ? "bg-primary text-primary-foreground" : active ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>{done ? <Check className="size-4" /> : <item.icon className="size-4" />}</div><div><p className="text-sm font-medium">{index + 1}. {item.title}</p><p className="mt-1 text-xs leading-relaxed text-muted-foreground">{item.description}</p></div></div>
+            return <div key={item.title} className={`flex gap-3 rounded-2xl p-4 ${active ? "bg-primary/[0.075]" : "bg-muted/45"}`}><div className={`flex size-9 shrink-0 items-center justify-center rounded-xl ${done ? "bg-primary text-primary-foreground" : active ? "bg-primary/10 text-primary" : "bg-card text-muted-foreground"}`}>{done ? <Check className="size-4" /> : <item.icon className="size-4" />}</div><div><p className="text-sm font-medium">{index + 1}. {item.title}</p><p className="mt-1 text-xs leading-relaxed text-muted-foreground">{item.description}</p></div></div>
           })}
         </div>
         <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">

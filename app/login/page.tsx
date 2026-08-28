@@ -57,7 +57,7 @@ export default function LoginPage() {
         </div>
 
         <div className="max-w-md">
-          <h1 className="text-balance text-4xl font-bold leading-tight">
+          <h1 className="text-balance text-[2.75rem] font-bold leading-[1.18] tracking-[-0.045em] xl:text-5xl">
             꾸준함이 실력이 되는
             <br />
             알고리즘 스터디 플랫폼
@@ -100,7 +100,7 @@ export default function LoginPage() {
       </div>
 
       {/* Form panel */}
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col bg-background">
         <div className="flex items-center justify-between p-4">
           <div className="lg:hidden">
             <Logo />
@@ -111,16 +111,16 @@ export default function LoginPage() {
         </div>
 
         <div className="flex flex-1 items-center justify-center px-6 pb-12">
-          <div className="w-full max-w-sm">
+          <div className="w-full max-w-sm rounded-3xl bg-card p-6 shadow-[0_12px_50px_rgba(15,23,42,0.05)] ring-1 ring-foreground/[0.05] sm:p-8 lg:bg-transparent lg:p-0 lg:shadow-none lg:ring-0">
             <div className="mb-8 text-center">
-              <h2 className="text-2xl font-bold tracking-tight">함께 성장할 준비가 되셨나요?</h2>
+              <h2 className="text-2xl font-bold tracking-[-0.035em]">함께 성장할 준비가 되셨나요?</h2>
               <p className="mt-2 text-sm text-muted-foreground">
                 Google로 시작하고, 스터디 멤버들과 목표를 달성해보세요.
               </p>
             </div>
 
             <div className="flex flex-col gap-3">
-              <Button variant="outline" className="h-11 w-full gap-2" onClick={signInWithGoogle} disabled={pending}>
+              <Button variant="outline" size="lg" className="w-full gap-2" onClick={signInWithGoogle} disabled={pending}>
                 <GoogleIcon className="size-4.5" />
                 {pending ? "Google로 연결 중..." : "Google로 계속하기"}
               </Button>

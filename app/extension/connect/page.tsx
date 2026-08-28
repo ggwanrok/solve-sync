@@ -41,7 +41,7 @@ export default async function ExtensionConnectPage({ searchParams }: { searchPar
             request={{ installationId, deviceName, redirectUri: redirect.url.toString(), state, codeChallenge }}
           />
         ) : (
-          <div className="w-full max-w-md rounded-2xl border bg-card p-6 text-center shadow-xl">
+          <div className="w-full max-w-md rounded-3xl bg-card p-7 text-center shadow-xl ring-1 ring-foreground/[0.055]">
             <AlertTriangle className="mx-auto size-10 text-destructive" />
             <h1 className="mt-4 text-lg font-semibold">올바르지 않은 연결 요청입니다.</h1>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">SolveSync 확장 프로그램을 다시 열고 계정 연결을 시작해 주세요.</p>

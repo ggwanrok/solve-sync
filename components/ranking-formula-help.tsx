@@ -16,7 +16,7 @@ export function RankingFormulaHelp() {
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Positioner side="bottom" align="start" sideOffset={8} className="isolate z-50">
-          <Popover.Popup className="w-[min(22rem,calc(100vw-2rem))] origin-(--transform-origin) rounded-xl border border-border bg-popover p-4 text-popover-foreground shadow-md outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
+          <Popover.Popup className="w-[min(22rem,calc(100vw-2rem))] origin-(--transform-origin) rounded-2xl bg-popover p-4 text-popover-foreground shadow-[0_16px_48px_rgba(15,23,42,0.16)] ring-1 ring-foreground/[0.065] outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
             <Popover.Title className="text-sm font-semibold">랭킹 점수 산출 방식</Popover.Title>
             <Popover.Description className="mt-1.5 text-xs leading-5 text-muted-foreground">
               알고리즘과 SQL에 같은 산식을 각각 적용한 뒤 SQL 점수를 2로 정수 나눗셈해 반영합니다.

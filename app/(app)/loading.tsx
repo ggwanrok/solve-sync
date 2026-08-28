@@ -5,7 +5,7 @@ function LoadingBlock({ className }: { className: string }) {
 export default function AppPageLoading() {
   return (
     <div
-      className="mx-auto flex max-w-6xl flex-col gap-6"
+      className="page-container"
       role="status"
       aria-label="페이지 불러오는 중"
     >
@@ -18,7 +18,7 @@ export default function AppPageLoading() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {Array.from({ length: 6 }).map((_, index) => (
-          <div key={index} className="space-y-4 rounded-xl border bg-card p-5">
+          <div key={index} className="space-y-4 rounded-2xl bg-card p-5 shadow-sm ring-1 ring-foreground/[0.055]">
             <LoadingBlock className="h-5 w-2/3" />
             <div className="space-y-2">
               <LoadingBlock className="h-4 w-full" />

@@ -156,12 +156,12 @@ export function AccountDialog({ user, browserExtensionStatus }: { user: AccountU
   return (
     <Dialog>
       <DialogTrigger render={<button type="button" className="rounded-full outline-none ring-ring focus-visible:ring-2" aria-label="마이페이지 열기" />}>
-        <UserAvatar name={nickname} imageUrl={avatarUrl} className="size-9" />
+        <UserAvatar name={nickname} imageUrl={avatarUrl} className="size-10" />
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
         <DialogHeader><DialogTitle>마이페이지</DialogTitle><DialogDescription>프로필과 확장 프로그램 연결 기기를 관리합니다.</DialogDescription></DialogHeader>
 
-        <div className="rounded-xl border p-4">
+        <div className="rounded-2xl bg-muted/45 p-4">
           <div className="flex items-center gap-4">
             <UserAvatar name={nickname} imageUrl={avatarUrl} className="size-16" />
             <div className="min-w-0 flex-1">
@@ -226,7 +226,7 @@ export function AccountDialog({ user, browserExtensionStatus }: { user: AccountU
           </form>
         </div>
 
-        <div className="rounded-xl border p-4">
+        <div className="rounded-2xl bg-muted/45 p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-medium">연결된 기기 {devices.length}대</p>
@@ -235,7 +235,7 @@ export function AccountDialog({ user, browserExtensionStatus }: { user: AccountU
             <MonitorSmartphone className="size-5 shrink-0 text-muted-foreground" />
           </div>
 
-          <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border bg-muted/20 p-3">
+          <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-card p-3 shadow-sm">
             <div className="min-w-0">
               <p className="text-sm font-medium">현재 브라우저</p>
               <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">{browserStatusCopy.description}</p>
@@ -248,7 +248,7 @@ export function AccountDialog({ user, browserExtensionStatus }: { user: AccountU
           {devices.length ? (
             <div className="mt-3 space-y-2">
               {devices.map((device) => (
-                <div key={device.installationId} className="flex items-center gap-3 rounded-lg border bg-muted/20 p-3">
+                <div key={device.installationId} className="flex items-center gap-3 rounded-xl bg-card p-3 shadow-sm">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{device.deviceName}</p>
                     <p className="mt-0.5 text-[11px] text-muted-foreground">
@@ -270,12 +270,12 @@ export function AccountDialog({ user, browserExtensionStatus }: { user: AccountU
               ))}
             </div>
           ) : (
-            <p className="mt-3 rounded-lg bg-muted/40 p-3 text-center text-xs text-muted-foreground">연결된 기기가 없습니다.</p>
+            <p className="mt-3 rounded-xl bg-card p-3 text-center text-xs text-muted-foreground">연결된 기기가 없습니다.</p>
           )}
         </div>
 
         <Button type="button" variant="outline" className="w-full" onClick={logout}><LogOut className="size-4" />로그아웃</Button>
-        <div className="rounded-xl border border-destructive/30 p-4">
+        <div className="rounded-2xl bg-destructive/5 p-4 ring-1 ring-destructive/20">
           {!confirmDelete ? <Button type="button" variant="destructive" className="w-full" onClick={() => setConfirmDelete(true)}><Trash2 className="size-4" />회원 탈퇴</Button> : <div className="space-y-3"><p className="text-sm text-destructive">계정과 모든 풀이·친구·스터디 데이터가 삭제되며 복구할 수 없습니다.</p><div className="flex gap-2"><Button type="button" variant="outline" className="flex-1" onClick={() => setConfirmDelete(false)} disabled={deleting}>취소</Button><Button type="button" variant="destructive" className="flex-1" onClick={deleteAccount} disabled={deleting}>{deleting ? "삭제 중..." : "영구 삭제"}</Button></div></div>}
         </div>
         {avatarCropFile && <ProfileImageCropDialog file={avatarCropFile} onCancel={closeAvatarCrop} onApply={uploadAvatar} />}

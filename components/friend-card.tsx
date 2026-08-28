@@ -43,13 +43,13 @@ export function FriendCard({ friend, contributions }: { friend: FriendCardProfil
   }
 
   return (
-    <div className="flex items-center gap-1 rounded-xl border p-2 transition-colors hover:border-primary/30">
+    <div className="flex items-center gap-1 rounded-2xl bg-muted/45 p-2.5 transition-colors hover:bg-muted/75">
       <Dialog>
         <DialogTrigger
           render={
             <button
               type="button"
-              className="flex min-w-0 flex-1 items-center gap-3 rounded-lg p-1 text-left outline-none transition-colors hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex min-w-0 flex-1 items-center gap-3 rounded-xl p-1 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
               onClick={() => setConfirming(false)}
             />
           }
@@ -67,7 +67,7 @@ export function FriendCard({ friend, contributions }: { friend: FriendCardProfil
             <DialogDescription>{name}님의 프로필과 최근 잔디 현황입니다.</DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-col items-center rounded-xl bg-accent/35 px-5 py-6 text-center sm:flex-row sm:text-left">
+          <div className="flex flex-col items-center rounded-2xl bg-primary/[0.065] px-5 py-7 text-center sm:flex-row sm:text-left">
             <UserAvatar name={name} imageUrl={friend.avatar_url} className="size-24 ring-4 ring-background" />
             <div className="mt-4 min-w-0 sm:ml-5 sm:mt-0">
               <p className="truncate text-2xl font-bold tracking-tight">{name}</p>
@@ -76,7 +76,7 @@ export function FriendCard({ friend, contributions }: { friend: FriendCardProfil
             </div>
           </div>
 
-          <div className="rounded-xl border p-4">
+          <div className="rounded-2xl bg-muted/45 p-4">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
                 <span className="flex size-9 items-center justify-center rounded-lg bg-accent text-primary">

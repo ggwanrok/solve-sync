@@ -75,8 +75,8 @@ function StepList({ steps }: { steps: typeof installSteps }) {
   return (
     <ol className="grid gap-3 sm:grid-cols-2">
       {steps.map((step, index) => (
-        <li key={step.title} className="flex gap-3 rounded-xl border bg-muted/15 p-4">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+        <li key={step.title} className="flex gap-3 rounded-2xl bg-muted/55 p-4">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-sm font-semibold text-primary-foreground">
             {index + 1}
           </div>
           <div className="min-w-0">
@@ -97,9 +97,9 @@ export default async function ProgrammersGuidePage() {
   const connected = devices.length > 0
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-6">
-      <section className="overflow-hidden rounded-2xl border bg-card">
-        <div className="bg-gradient-to-br from-primary/12 via-accent/45 to-card p-6 sm:p-8">
+    <div className="page-container max-w-4xl">
+      <section className="overflow-hidden rounded-3xl bg-card shadow-[0_1px_2px_rgba(15,23,42,0.025),0_14px_40px_rgba(15,23,42,0.045)] ring-1 ring-foreground/[0.055]">
+        <div className="p-6 sm:p-8">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={connected ? "default" : "secondary"}>
               {connected ? "연동됨" : "현재 미연동"}
@@ -109,10 +109,10 @@ export default async function ProgrammersGuidePage() {
           <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <div className="flex items-center gap-3">
-                <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+                <div className="flex size-13 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                   <Chrome className="size-6" aria-hidden="true" />
                 </div>
-                <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">프로그래머스 풀이 자동 기록 연결하기</h1>
+                <h1 className="text-2xl font-bold tracking-[-0.035em] sm:text-3xl">프로그래머스 풀이 자동 기록 연결하기</h1>
               </div>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
                 Chrome 확장 프로그램이 프로그래머스의 정답 제출을 감지해 SolveSync로 자동 전송합니다.
@@ -138,7 +138,7 @@ export default async function ProgrammersGuidePage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <StepList steps={installSteps} />
-          <div className="flex items-start gap-3 rounded-xl bg-accent/45 p-4 text-xs leading-relaxed">
+          <div className="flex items-start gap-3 rounded-2xl bg-accent/45 p-4 text-xs leading-relaxed">
             <CircleAlert className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
             <p><strong className="font-medium">이미 설치되어 있다면 다시 설치할 필요가 없습니다.</strong> Chrome 도구 모음에서 SolveSync를 열고 아래 계정 연결 단계부터 진행하세요.</p>
           </div>
@@ -152,7 +152,7 @@ export default async function ProgrammersGuidePage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <StepList steps={connectSteps} />
-          <div className="flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 text-xs leading-relaxed text-muted-foreground">
+          <div className="flex items-start gap-3 rounded-2xl bg-primary/[0.065] p-4 text-xs leading-relaxed text-muted-foreground">
             <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
             <p>기기마다 별도의 연결 키가 발급되며 Google 비밀번호는 확장 프로그램에 전달되지 않습니다. 여러 PC를 사용한다면 각 PC에서 이 과정을 한 번씩 진행하세요.</p>
           </div>
@@ -182,26 +182,26 @@ export default async function ProgrammersGuidePage() {
           <CardDescription>아래 항목을 순서대로 확인해 보세요.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-xl border p-4">
+          <div className="rounded-2xl bg-muted/55 p-4">
             <p className="font-medium">확장 프로그램 아이콘이 안 보여요</p>
             <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">Chrome 도구 모음의 퍼즐 아이콘을 누르고 SolveSync 옆 고정 아이콘을 선택하세요.</p>
           </div>
-          <div className="rounded-xl border p-4">
+          <div className="rounded-2xl bg-muted/55 p-4">
             <p className="font-medium">재연동이 필요하다고 나와요</p>
             <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">확장 프로그램의 ‘계정 다시 연결’을 누르고 같은 계정으로 기기 승인을 다시 진행하세요.</p>
           </div>
-          <div className="rounded-xl border p-4">
+          <div className="rounded-2xl bg-muted/55 p-4">
             <p className="font-medium">풀이 기록이 바로 안 보여요</p>
             <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">확장 프로그램에서 대기 건수를 확인하고 ‘지금 동기화’를 누른 뒤 대시보드를 새로고침하세요.</p>
           </div>
-          <div className="rounded-xl border p-4">
+          <div className="rounded-2xl bg-muted/55 p-4">
             <p className="font-medium">다른 컴퓨터도 연결하고 싶어요</p>
             <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">새 컴퓨터에도 확장 프로그램을 설치하고 같은 계정으로 연결하세요. 기존 기기 연결은 유지됩니다.</p>
           </div>
         </CardContent>
       </Card>
 
-      <div className="flex flex-col items-start justify-between gap-3 rounded-xl border bg-muted/20 p-4 sm:flex-row sm:items-center">
+      <div className="flex flex-col items-start justify-between gap-3 rounded-2xl bg-card p-5 shadow-sm ring-1 ring-foreground/[0.055] sm:flex-row sm:items-center">
         <div className="flex items-start gap-3">
           <MonitorSmartphone className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
           <div>

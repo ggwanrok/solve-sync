@@ -66,27 +66,27 @@
 
 :root {
   color-scheme: light;
-  --background: oklch(0.99 0.004 145);
-  --foreground: oklch(0.18 0.01 160);
+  --background: oklch(0.975 0.006 150);
+  --foreground: oklch(0.17 0.012 160);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.18 0.01 160);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.18 0.01 160);
   --primary: oklch(0.58 0.145 156);
   --primary-foreground: oklch(0.99 0.01 145);
-  --secondary: oklch(0.96 0.006 155);
+  --secondary: oklch(0.952 0.009 155);
   --secondary-foreground: oklch(0.26 0.02 160);
-  --muted: oklch(0.96 0.006 155);
-  --muted-foreground: oklch(0.52 0.02 160);
-  --accent: oklch(0.94 0.03 155);
+  --muted: oklch(0.95 0.008 155);
+  --muted-foreground: oklch(0.5 0.018 160);
+  --accent: oklch(0.935 0.031 155);
   --accent-foreground: oklch(0.3 0.06 158);
   --destructive: oklch(0.58 0.21 25);
   --success: oklch(0.58 0.145 156);
   --success-foreground: oklch(0.99 0.01 145);
   --warning: oklch(0.72 0.16 65);
   --warning-foreground: oklch(0.22 0.03 65);
-  --border: oklch(0.9 0.008 155);
-  --input: oklch(0.9 0.008 155);
+  --border: oklch(0.9 0.01 155);
+  --input: oklch(0.89 0.012 155);
   --ring: oklch(0.58 0.145 156);
   --chart-1: oklch(0.58 0.145 156);
   --chart-2: oklch(0.7 0.13 160);
@@ -106,8 +106,8 @@
   --grass-4: oklch(0.48 0.15 156);
   --grass-5: oklch(0.42 0.15 156);
   --grass-6: oklch(0.36 0.14 156);
-  --radius: 0.7rem;
-  --sidebar: oklch(0.98 0.006 155);
+  --radius: 0.875rem;
+  --sidebar: oklch(0.985 0.006 155);
   --sidebar-foreground: oklch(0.18 0.01 160);
   --sidebar-primary: oklch(0.58 0.145 156);
   --sidebar-primary-foreground: oklch(0.99 0.01 145);
@@ -174,6 +174,38 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    letter-spacing: -0.012em;
+  }
+  ::selection {
+    @apply bg-primary/20 text-foreground;
+  }
+  button,
+  a,
+  input,
+  textarea,
+  select {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer components {
+  .page-container {
+    @apply mx-auto flex w-full max-w-6xl flex-col gap-6;
+  }
+  .page-container-wide {
+    @apply mx-auto flex w-full max-w-7xl flex-col gap-5;
+  }
+  .page-heading {
+    @apply text-[1.75rem] leading-tight font-bold tracking-[-0.035em] sm:text-[2rem];
+  }
+  .page-description {
+    @apply mt-2 max-w-2xl text-sm leading-6 text-muted-foreground;
+  }
+  .section-title {
+    @apply text-lg font-semibold tracking-[-0.025em];
+  }
+  .empty-state {
+    @apply rounded-2xl bg-card px-6 py-16 text-center ring-1 ring-foreground/[0.055];
   }
 }

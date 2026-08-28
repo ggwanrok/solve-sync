@@ -28,7 +28,7 @@ const nav = [
 function NavLinks({ pendingFriendRequestCount, onNavigate }: { pendingFriendRequestCount: number; onNavigate?: () => void }) {
   const pathname = usePathname()
   return (
-    <nav className="flex flex-col gap-1">
+    <nav className="flex flex-col gap-1.5">
       {nav.map((item) => {
         const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href)
         return (
@@ -38,13 +38,13 @@ function NavLinks({ pendingFriendRequestCount, onNavigate }: { pendingFriendRequ
             prefetch
             onClick={onNavigate}
             className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              "flex h-11 items-center gap-3 rounded-xl px-3.5 text-sm font-semibold transition-[background-color,color,transform] active:scale-[0.99]",
               active
-                ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-sidebar-accent/65 hover:text-sidebar-foreground",
             )}
           >
-            <item.icon className="size-4.5" />
+            <item.icon className="size-5" strokeWidth={active ? 2.4 : 2} />
             {item.label}
             {item.href === "/friends" && pendingFriendRequestCount > 0 && (
               <Badge className="ml-auto h-5 min-w-5 justify-center rounded-full px-1.5 text-[10px]" aria-label={`받은 친구 요청 ${pendingFriendRequestCount}건`}>
@@ -60,8 +60,8 @@ function NavLinks({ pendingFriendRequestCount, onNavigate }: { pendingFriendRequ
 
 function SidebarContent({ user, contributions, onNavigate }: { user: ShellUser; contributions: ContributionDay[]; onNavigate?: () => void }) {
   return (
-    <div className="flex h-full flex-col gap-6 p-4">
-      <div className="px-2 pt-2">
+    <div className="flex h-full flex-col gap-8 px-4 py-5">
+      <div className="px-2 py-1">
         <Link href="/" onClick={onNavigate}>
           <Logo />
         </Link>
@@ -69,24 +69,24 @@ function SidebarContent({ user, contributions, onNavigate }: { user: ShellUser; 
 
       <NavLinks pendingFriendRequestCount={user.pendingFriendRequestCount} onNavigate={onNavigate} />
 
-      <div className="mt-auto flex flex-col gap-3">
+      <div className="mt-auto flex flex-col gap-4">
         <Link
           href="/programmers"
           onClick={onNavigate}
-          className="flex items-center justify-center gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent/45 px-3 py-2 text-xs font-medium text-sidebar-foreground transition-colors hover:border-primary/35 hover:bg-sidebar-accent"
+          className="flex h-10 items-center justify-center gap-2 rounded-xl bg-card px-3 text-xs font-semibold text-sidebar-foreground shadow-sm ring-1 ring-foreground/[0.065] transition-colors hover:bg-sidebar-accent"
         >
           <Chrome className="size-3.5 text-primary" aria-hidden="true" />
           프로그래머스 연동방법
         </Link>
-        <div className="border-y border-sidebar-border px-2 py-4">
+        <div className="rounded-2xl bg-card px-3 py-4 shadow-sm ring-1 ring-foreground/[0.055]">
           <div className="mb-2 flex items-center justify-between text-[11px] text-muted-foreground">
             <span className="font-medium text-sidebar-foreground">나의 잔디</span>
             <span>최근 16주</span>
           </div>
           <ContributionGraph data={contributions} compact />
         </div>
-        <div className="flex items-center gap-3 rounded-xl px-2 py-1.5">
-          <UserAvatar name={user.name} imageUrl={user.avatarUrl} className="size-9" />
+        <div className="flex items-center gap-3 rounded-xl px-2 py-1">
+          <UserAvatar name={user.name} imageUrl={user.avatarUrl} className="size-10" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium">{user.name}</p>
             <p className="truncate text-xs text-muted-foreground">@{user.handle}</p>
@@ -124,33 +124,22 @@ export function AppShell({ children, user, contributions, notificationInbox }: {
 
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-r border-sidebar-border bg-sidebar lg:block">
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-r border-sidebar-border/70 bg-sidebar lg:block">
         <SidebarContent user={user} contributions={contributions} />
       </aside>
 
-      {/* Mobile drawer */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="absolute inset-0 bg-foreground/40 backdrop-blur-sm"
-            onClick={() => setMobileOpen(false)}
-          />
-          <div className="absolute left-0 top-0 h-full w-72 border-r border-sidebar-border bg-sidebar">
+          <div className="absolute inset-0 bg-foreground/30 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+          <div className="absolute left-0 top-0 h-full w-72 border-r border-sidebar-border/70 bg-sidebar shadow-2xl">
             <SidebarContent user={user} contributions={contributions} onNavigate={() => setMobileOpen(false)} />
           </div>
         </div>
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur-md md:px-6">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="lg:hidden"
-            aria-label="메뉴 열기"
-            onClick={() => setMobileOpen(true)}
-          >
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border/55 bg-background/88 px-4 backdrop-blur-xl md:px-6">
+          <Button variant="ghost" size="icon" className="lg:hidden" aria-label="메뉴 열기" onClick={() => setMobileOpen(true)}>
             <Menu className="size-5" />
           </Button>
 
@@ -158,7 +147,7 @@ export function AppShell({ children, user, contributions, notificationInbox }: {
             <Logo showText={false} />
           </div>
 
-          <div className="ml-auto flex items-center gap-2 md:gap-3">
+          <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
             {refreshLabel && (
               <Button
                 type="button"

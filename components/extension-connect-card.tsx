@@ -68,8 +68,8 @@ export function ExtensionConnectCard({ request, signedIn, accountLabel }: { requ
   }
 
   return (
-    <div className="w-full max-w-md rounded-2xl border bg-card p-6 text-card-foreground shadow-xl">
-      <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+    <div className="w-full max-w-md rounded-3xl bg-card p-7 text-card-foreground shadow-[0_20px_70px_rgba(15,23,42,0.1)] ring-1 ring-foreground/[0.055]">
+      <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
         <Chrome className="size-6" />
       </div>
       <h1 className="mt-5 text-xl font-semibold">SolveSync 확장 프로그램 연결</h1>
@@ -77,7 +77,7 @@ export function ExtensionConnectCard({ request, signedIn, accountLabel }: { requ
         이 기기에서 수집한 프로그래머스 풀이를 현재 SolveSync 계정에 동기화합니다.
       </p>
 
-      <div className="mt-5 rounded-xl border bg-muted/30 p-4">
+      <div className="mt-5 rounded-2xl bg-muted/55 p-4">
         <p className="text-xs text-muted-foreground">연결할 기기</p>
         <p className="mt-1 font-medium">{request.deviceName}</p>
         <div className="mt-3 flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">

@@ -104,7 +104,7 @@ function DifficultyDonutChart({ counts }: { counts: ViewerRanking["levelSolved"]
 
 export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
   return (
-    <Card className="bg-gradient-to-br from-card via-card to-primary/5">
+    <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Trophy className="size-4.5 text-primary" />
@@ -115,10 +115,10 @@ export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
           <RankingFormulaHelp />
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+      <CardContent className="grid gap-7 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
         <div className="grid self-center grid-cols-2 gap-3 lg:grid-cols-1">
-          <div className="flex min-h-24 items-center gap-3 rounded-xl bg-primary/8 p-4 ring-1 ring-inset ring-primary/15 sm:gap-4 sm:p-5">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/12 text-primary">
+          <div className="flex min-h-28 items-center gap-3 rounded-2xl bg-primary/[0.075] p-4 sm:gap-4 sm:p-5">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/12 text-primary">
               <Crown className="size-4.5" />
             </div>
             <div className="min-w-0">
@@ -128,8 +128,8 @@ export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
               </p>
             </div>
           </div>
-          <div className="flex min-h-24 items-center gap-3 rounded-xl bg-accent/55 p-4 ring-1 ring-inset ring-border/70 sm:gap-4 sm:p-5">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-background/70 text-accent-foreground">
+          <div className="flex min-h-28 items-center gap-3 rounded-2xl bg-muted/75 p-4 sm:gap-4 sm:p-5">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-card text-accent-foreground shadow-sm">
               <Gauge className="size-4.5" />
             </div>
             <div className="min-w-0">
@@ -171,14 +171,14 @@ export function LeaderboardCard({ entries, viewerId }: { entries: DashboardRanki
             <div
               key={entry.userId}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-accent/45",
-                isViewer && "bg-primary/8 ring-1 ring-inset ring-primary/15",
+                "flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-muted/65",
+                isViewer && "bg-primary/[0.075]",
               )}
             >
-              <div className={cn("flex size-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold tabular-nums", rankStyle[entry.rankingPosition] || "text-muted-foreground")}>
+              <div className={cn("flex size-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold tabular-nums", rankStyle[entry.rankingPosition] || "text-muted-foreground")}>
                 {entry.rankingPosition}
               </div>
-              <UserAvatar name={entry.nickname || entry.handle} imageUrl={entry.avatarUrl} className="size-8" />
+              <UserAvatar name={entry.nickname || entry.handle} imageUrl={entry.avatarUrl} className="size-9" />
               <div className="min-w-0 flex-1">
                 <div className="flex min-w-0 items-center gap-1.5">
                   <p className="truncate text-sm font-medium">{entry.nickname || entry.handle}</p>
@@ -190,7 +190,7 @@ export function LeaderboardCard({ entries, viewerId }: { entries: DashboardRanki
             </div>
           )
         }) : (
-          <div className="flex min-h-64 flex-col items-center justify-center rounded-lg bg-muted/35 px-6 text-center">
+          <div className="flex min-h-64 flex-col items-center justify-center rounded-2xl bg-muted/45 px-6 text-center">
             <Trophy className="mb-3 size-8 text-muted-foreground/55" />
             <p className="text-sm font-medium">아직 집계된 랭킹이 없습니다.</p>
             <p className="mt-1 text-xs leading-5 text-muted-foreground">첫 풀이가 기록되면 랭킹이 시작돼요.</p>
