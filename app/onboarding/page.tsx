@@ -71,7 +71,7 @@ export default function OnboardingPage() {
     <main className="flex min-h-screen items-center justify-center bg-background p-6">
       {pending && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-3 rounded-2xl border bg-card px-8 py-6 shadow-lg">
+          <div className="flex flex-col items-center gap-3 rounded-3xl bg-card px-8 py-6 shadow-xl ring-1 ring-foreground/[0.055]">
             <LoaderCircle className="size-7 animate-spin text-primary" />
             <div className="text-center">
               <p className="font-medium">아이디를 설정하고 있어요</p>
@@ -80,10 +80,10 @@ export default function OnboardingPage() {
           </div>
         </div>
       )}
-      <div className="w-full max-w-md rounded-2xl border bg-card p-8 shadow-sm">
+      <div className="w-full max-w-md rounded-3xl bg-card p-7 shadow-[0_16px_60px_rgba(15,23,42,0.07)] ring-1 ring-foreground/[0.055] sm:p-9">
         <Logo />
         <div className="mt-8">
-          <h1 className="text-2xl font-bold">사용할 아이디를 설정해주세요.</h1>
+          <h1 className="text-2xl font-bold tracking-[-0.035em]">사용할 아이디를 설정해주세요.</h1>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             친구 검색에 사용하는 고유한 아이디이며, 생성 후에는 변경할 수 없습니다.
           </p>
@@ -107,7 +107,7 @@ export default function OnboardingPage() {
                   required
                 />
               </div>
-              <Button type="button" variant="outline" onClick={checkAvailability} disabled={checking || !handle} className="h-8 gap-1.5">
+              <Button type="button" variant="outline" onClick={checkAvailability} disabled={checking || !handle} className="gap-1.5">
                 {checking ? "확인 중" : "중복 확인"}
                 {!checking && <Search className="size-4" />}
               </Button>

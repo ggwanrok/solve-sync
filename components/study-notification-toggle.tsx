@@ -295,7 +295,7 @@ export function StudyNotificationToggle({ studyId, initialEnabled }: { studyId: 
 
           {setupStage === "guide" && (
             <>
-              <div className="space-y-3 rounded-lg border bg-muted/40 p-4">
+              <div className="space-y-3 rounded-2xl bg-muted/55 p-4">
                 <div className="flex gap-3">
                   <Settings className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
                   <div>
@@ -323,7 +323,7 @@ export function StudyNotificationToggle({ studyId, initialEnabled }: { studyId: 
 
           {setupStage === "confirm" && (
             <>
-              <div className="rounded-lg border bg-muted/40 p-4 text-center">
+              <div className="rounded-2xl bg-muted/55 p-4 text-center">
                 <CheckCircle2 className="mx-auto size-8 text-primary" aria-hidden="true" />
                 <p className="mt-3 font-medium">방금 테스트 알림을 받았나요?</p>
                 <p className="mt-1 text-xs leading-relaxed text-muted-foreground">시스템 알림 영역에 ‘SolveSync 알림 테스트’가 보여야 해요.</p>
@@ -340,7 +340,7 @@ export function StudyNotificationToggle({ studyId, initialEnabled }: { studyId: 
 
           {setupStage === "help" && (
             <>
-              <div className="space-y-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
+              <div className="space-y-2 rounded-2xl bg-amber-500/10 p-4 ring-1 ring-amber-500/20">
                 <p className="font-medium text-amber-800 dark:text-amber-300">시스템 알림 설정을 확인해 주세요</p>
                 <p className="text-xs leading-relaxed text-muted-foreground">{systemNotificationGuide()}</p>
                 <p className="text-xs leading-relaxed text-muted-foreground">방해 금지 모드나 집중 모드도 알림을 숨길 수 있어요.</p>

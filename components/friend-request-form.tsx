@@ -102,7 +102,7 @@ export function FriendRequestForm() {
             value={query}
             onChange={(event) => updateQuery(event.target.value)}
             placeholder="@아이디로 친구 검색"
-            className="pl-9"
+          className="pl-10"
             maxLength={21}
             autoComplete="off"
             disabled={pendingHandle !== null}
@@ -116,7 +116,7 @@ export function FriendRequestForm() {
       </form>
 
       {normalizedHandle && searchStatus !== "idle" && (
-        <div className="mt-2 overflow-hidden rounded-xl border bg-card shadow-sm" aria-live="polite">
+        <div className="mt-2 overflow-hidden rounded-2xl bg-card shadow-lg ring-1 ring-foreground/[0.075]" aria-live="polite">
           {searchStatus === "loading" ? (
             <div className="flex items-center justify-center gap-2 px-4 py-5 text-sm text-muted-foreground">
               <LoaderCircle className="size-4 animate-spin" />아이디 검색 중...

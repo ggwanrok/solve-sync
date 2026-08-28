@@ -121,16 +121,16 @@ export default async function StudyListPage({
   const allHref = studyPageHref({ field, query, minDifficulty, view: "all" })
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6">
+    <div className="page-container">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">스터디룸</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{hasSearchFilters ? `${directoryLabel} 검색 결과 ${total}개` : `${directoryLabel} ${total}개`} · 함께 공부할 방을 찾아보세요.</p>
+          <h1 className="page-heading">스터디룸</h1>
+          <p className="page-description">{hasSearchFilters ? `${directoryLabel} 검색 결과 ${total}개` : `${directoryLabel} ${total}개`} · 함께 공부할 방을 찾아보세요.</p>
         </div>
         <CreateStudyDialog />
       </div>
 
-      <form method="get" className="rounded-xl border bg-card p-3">
+      <form method="get" className="rounded-2xl bg-card p-4 shadow-sm ring-1 ring-foreground/[0.055] sm:p-5">
         <input type="hidden" name="view" value={view} />
         <div className="flex flex-col gap-2 sm:flex-row">
           <div className="relative sm:w-44">
@@ -138,7 +138,7 @@ export default async function StudyListPage({
               name="field"
               defaultValue={field}
               aria-label="검색 기준"
-              className="h-9 w-full appearance-none rounded-lg border border-input bg-background py-0 pl-3 pr-10 text-sm outline-none focus:border-ring focus:ring-3 focus:ring-ring/50"
+              className="h-11 w-full appearance-none rounded-xl border border-transparent bg-muted/65 py-0 pl-3.5 pr-10 text-sm font-medium outline-none ring-1 ring-foreground/[0.065] focus:ring-2 focus:ring-ring/45"
             >
               <option value="title">제목으로 검색</option>
               <option value="description">설명으로 검색</option>
@@ -148,10 +148,10 @@ export default async function StudyListPage({
           </div>
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input key={params.query || "empty-query"} name="query" defaultValue={params.query || ""} placeholder="검색어를 입력하세요" className="h-9 pl-9" />
+            <Input key={params.query || "empty-query"} name="query" defaultValue={params.query || ""} placeholder="검색어를 입력하세요" className="pl-10" />
           </div>
-          <Button type="submit" className="h-9 px-4">검색</Button>
-          {hasSearchFilters && <Button render={<Link href={resetHref} />} nativeButton={false} type="button" variant="outline" className="h-9 px-4">필터 초기화</Button>}
+          <Button type="submit">검색</Button>
+          {hasSearchFilters && <Button render={<Link href={resetHref} />} nativeButton={false} type="button" variant="outline">필터 초기화</Button>}
         </div>
         <fieldset className="mt-3 border-t pt-3">
           <legend className="px-1 text-xs font-medium text-muted-foreground">포함할 방 난이도</legend>
@@ -159,12 +159,12 @@ export default async function StudyListPage({
         </fieldset>
       </form>
 
-      <nav className="flex w-full border-b" aria-label="스터디룸 보기 방식">
+      <nav className="flex w-fit rounded-xl bg-muted/70 p-1" aria-label="스터디룸 보기 방식">
         <Button
           render={<Link href={joinedHref} />}
           nativeButton={false}
           variant="ghost"
-          className={`rounded-b-none border-b-2 px-4 ${joinedOnly ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}
+          className={`h-9 rounded-lg px-4 ${joinedOnly ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
           aria-current={joinedOnly ? "page" : undefined}
         >
           참여 중인 스터디룸
@@ -173,7 +173,7 @@ export default async function StudyListPage({
           render={<Link href={allHref} />}
           nativeButton={false}
           variant="ghost"
-          className={`rounded-b-none border-b-2 px-4 ${!joinedOnly ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}
+          className={`h-9 rounded-lg px-4 ${!joinedOnly ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
           aria-current={!joinedOnly ? "page" : undefined}
         >
           모두 둘러보기
@@ -188,11 +188,11 @@ export default async function StudyListPage({
           const joined = room.is_joined
           const ownerName = room.owner_nickname || room.owner_handle || "방장"
           return (
-            <Card key={room.id} className="group transition-colors hover:border-primary/40">
-              <CardContent className="flex h-full flex-col gap-4 p-5">
+            <Card key={room.id} className="group py-0 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(15,23,42,0.075)]">
+              <CardContent className="flex h-full flex-col gap-5 p-5 sm:p-6">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <h2 className="truncate font-semibold">{room.name}</h2>
+                    <h2 className="truncate text-base font-semibold tracking-tight">{room.name}</h2>
                     {room.is_private && <Lock className="size-3.5 text-muted-foreground" />}
                     {leader && <Badge variant="secondary" className="gap-1 px-1.5 py-0 text-xs"><Crown className="size-3 text-warning-foreground" />리더</Badge>}
                     {!leader && joined && <Badge variant="secondary" className="px-1.5 py-0 text-xs">참여 중</Badge>}
@@ -200,7 +200,7 @@ export default async function StudyListPage({
                   <p className="mt-1 h-10 line-clamp-2 text-sm text-muted-foreground">{room.description || <span className="sr-only">소개 없음</span>}</p>
                   <p className="mt-2 text-xs text-muted-foreground">방장 · {ownerName}</p>
                 </div>
-                <div className="rounded-lg border bg-muted/40 px-3 py-2 text-sm">
+                <div className="rounded-xl bg-muted/65 px-3.5 py-3 text-sm">
                   <span className="text-muted-foreground">규칙 · </span>
                   <span className="font-medium">{room.goal_period === "daily" ? "매일" : "매주"} {room.goal_count}문제 · Lv.{room.min_difficulty} 이상</span>
                 </div>
@@ -217,7 +217,7 @@ export default async function StudyListPage({
       </div>
 
       {studyRooms.length === 0 && (
-        <div className="rounded-xl border border-dashed py-16 text-center">
+        <div className="empty-state">
           {joinedOnly && !hasSearchFilters ? <Users className="mx-auto mb-3 size-8 text-muted-foreground/50" /> : <Search className="mx-auto mb-3 size-8 text-muted-foreground/50" />}
           <p className="text-sm font-medium">
             {joinedOnly && !hasSearchFilters

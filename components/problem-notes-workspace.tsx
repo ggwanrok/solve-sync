@@ -142,7 +142,7 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
 
   if (!problems.length) {
     return (
-      <div className="mx-auto flex max-w-3xl flex-col gap-6">
+      <div className="page-container max-w-3xl">
         <header>
           <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight sm:text-3xl"><NotebookPen className="size-6 text-primary" />문제 메모</h1>
         </header>
@@ -158,7 +158,7 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
   }
 
   return (
-    <div className="mx-auto flex max-w-7xl flex-col gap-5">
+    <div className="page-container-wide">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight sm:text-3xl"><NotebookPen className="size-6 text-primary" />문제 메모</h1>
         <div className="flex gap-2 text-xs">
@@ -176,9 +176,9 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
               <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="문제명, 알고리즘 검색" className="pl-8" />
             </div>
-            <div className="mt-2 grid grid-cols-3 gap-1 rounded-lg bg-muted/55 p-1">
+            <div className="mt-2 grid grid-cols-3 gap-1 rounded-xl bg-muted/70 p-1">
               {([['all', '전체'], ['written', '작성'], ['empty', '미작성']] as const).map(([value, label]) => (
-                <button key={value} type="button" onClick={() => setFilter(value)} className={cn("rounded-md px-2 py-1.5 text-xs font-medium transition-colors", filter === value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>{label}</button>
+                <button key={value} type="button" onClick={() => setFilter(value)} className={cn("rounded-lg px-2 py-2 text-xs font-semibold transition-colors", filter === value ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>{label}</button>
               ))}
             </div>
           </CardHeader>
@@ -190,7 +190,7 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
                     key={problem.id}
                     type="button"
                     onClick={() => selectProblem(problem.id)}
-                    className={cn("group flex w-full items-center gap-2 rounded-lg px-2.5 py-2.5 text-left transition-colors", selected?.id === problem.id ? "bg-primary/10 text-foreground" : "hover:bg-muted/60")}
+                    className={cn("group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-3 text-left transition-colors", selected?.id === problem.id ? "bg-primary/10 text-foreground" : "hover:bg-muted/60")}
                   >
                     <span className={cn("flex size-7 shrink-0 items-center justify-center rounded-full", problem.memo ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>{problem.memo ? <Check className="size-3.5" /> : <NotebookPen className="size-3.5" />}</span>
                     <span className="min-w-0 flex-1">
@@ -215,7 +215,7 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
               {dirtyIds.has(selected.id) && <Badge variant="secondary" className="shrink-0">저장 전</Badge>}
             </div>
 
-            <section className="rounded-xl border bg-card p-5 sm:p-6">
+            <section className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-foreground/[0.055] sm:p-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
@@ -245,7 +245,7 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
                   <label className="text-sm font-medium">체감 난이도</label>
                   <div className="flex flex-wrap gap-2">
                     {PERCEIVED_DIFFICULTIES.map((item) => (
-                      <button key={item.value} type="button" aria-pressed={draft.perceivedDifficulty === item.value} onClick={() => updateDraft("perceivedDifficulty", draft.perceivedDifficulty === item.value ? null : item.value)} className={cn("rounded-lg border px-3 py-2 text-xs font-medium transition-colors", draft.perceivedDifficulty === item.value ? "border-primary bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground")}>{item.label}</button>
+                      <button key={item.value} type="button" aria-pressed={draft.perceivedDifficulty === item.value} onClick={() => updateDraft("perceivedDifficulty", draft.perceivedDifficulty === item.value ? null : item.value)} className={cn("rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-colors", draft.perceivedDifficulty === item.value ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground")}>{item.label}</button>
                     ))}
                   </div>
                   {draft.perceivedDifficulty && <p className="text-xs text-muted-foreground">현재 선택: {perceivedDifficultyLabel(draft.perceivedDifficulty)}</p>}
@@ -264,7 +264,7 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
                         <label htmlFor={`memo-${field.key}`} className="text-sm font-medium">{field.label}</label>
                         <span className="text-[10px] text-muted-foreground">{draft[field.key].length}/{PROBLEM_MEMO_TEXT_LIMIT}</span>
                       </div>
-                      <textarea id={`memo-${field.key}`} rows={field.rows} value={draft[field.key]} maxLength={PROBLEM_MEMO_TEXT_LIMIT} onChange={(event) => updateDraft(field.key, event.target.value)} placeholder={field.placeholder} className="w-full resize-y rounded-lg border border-input bg-transparent px-3 py-2 text-sm leading-6 outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30" />
+                      <textarea id={`memo-${field.key}`} rows={field.rows} value={draft[field.key]} maxLength={PROBLEM_MEMO_TEXT_LIMIT} onChange={(event) => updateDraft(field.key, event.target.value)} placeholder={field.placeholder} className="w-full resize-y rounded-xl border border-transparent bg-muted/45 px-3.5 py-3 text-sm leading-6 outline-none ring-1 ring-foreground/[0.075] placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/45 dark:bg-input/30" />
                     </div>
                   ))}
                 </div>

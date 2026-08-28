@@ -71,15 +71,15 @@ function DataItem({ title, items, purpose }: { title: string; items: string; pur
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-6xl items-center px-4 md:px-6">
+      <header className="sticky top-0 z-30 border-b border-border/55 bg-background/88 backdrop-blur-xl">
+        <div className="mx-auto flex h-[4.5rem] max-w-6xl items-center px-5 md:px-8">
           <Link href="/" aria-label="Solve-Sync 홈으로 이동">
             <Logo />
           </Link>
           <div className="ml-auto flex items-center gap-2">
             <Link
               href="/"
-              className="hidden items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:flex"
+              className="hidden items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:flex"
             >
               <ArrowLeft className="size-4" />
               서비스로 돌아가기
@@ -90,13 +90,13 @@ export default function AboutPage() {
       </header>
 
       <main>
-        <section className="border-b bg-gradient-to-b from-primary/8 to-background">
+        <section className="border-b border-border/55">
           <div className="mx-auto max-w-6xl px-4 py-16 md:px-6 md:py-24">
             <div className="max-w-3xl">
-              <span className="inline-flex rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+              <span className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
                 About Solve-Sync
               </span>
-              <h1 className="mt-6 text-balance text-4xl font-bold tracking-tight md:text-5xl">
+              <h1 className="mt-6 text-balance text-4xl font-bold tracking-[-0.05em] md:text-5xl">
                 풀이 기록은 편리하게,
                 <br />
                 개인정보는 투명하게.
@@ -108,17 +108,17 @@ export default function AboutPage() {
             </div>
 
             <div className="mt-12 grid gap-4 md:grid-cols-3">
-              <div className="rounded-2xl border bg-card p-5 shadow-sm">
+              <div className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-foreground/[0.055]">
                 <KeyRound className="size-5 text-primary" />
                 <p className="mt-4 font-semibold">Google 계정으로 로그인</p>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">Google 계정 비밀번호를 수집하지 않고 인증 세션을 안전하게 관리합니다.</p>
               </div>
-              <div className="rounded-2xl border bg-card p-5 shadow-sm">
+              <div className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-foreground/[0.055]">
                 <Database className="size-5 text-primary" />
                 <p className="mt-4 font-semibold">학습에 필요한 정보만</p>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">풀이 기록과 친구·스터디 활동을 서비스 제공 목적으로만 처리합니다.</p>
               </div>
-              <div className="rounded-2xl border bg-card p-5 shadow-sm">
+              <div className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-foreground/[0.055]">
                 <ShieldCheck className="size-5 text-primary" />
                 <p className="mt-4 font-semibold">언제든 계정 삭제</p>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">마이페이지에서 계정과 연결된 서비스 데이터를 직접 삭제할 수 있습니다.</p>
@@ -141,7 +141,7 @@ export default function AboutPage() {
           </aside>
 
           <article className="min-w-0 space-y-12">
-            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 text-sm leading-7">
+            <div className="rounded-2xl bg-primary/[0.065] p-5 text-sm leading-7">
               Solve-Sync 운영자(이하 “운영자”)는 개인정보 보호법 등 관련 법령을 준수하며, 이용자의 개인정보를
               필요한 범위에서 안전하고 투명하게 처리합니다.
             </div>
@@ -158,7 +158,7 @@ export default function AboutPage() {
             </PolicySection>
 
             <PolicySection id="collection" number={2} title="처리하는 개인정보 항목과 수집 방법">
-              <div className="overflow-hidden rounded-2xl border bg-card px-5">
+              <div className="overflow-hidden rounded-2xl bg-card px-5 shadow-sm ring-1 ring-foreground/[0.055]">
                 <div className="hidden grid-cols-[9rem_1fr_1fr] gap-6 border-b py-3 text-xs font-semibold text-foreground md:grid">
                   <span>구분</span><span>처리 항목</span><span>이용 목적</span>
                 </div>
@@ -191,7 +191,7 @@ export default function AboutPage() {
                   ["Supabase", "인증, 데이터베이스 및 실시간 기능", "https://supabase.com/privacy"],
                   ["Vercel", "웹 서비스 호스팅 및 이용 분석", "https://vercel.com/legal/privacy-policy"],
                 ].map(([name, purpose, href]) => (
-                  <a key={name} href={href} target="_blank" rel="noreferrer" className="group rounded-xl border bg-card p-4 transition-colors hover:border-primary/40">
+                  <a key={name} href={href} target="_blank" rel="noreferrer" className="group rounded-2xl bg-card p-4 shadow-sm ring-1 ring-foreground/[0.055] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-md">
                     <span className="flex items-center gap-1.5 font-medium text-foreground">{name}<ExternalLink className="size-3.5 text-muted-foreground transition-colors group-hover:text-primary" /></span>
                     <span className="mt-2 block text-xs leading-5">{purpose}</span>
                   </a>
@@ -203,7 +203,7 @@ export default function AboutPage() {
 
             <PolicySection id="rights" number={5} title="이용자의 권리와 행사 방법">
               <p>이용자는 자신의 개인정보에 대해 열람, 정정, 삭제, 처리정지 및 동의 철회를 요구할 수 있습니다. 마이페이지에서 로그아웃과 회원 탈퇴를 직접 처리할 수 있으며, 연동 해제 등 그 밖의 요청은 아래 개인정보 문의 창구로 접수할 수 있습니다.</p>
-              <div className="rounded-xl border bg-card p-4">
+              <div className="rounded-2xl bg-card p-4 shadow-sm ring-1 ring-foreground/[0.055]">
                 <div className="flex items-start gap-3">
                   <Users className="mt-0.5 size-5 shrink-0 text-primary" />
                   <div>
@@ -224,7 +224,7 @@ export default function AboutPage() {
             </PolicySection>
 
             <PolicySection id="cookies" number={7} title="쿠키 및 자동 수집 장치">
-              <div className="flex items-start gap-3 rounded-xl border bg-card p-4">
+              <div className="flex items-start gap-3 rounded-2xl bg-card p-4 shadow-sm ring-1 ring-foreground/[0.055]">
                 <Cookie className="mt-0.5 size-5 shrink-0 text-primary" />
                 <p>서비스는 로그인 상태와 보안을 유지하기 위해 필수 인증 쿠키를 사용합니다. 테마 설정은 이용자의 브라우저에 저장될 수 있으며, 현재 자체 광고 목적의 추적 쿠키는 사용하지 않습니다.</p>
               </div>
@@ -232,7 +232,7 @@ export default function AboutPage() {
             </PolicySection>
 
             <PolicySection id="contact" number={8} title="개인정보 보호책임자 및 권익침해 구제">
-              <div className="rounded-2xl border bg-card p-5">
+              <div className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-foreground/[0.055]">
                 <dl className="grid gap-4 sm:grid-cols-[10rem_1fr]">
                   <dt className="text-xs font-medium">개인정보 보호책임자</dt>
                   <dd className="text-foreground">Solve-Sync 운영자</dd>

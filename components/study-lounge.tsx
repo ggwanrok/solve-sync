@@ -361,7 +361,7 @@ export function StudyLounge({
       </CardHeader>
       <CardContent>
         {(realtimeStatus === "degraded" || manualReconnectPending) && (
-          <div className="mb-4 flex items-center gap-3 rounded-lg border border-destructive/20 bg-destructive/5 p-3" role="status">
+          <div className="mb-4 flex items-center gap-3 rounded-xl bg-destructive/5 p-3 ring-1 ring-destructive/15" role="status">
             {manualReconnectPending
               ? <LoaderCircle className="size-4 shrink-0 animate-spin text-muted-foreground" />
               : <WifiOff className="size-4 shrink-0 text-destructive" />}

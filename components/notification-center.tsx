@@ -110,8 +110,8 @@ export function NotificationCenter({ inbox }: { inbox: StudyNotificationInbox })
         )}
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" sideOffset={8} className="w-[min(calc(100vw-2rem),24rem)] overflow-hidden p-0">
-        <div className="flex items-center justify-between border-b px-4 py-3">
+      <DropdownMenuContent align="end" sideOffset={10} className="w-[min(calc(100vw-2rem),25rem)] overflow-hidden p-0">
+        <div className="flex items-center justify-between border-b px-5 py-4">
           <div>
             <p className="text-sm font-semibold">알림</p>
             <p className="mt-0.5 text-[11px] text-muted-foreground">
@@ -133,7 +133,7 @@ export function NotificationCenter({ inbox }: { inbox: StudyNotificationInbox })
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">스터디 목표와 멤버 소식을 여기에 모아드릴게요.</p>
           </div>
         ) : (
-          <div className="max-h-[min(32rem,calc(100vh-8rem))] overflow-y-auto p-1.5">
+          <div className="max-h-[min(32rem,calc(100vh-8rem))] overflow-y-auto p-2">
             {items.map((item) => {
               const Icon = notificationIcon[item.type] || Bell
               return (
@@ -141,7 +141,7 @@ export function NotificationCenter({ inbox }: { inbox: StudyNotificationInbox })
                   key={item.id}
                   onClick={() => void openNotification(item)}
                   className={cn(
-                    "items-start gap-3 rounded-lg px-3 py-3",
+                    "items-start gap-3 rounded-xl px-3.5 py-3.5",
                     !item.readAt && "bg-primary/[0.07] focus:bg-primary/[0.11]",
                   )}
                 >
