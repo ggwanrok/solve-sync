@@ -128,14 +128,11 @@ type SolveRow = {
 
 type MemoRow = {
   problem_id: string
-  perceived_difficulty: ProblemMemoRecord["perceivedDifficulty"]
   algorithm_tags: string
-  core_condition: string
-  solution_approach: string
-  quick_approach: string
-  tips: string
-  mistake_notes: string
-  similar_problems: string
+  approach: string
+  solution_code: string
+  difficulty_reason: string
+  learnings: string
   updated_at: string
 }
 
@@ -161,7 +158,7 @@ export const getViewerProblemNotes = cache(async () => {
   const problemIds = solveRows.map((solve) => solve.problem_id)
   const { data: memos, error: memoError } = await supabase
     .from("problem_memos")
-    .select("problem_id,perceived_difficulty,algorithm_tags,core_condition,solution_approach,quick_approach,tips,mistake_notes,similar_problems,updated_at")
+    .select("problem_id,algorithm_tags,approach,solution_code,difficulty_reason,learnings,updated_at")
     .eq("user_id", user.id)
     .eq("platform", "programmers")
     .in("problem_id", problemIds)
@@ -181,14 +178,11 @@ export const getViewerProblemNotes = cache(async () => {
       difficulty: solve.difficulty,
       acceptedAt: solve.accepted_at,
       memo: memo ? {
-        perceivedDifficulty: memo.perceived_difficulty,
         algorithmTags: memo.algorithm_tags,
-        coreCondition: memo.core_condition,
-        solutionApproach: memo.solution_approach,
-        quickApproach: memo.quick_approach,
-        tips: memo.tips,
-        mistakeNotes: memo.mistake_notes,
-        similarProblems: memo.similar_problems,
+        approach: memo.approach,
+        solutionCode: memo.solution_code,
+        difficultyReason: memo.difficulty_reason,
+        learnings: memo.learnings,
         updatedAt: memo.updated_at,
       } : null,
     }

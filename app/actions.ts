@@ -163,14 +163,11 @@ export async function saveProblemMemo(input: ProblemMemoInput) {
     user_id: user.id,
     platform: "programmers",
     problem_id: normalized.problemId,
-    perceived_difficulty: normalized.perceivedDifficulty,
     algorithm_tags: normalized.algorithmTags,
-    core_condition: normalized.coreCondition,
-    solution_approach: normalized.solutionApproach,
-    quick_approach: normalized.quickApproach,
-    tips: normalized.tips,
-    mistake_notes: normalized.mistakeNotes,
-    similar_problems: normalized.similarProblems,
+    approach: normalized.approach,
+    solution_code: normalized.solutionCode,
+    difficulty_reason: normalized.difficultyReason,
+    learnings: normalized.learnings,
     updated_at: updatedAt,
   }, { onConflict: "user_id,platform,problem_id" })
   if (error) {

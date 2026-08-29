@@ -22,10 +22,9 @@ import { Input } from "@/components/ui/input"
 import { ProblemDifficultyBadge } from "@/components/difficulty-badge"
 import {
   EMPTY_PROBLEM_MEMO,
-  PERCEIVED_DIFFICULTIES,
+  PROBLEM_MEMO_CODE_LIMIT,
   PROBLEM_MEMO_TAGS_LIMIT,
   PROBLEM_MEMO_TEXT_LIMIT,
-  perceivedDifficultyLabel,
   type ProblemMemoFields,
   type SolvedProblemNote,
 } from "@/lib/problem-memo"
@@ -34,17 +33,17 @@ import { cn } from "@/lib/utils"
 type MemoFilter = "all" | "written" | "empty"
 
 const fieldDescriptions: Array<{
-  key: Exclude<keyof ProblemMemoFields, "perceivedDifficulty" | "algorithmTags">
+  key: Exclude<keyof ProblemMemoFields, "algorithmTags">
   label: string
   placeholder: string
   rows: number
+  maxLength: number
+  code?: boolean
 }> = [
-  { key: "coreCondition", label: "핵심 조건", placeholder: "정답을 결정하는 제약과 반드시 확인할 조건을 적어보세요.", rows: 3 },
-  { key: "solutionApproach", label: "논리 구조", placeholder: "어떤 순서와 근거로 풀이했는지 적어보세요.", rows: 4 },
-  { key: "quickApproach", label: "빠른 접근 방법", placeholder: "다시 풀 때 가장 먼저 확인할 단서나 접근 순서를 적어보세요.", rows: 3 },
-  { key: "tips", label: "풀이 꿀팁", placeholder: "시간을 줄여준 구현 방식이나 기억할 팁을 적어보세요.", rows: 3 },
-  { key: "mistakeNotes", label: "착각하기 쉬운 부분", placeholder: "틀렸거나 헷갈렸던 지점과 다음에 확인할 내용을 적어보세요.", rows: 3 },
-  { key: "similarProblems", label: "비슷한 문제", placeholder: "공통 풀이 패턴이 있는 문제 이름이나 링크를 적어보세요.", rows: 2 },
+  { key: "approach", label: "접근 방법", placeholder: "문제를 보고 떠올린 핵심 아이디어와 풀이 순서를 적어보세요.", rows: 4, maxLength: PROBLEM_MEMO_TEXT_LIMIT },
+  { key: "solutionCode", label: "해결 코드", placeholder: "최종 해결 코드를 붙여 넣어보세요.", rows: 10, maxLength: PROBLEM_MEMO_CODE_LIMIT, code: true },
+  { key: "difficultyReason", label: "틀리거나 시간이 오래 걸린 이유", placeholder: "막혔던 지점, 잘못 생각한 부분과 오래 걸린 이유를 적어보세요.", rows: 4, maxLength: PROBLEM_MEMO_TEXT_LIMIT },
+  { key: "learnings", label: "배운 점", placeholder: "이 문제를 통해 새로 알게 된 점이나 다음에 기억할 내용을 적어보세요.", rows: 4, maxLength: PROBLEM_MEMO_TEXT_LIMIT },
 ]
 
 function initialDraft(problem: SolvedProblemNote): ProblemMemoFields {
@@ -234,37 +233,27 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
               <CardHeader className="border-b">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <CardTitle className="flex items-center gap-2"><Sparkles className="size-4 text-primary" />풀이 회고</CardTitle>
-                    <CardDescription className="mt-1">모든 항목을 채울 필요는 없어요. 다시 봤을 때 필요한 내용만 남겨보세요.</CardDescription>
+                    <CardTitle className="flex items-center gap-2"><Sparkles className="size-4 text-primary" />풀이 기록</CardTitle>
+                    <CardDescription className="mt-1">알고리즘 테마와 다시 풀 때 필요한 핵심만 간결하게 남겨보세요.</CardDescription>
                   </div>
                   {selected.memo && <Badge variant="outline">최근 수정 {dateLabel(selected.memo.updatedAt)}</Badge>}
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">체감 난이도</label>
-                  <div className="flex flex-wrap gap-2">
-                    {PERCEIVED_DIFFICULTIES.map((item) => (
-                      <button key={item.value} type="button" aria-pressed={draft.perceivedDifficulty === item.value} onClick={() => updateDraft("perceivedDifficulty", draft.perceivedDifficulty === item.value ? null : item.value)} className={cn("rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-colors", draft.perceivedDifficulty === item.value ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground")}>{item.label}</button>
-                    ))}
-                  </div>
-                  {draft.perceivedDifficulty && <p className="text-xs text-muted-foreground">현재 선택: {perceivedDifficultyLabel(draft.perceivedDifficulty)}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <label htmlFor="algorithm-tags" className="text-sm font-medium">알고리즘·문제 유형</label>
+                  <label htmlFor="algorithm-tags" className="text-sm font-semibold">알고리즘 테마</label>
                   <Input id="algorithm-tags" value={draft.algorithmTags} maxLength={PROBLEM_MEMO_TAGS_LIMIT} onChange={(event) => updateDraft("algorithmTags", event.target.value)} placeholder="예: 그리디, 정렬, 투 포인터" />
-                  <p className="text-xs text-muted-foreground">쉼표로 구분하면 목록 검색에도 활용할 수 있어요.</p>
+                  <p className="text-xs text-muted-foreground">쉼표로 구분하면 문제 검색에도 활용할 수 있어요.</p>
                 </div>
 
-                <div className="grid gap-5 xl:grid-cols-2">
+                <div className="space-y-6">
                   {fieldDescriptions.map((field) => (
-                    <div key={field.key} className={cn("space-y-2", field.key === "solutionApproach" && "xl:col-span-2")}>
+                    <div key={field.key} className="space-y-2 border-t pt-6">
                       <div className="flex items-center justify-between gap-2">
-                        <label htmlFor={`memo-${field.key}`} className="text-sm font-medium">{field.label}</label>
-                        <span className="text-[10px] text-muted-foreground">{draft[field.key].length}/{PROBLEM_MEMO_TEXT_LIMIT}</span>
+                        <label htmlFor={`memo-${field.key}`} className="text-sm font-semibold">{field.label}</label>
+                        <span className="text-[10px] text-muted-foreground">{draft[field.key].length}/{field.maxLength}</span>
                       </div>
-                      <textarea id={`memo-${field.key}`} rows={field.rows} value={draft[field.key]} maxLength={PROBLEM_MEMO_TEXT_LIMIT} onChange={(event) => updateDraft(field.key, event.target.value)} placeholder={field.placeholder} className="w-full resize-y rounded-xl border border-transparent bg-muted/45 px-3.5 py-3 text-sm leading-6 outline-none ring-1 ring-foreground/[0.075] placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/45 dark:bg-input/30" />
+                      <textarea id={`memo-${field.key}`} rows={field.rows} value={draft[field.key]} maxLength={field.maxLength} onChange={(event) => updateDraft(field.key, event.target.value)} placeholder={field.placeholder} spellCheck={!field.code} className={cn("w-full resize-y rounded-xl border border-transparent bg-muted/45 px-3.5 py-3 text-sm leading-6 outline-none ring-1 ring-foreground/[0.075] placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/45 dark:bg-input/30", field.code && "font-mono text-[13px] leading-5 tab-size-2")} />
                     </div>
                   ))}
                 </div>
