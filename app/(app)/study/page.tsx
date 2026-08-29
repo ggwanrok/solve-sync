@@ -188,7 +188,7 @@ export default async function StudyListPage({
           const joined = room.is_joined
           const ownerName = room.owner_nickname || room.owner_handle || "방장"
           return (
-            <Card key={room.id} className="group py-0 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(15,23,42,0.075)]">
+            <Card key={room.id} className="group py-0 transition-shadow duration-200 hover:shadow-[0_14px_36px_rgba(15,23,42,0.075)]">
               <CardContent className="flex h-full flex-col gap-5 p-5 sm:p-6">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
