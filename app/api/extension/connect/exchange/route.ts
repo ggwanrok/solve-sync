@@ -1,6 +1,11 @@
 import { createHash, randomBytes } from "node:crypto"
 import { NextResponse } from "next/server"
-import { isValidCodeVerifier, isValidInstallationId } from "@/lib/extension-connect"
+import {
+  EXTENSION_CONNECTION_LIMIT_MESSAGE,
+  isExtensionConnectionLimitError,
+  isValidCodeVerifier,
+  isValidInstallationId,
+} from "@/lib/extension-connect"
 import { createAdminClient } from "@/utils/supabase/admin"
 
 export const runtime = "nodejs"
@@ -34,6 +39,9 @@ export async function POST(request: Request) {
   })
   if (error || !data) {
     if (error) console.error("extension connection code exchange failed", error)
+    if (isExtensionConnectionLimitError(error)) {
+      return NextResponse.json({ error: EXTENSION_CONNECTION_LIMIT_MESSAGE }, { status: 409 })
+    }
     return NextResponse.json({ error: "연결 코드가 만료되었거나 이미 사용되었습니다. 다시 연결해 주세요." }, { status: 401 })
   }
 

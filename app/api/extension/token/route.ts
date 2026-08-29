@@ -1,6 +1,7 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
+import { EXTENSION_CONNECTION_LIMIT_MESSAGE, isExtensionConnectionLimitError } from "@/lib/extension-connect"
 import { createAdminClient } from "@/utils/supabase/admin"
 import { createRequestClient } from "@/utils/supabase/request"
 
@@ -32,7 +33,13 @@ export async function POST(request: Request) {
     token_hash: hash(token),
     last_seen_at: null,
   })
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error("extension token creation failed", error)
+    if (isExtensionConnectionLimitError(error)) {
+      return NextResponse.json({ error: EXTENSION_CONNECTION_LIMIT_MESSAGE }, { status: 409 })
+    }
+    return NextResponse.json({ error: "연동 토큰을 만들지 못했습니다." }, { status: 500 })
+  }
   return NextResponse.json({ token })
 }
 

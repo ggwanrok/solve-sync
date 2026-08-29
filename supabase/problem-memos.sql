@@ -15,10 +15,10 @@ create table if not exists public.problem_memos (
   foreign key (user_id, platform, problem_id)
     references public.solve_events(user_id, platform, problem_id) on delete cascade,
   constraint problem_memos_algorithm_tags_length check (char_length(algorithm_tags) <= 300),
-  constraint problem_memos_approach_length check (char_length(approach) <= 2000),
-  constraint problem_memos_solution_code_length check (char_length(solution_code) <= 20000),
-  constraint problem_memos_difficulty_reason_length check (char_length(difficulty_reason) <= 2000),
-  constraint problem_memos_learnings_length check (char_length(learnings) <= 2000)
+  constraint problem_memos_approach_length check (char_length(approach) <= 500),
+  constraint problem_memos_solution_code_length check (char_length(solution_code) <= 10000),
+  constraint problem_memos_difficulty_reason_length check (char_length(difficulty_reason) <= 500),
+  constraint problem_memos_learnings_length check (char_length(learnings) <= 300)
 );
 
 create index if not exists problem_memos_user_updated_at

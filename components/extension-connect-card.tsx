@@ -5,6 +5,7 @@ import { useState } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { authenticatedFetch } from "@/lib/authenticated-fetch"
+import { MAX_EXTENSION_CONNECTIONS } from "@/lib/extension-connect"
 import { createClient } from "@/utils/supabase/client"
 
 type ConnectRequest = {
@@ -107,7 +108,7 @@ export function ExtensionConnectCard({ request, signedIn, accountLabel }: { requ
         <X className="size-4" />연결 취소
       </Button>
       <p className="mt-4 text-center text-[11px] leading-relaxed text-muted-foreground">
-        승인 코드는 5분 동안 한 번만 사용할 수 있으며, 계정 비밀번호나 Google 로그인 정보는 확장 프로그램에 전달되지 않습니다.
+        계정당 최대 {MAX_EXTENSION_CONNECTIONS}개까지 연결할 수 있습니다. 승인 코드는 5분 동안 한 번만 사용되며, 로그인 정보는 확장 프로그램에 전달되지 않습니다.
       </p>
     </div>
   )

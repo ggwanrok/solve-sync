@@ -4,22 +4,28 @@ const { join } = require("node:path")
 const { test } = require("node:test")
 
 test("문제 메모 입력을 정리하고 허용 길이로 제한한다", async () => {
-  const { normalizeProblemMemoInput, PROBLEM_MEMO_CODE_LIMIT, PROBLEM_MEMO_TEXT_LIMIT } = await import("../lib/problem-memo.ts")
+  const {
+    normalizeProblemMemoInput,
+    PROBLEM_MEMO_APPROACH_LIMIT,
+    PROBLEM_MEMO_CODE_LIMIT,
+    PROBLEM_MEMO_DIFFICULTY_REASON_LIMIT,
+    PROBLEM_MEMO_LEARNINGS_LIMIT,
+  } = await import("../lib/problem-memo.ts")
   const memo = normalizeProblemMemoInput({
     problemId: " 12948 ",
     algorithmTags: " 문자열, 슬라이싱 ",
-    approach: " 뒤 네 자리만 남긴다 ",
+    approach: ` ${"a".repeat(PROBLEM_MEMO_APPROACH_LIMIT + 20)} `,
     solutionCode: "a".repeat(PROBLEM_MEMO_CODE_LIMIT + 20),
-    difficultyReason: " 인덱스 범위를 잘못 계산했다 ",
-    learnings: "b".repeat(PROBLEM_MEMO_TEXT_LIMIT + 20),
+    difficultyReason: "b".repeat(PROBLEM_MEMO_DIFFICULTY_REASON_LIMIT + 20),
+    learnings: "c".repeat(PROBLEM_MEMO_LEARNINGS_LIMIT + 20),
   })
 
   assert.equal(memo.problemId, "12948")
   assert.equal(memo.algorithmTags, "문자열, 슬라이싱")
-  assert.equal(memo.approach, "뒤 네 자리만 남긴다")
+  assert.equal(memo.approach.length, PROBLEM_MEMO_APPROACH_LIMIT)
   assert.equal(memo.solutionCode.length, PROBLEM_MEMO_CODE_LIMIT)
-  assert.equal(memo.difficultyReason, "인덱스 범위를 잘못 계산했다")
-  assert.equal(memo.learnings.length, PROBLEM_MEMO_TEXT_LIMIT)
+  assert.equal(memo.difficultyReason.length, PROBLEM_MEMO_DIFFICULTY_REASON_LIMIT)
+  assert.equal(memo.learnings.length, PROBLEM_MEMO_LEARNINGS_LIMIT)
 })
 
 test("허용하지 않는 문제 ID를 걸러낸다", async () => {
@@ -40,5 +46,8 @@ test("문제 메모 스키마는 간소화된 다섯 항목만 저장한다", ()
   for (const removedColumn of ["perceived_difficulty", "core_condition", "solution_approach", "quick_approach", "tips", "mistake_notes", "similar_problems"]) {
     assert.doesNotMatch(memoTable, new RegExp(`\\b${removedColumn}\\b`))
   }
-  assert.match(memoTable, /char_length\(solution_code\) <= 20000/)
+  assert.match(memoTable, /char_length\(approach\) <= 500/)
+  assert.match(memoTable, /char_length\(solution_code\) <= 10000/)
+  assert.match(memoTable, /char_length\(difficulty_reason\) <= 500/)
+  assert.match(memoTable, /char_length\(learnings\) <= 300/)
 })

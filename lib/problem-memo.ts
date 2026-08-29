@@ -1,6 +1,8 @@
-export const PROBLEM_MEMO_TEXT_LIMIT = 2_000
 export const PROBLEM_MEMO_TAGS_LIMIT = 300
-export const PROBLEM_MEMO_CODE_LIMIT = 20_000
+export const PROBLEM_MEMO_APPROACH_LIMIT = 500
+export const PROBLEM_MEMO_CODE_LIMIT = 10_000
+export const PROBLEM_MEMO_DIFFICULTY_REASON_LIMIT = 500
+export const PROBLEM_MEMO_LEARNINGS_LIMIT = 300
 
 export type ProblemMemoFields = {
   algorithmTags: string
@@ -50,9 +52,9 @@ export function normalizeProblemMemoInput(input: ProblemMemoInput): ProblemMemoI
   return {
     problemId,
     algorithmTags: normalizedText(input.algorithmTags, PROBLEM_MEMO_TAGS_LIMIT),
-    approach: normalizedText(input.approach, PROBLEM_MEMO_TEXT_LIMIT),
+    approach: normalizedText(input.approach, PROBLEM_MEMO_APPROACH_LIMIT),
     solutionCode: normalizedText(input.solutionCode, PROBLEM_MEMO_CODE_LIMIT),
-    difficultyReason: normalizedText(input.difficultyReason, PROBLEM_MEMO_TEXT_LIMIT),
-    learnings: normalizedText(input.learnings, PROBLEM_MEMO_TEXT_LIMIT),
+    difficultyReason: normalizedText(input.difficultyReason, PROBLEM_MEMO_DIFFICULTY_REASON_LIMIT),
+    learnings: normalizedText(input.learnings, PROBLEM_MEMO_LEARNINGS_LIMIT),
   }
 }

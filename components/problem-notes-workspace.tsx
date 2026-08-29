@@ -22,9 +22,11 @@ import { Input } from "@/components/ui/input"
 import { ProblemDifficultyBadge } from "@/components/difficulty-badge"
 import {
   EMPTY_PROBLEM_MEMO,
+  PROBLEM_MEMO_APPROACH_LIMIT,
   PROBLEM_MEMO_CODE_LIMIT,
+  PROBLEM_MEMO_DIFFICULTY_REASON_LIMIT,
+  PROBLEM_MEMO_LEARNINGS_LIMIT,
   PROBLEM_MEMO_TAGS_LIMIT,
-  PROBLEM_MEMO_TEXT_LIMIT,
   type ProblemMemoFields,
   type SolvedProblemNote,
 } from "@/lib/problem-memo"
@@ -40,10 +42,10 @@ const fieldDescriptions: Array<{
   maxLength: number
   code?: boolean
 }> = [
-  { key: "approach", label: "접근 방법", placeholder: "문제를 보고 떠올린 핵심 아이디어와 풀이 순서를 적어보세요.", rows: 4, maxLength: PROBLEM_MEMO_TEXT_LIMIT },
+  { key: "approach", label: "접근 방법", placeholder: "문제를 보고 떠올린 핵심 아이디어와 풀이 순서를 적어보세요.", rows: 4, maxLength: PROBLEM_MEMO_APPROACH_LIMIT },
   { key: "solutionCode", label: "해결 코드", placeholder: "최종 해결 코드를 붙여 넣어보세요.", rows: 10, maxLength: PROBLEM_MEMO_CODE_LIMIT, code: true },
-  { key: "difficultyReason", label: "틀리거나 시간이 오래 걸린 이유", placeholder: "막혔던 지점, 잘못 생각한 부분과 오래 걸린 이유를 적어보세요.", rows: 4, maxLength: PROBLEM_MEMO_TEXT_LIMIT },
-  { key: "learnings", label: "배운 점", placeholder: "이 문제를 통해 새로 알게 된 점이나 다음에 기억할 내용을 적어보세요.", rows: 4, maxLength: PROBLEM_MEMO_TEXT_LIMIT },
+  { key: "difficultyReason", label: "틀리거나 시간이 오래 걸린 이유", placeholder: "막혔던 지점, 잘못 생각한 부분과 오래 걸린 이유를 적어보세요.", rows: 4, maxLength: PROBLEM_MEMO_DIFFICULTY_REASON_LIMIT },
+  { key: "learnings", label: "배운 점", placeholder: "이 문제를 통해 새로 알게 된 점이나 다음에 기억할 내용을 적어보세요.", rows: 4, maxLength: PROBLEM_MEMO_LEARNINGS_LIMIT },
 ]
 
 function initialDraft(problem: SolvedProblemNote): ProblemMemoFields {

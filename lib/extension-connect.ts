@@ -3,6 +3,18 @@ const BASE64URL_PATTERN = /^[A-Za-z0-9_-]+$/
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export const CONNECTION_CODE_TTL_MS = 5 * 60_000
+export const MAX_EXTENSION_CONNECTIONS = 5
+export const EXTENSION_CONNECTION_LIMIT_ERROR = "EXTENSION_CONNECTION_LIMIT_REACHED"
+export const EXTENSION_CONNECTION_LIMIT_MESSAGE = `브라우저는 계정당 최대 ${MAX_EXTENSION_CONNECTIONS}개까지 연동할 수 있습니다. 기존 연동을 해제한 뒤 다시 시도해 주세요.`
+
+export function canConnectExtensionInstallation(currentInstallationIds: string[], installationId: string) {
+  return currentInstallationIds.includes(installationId) || currentInstallationIds.length < MAX_EXTENSION_CONNECTIONS
+}
+
+export function isExtensionConnectionLimitError(error: unknown) {
+  if (!error || typeof error !== "object" || !("message" in error)) return false
+  return typeof error.message === "string" && error.message.includes(EXTENSION_CONNECTION_LIMIT_ERROR)
+}
 
 export function isValidInstallationId(value: unknown): value is string {
   return typeof value === "string" && UUID_PATTERN.test(value)

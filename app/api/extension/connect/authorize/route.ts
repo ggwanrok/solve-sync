@@ -2,6 +2,8 @@ import { createHash, randomBytes } from "node:crypto"
 import { NextResponse } from "next/server"
 import {
   CONNECTION_CODE_TTL_MS,
+  EXTENSION_CONNECTION_LIMIT_MESSAGE,
+  canConnectExtensionInstallation,
   isValidCodeChallenge,
   isValidInstallationId,
   isValidState,
@@ -38,6 +40,18 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient()
   if (!admin) return NextResponse.json({ error: "서버 설정이 완료되지 않았습니다." }, { status: 503 })
+
+  const { data: connections, error: connectionError } = await admin
+    .from("extension_connections")
+    .select("installation_id")
+    .eq("user_id", user.id)
+  if (connectionError) {
+    console.error("extension connection limit check failed", connectionError)
+    return NextResponse.json({ error: "연결된 기기를 확인하지 못했습니다." }, { status: 500 })
+  }
+  if (!canConnectExtensionInstallation((connections || []).map((connection) => connection.installation_id), installationId)) {
+    return NextResponse.json({ error: EXTENSION_CONNECTION_LIMIT_MESSAGE }, { status: 409 })
+  }
 
   const code = randomBytes(32).toString("base64url")
   const now = new Date()

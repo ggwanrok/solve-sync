@@ -28,9 +28,9 @@ alter table public.problem_memos
   drop constraint if exists problem_memos_learnings_length;
 
 alter table public.problem_memos
-  add constraint problem_memos_approach_length check (char_length(approach) <= 2000),
-  add constraint problem_memos_solution_code_length check (char_length(solution_code) <= 20000),
-  add constraint problem_memos_difficulty_reason_length check (char_length(difficulty_reason) <= 2000),
-  add constraint problem_memos_learnings_length check (char_length(learnings) <= 2000);
+  add constraint problem_memos_approach_length check (char_length(approach) <= 500),
+  add constraint problem_memos_solution_code_length check (char_length(solution_code) <= 10000),
+  add constraint problem_memos_difficulty_reason_length check (char_length(difficulty_reason) <= 500),
+  add constraint problem_memos_learnings_length check (char_length(learnings) <= 300);
 
 commit;

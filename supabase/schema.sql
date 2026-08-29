@@ -187,6 +187,41 @@ create table if not exists public.extension_connections (
 create index if not exists extension_connections_user_created_at
   on public.extension_connections(user_id, created_at desc);
 
+create or replace function public.enforce_extension_connection_limit()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(new.user_id::text, 0));
+
+  if exists(
+    select 1 from public.extension_connections connection
+    where connection.user_id = new.user_id
+      and connection.installation_id = new.installation_id
+  ) then
+    return new;
+  end if;
+
+  if (
+    select count(*) from public.extension_connections connection
+    where connection.user_id = new.user_id
+  ) >= 5 then
+    raise exception 'EXTENSION_CONNECTION_LIMIT_REACHED' using errcode = 'P0001';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists extension_connections_limit on public.extension_connections;
+create trigger extension_connections_limit
+before insert on public.extension_connections
+for each row execute function public.enforce_extension_connection_limit();
+
+revoke execute on function public.enforce_extension_connection_limit() from public, anon, authenticated;
+
 create table if not exists public.extension_connection_codes (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id) on delete cascade,
@@ -239,10 +274,10 @@ create table if not exists public.problem_memos (
   foreign key (user_id, platform, problem_id)
     references public.solve_events(user_id, platform, problem_id) on delete cascade,
   constraint problem_memos_algorithm_tags_length check (char_length(algorithm_tags) <= 300),
-  constraint problem_memos_approach_length check (char_length(approach) <= 2000),
-  constraint problem_memos_solution_code_length check (char_length(solution_code) <= 20000),
-  constraint problem_memos_difficulty_reason_length check (char_length(difficulty_reason) <= 2000),
-  constraint problem_memos_learnings_length check (char_length(learnings) <= 2000)
+  constraint problem_memos_approach_length check (char_length(approach) <= 500),
+  constraint problem_memos_solution_code_length check (char_length(solution_code) <= 10000),
+  constraint problem_memos_difficulty_reason_length check (char_length(difficulty_reason) <= 500),
+  constraint problem_memos_learnings_length check (char_length(learnings) <= 300)
 );
 create index if not exists problem_memos_user_updated_at
   on public.problem_memos(user_id, updated_at desc);

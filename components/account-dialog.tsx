@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { MAX_EXTENSION_CONNECTIONS } from "@/lib/extension-connect"
 import { isSupportedProfileImage, NICKNAME_MAX_LENGTH, PROFILE_BIO_MAX_LENGTH, PROFILE_IMAGE_INPUT_MAX_BYTES } from "@/lib/profile"
 import { createClient } from "@/utils/supabase/client"
 
@@ -229,8 +230,8 @@ export function AccountDialog({ user, browserExtensionStatus }: { user: AccountU
         <div className="rounded-2xl bg-muted/45 p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-medium">연결된 기기 {devices.length}대</p>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">각 PC의 SolveSync 확장 프로그램에서 ‘계정 연결’을 누르면 이 목록에 추가됩니다.</p>
+              <p className="text-sm font-medium">연결된 기기 {devices.length}/{MAX_EXTENSION_CONNECTIONS}대</p>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">계정당 최대 {MAX_EXTENSION_CONNECTIONS}개까지 연결할 수 있으며, 각 PC의 확장 프로그램에서 추가할 수 있습니다.</p>
             </div>
             <MonitorSmartphone className="size-5 shrink-0 text-muted-foreground" />
           </div>
