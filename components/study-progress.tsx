@@ -511,7 +511,7 @@ export function StudyProgress({
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Clock className="size-4 text-primary" />
-          <h2 className="font-semibold">멤버별 목표</h2>
+          <h2 className="font-semibold">멤버별 풀이현황</h2>
           <Badge variant="secondary">{currentMembers.length}</Badge>
         </div>
         {canViewProgress && (

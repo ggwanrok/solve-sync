@@ -708,17 +708,18 @@ begin
   with member_solves as (
     select member.user_id, count(distinct event.problem_id)::bigint as solved_count
     from public.study_members member
-    join public.study_rooms room on room.id = member.study_id
     left join public.solve_events event on event.user_id = member.user_id
-      and coalesce(event.difficulty, 0) >= room.min_difficulty
       and event.accepted_at >= (date_trunc('day', now() at time zone 'Asia/Seoul') at time zone 'Asia/Seoul')
       and event.accepted_at < ((date_trunc('day', now() at time zone 'Asia/Seoul') + interval '1 day') at time zone 'Asia/Seoul')
     where member.study_id = target_study group by member.user_id
-  ), winning_count as (select max(member_solves.solved_count) as solved_count from member_solves)
-  select profile.id, profile.handle, profile.nickname, profile.avatar_url, member_solves.solved_count
-  from member_solves join winning_count on winning_count.solved_count = member_solves.solved_count
-  join public.profiles profile on profile.id = member_solves.user_id
-  where member_solves.solved_count > 0
+  ), ranked_members as (
+    select member_solves.*, dense_rank() over(order by member_solves.solved_count desc) as solve_rank
+    from member_solves
+  )
+  select profile.id, profile.handle, profile.nickname, profile.avatar_url, ranked_members.solved_count
+  from ranked_members
+  join public.profiles profile on profile.id = ranked_members.user_id
+  where ranked_members.solve_rank = 1 and ranked_members.solved_count > 0
   order by coalesce(nullif(trim(profile.nickname), ''), profile.handle), profile.id;
 end;
 $$;
