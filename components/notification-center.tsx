@@ -19,6 +19,7 @@ const notificationIcon: Record<StudyNotificationType, typeof Bell> = {
   goal_reminder: BellRing,
   goal_missed: CircleAlert,
   weekly_summary: Crown,
+  period_summary: Crown,
   poke: Hand,
 }
 
