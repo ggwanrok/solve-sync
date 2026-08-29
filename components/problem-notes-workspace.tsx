@@ -242,10 +242,12 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="space-y-2">
+                <div>
                   <label htmlFor="algorithm-tags" className="text-sm font-semibold">알고리즘 테마</label>
-                  <Input id="algorithm-tags" value={draft.algorithmTags} maxLength={PROBLEM_MEMO_TAGS_LIMIT} onChange={(event) => updateDraft("algorithmTags", event.target.value)} placeholder="예: 그리디, 정렬, 투 포인터" />
-                  <p className="text-xs text-muted-foreground">쉼표로 구분하면 문제 검색에도 활용할 수 있어요.</p>
+                  <div className="mt-3 space-y-2">
+                    <Input id="algorithm-tags" value={draft.algorithmTags} maxLength={PROBLEM_MEMO_TAGS_LIMIT} onChange={(event) => updateDraft("algorithmTags", event.target.value)} placeholder="예: 그리디, 정렬, 투 포인터" />
+                    <p className="text-xs text-muted-foreground">쉼표로 구분하면 문제 검색에도 활용할 수 있어요.</p>
+                  </div>
                 </div>
 
                 <div className="space-y-6">
