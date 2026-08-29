@@ -134,7 +134,7 @@ export function NotificationCenter({ inbox }: { inbox: StudyNotificationInbox })
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">스터디 목표와 멤버 소식을 여기에 모아드릴게요.</p>
           </div>
         ) : (
-          <div className="flex max-h-[min(32rem,calc(100vh-8rem))] flex-col gap-1 overflow-y-auto p-2">
+          <div className="max-h-[min(32rem,calc(100vh-8rem))] space-y-1 overflow-y-auto p-2">
             {items.map((item) => {
               const Icon = notificationIcon[item.type] || Bell
               return (
