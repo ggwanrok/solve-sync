@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ProblemDifficultyBadge } from "@/components/difficulty-badge"
+import { SolutionCodeEditor } from "@/components/solution-code-editor"
 import {
   EMPTY_PROBLEM_MEMO,
   PROBLEM_MEMO_APPROACH_LIMIT,
@@ -254,10 +255,22 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
                   {fieldDescriptions.map((field) => (
                     <div key={field.key} className="space-y-2 border-t pt-6">
                       <div className="flex items-center justify-between gap-2">
-                        <label htmlFor={`memo-${field.key}`} className="text-sm font-semibold">{field.label}</label>
+                        <label id={`memo-${field.key}-label`} htmlFor={field.code ? undefined : `memo-${field.key}`} className="text-sm font-semibold">{field.label}</label>
                         <span className="text-[10px] text-muted-foreground">{draft[field.key].length}/{field.maxLength}</span>
                       </div>
-                      <textarea id={`memo-${field.key}`} rows={field.rows} value={draft[field.key]} maxLength={field.maxLength} onChange={(event) => updateDraft(field.key, event.target.value)} placeholder={field.placeholder} spellCheck={!field.code} className={cn("w-full resize-y rounded-xl border border-transparent bg-muted/45 px-3.5 py-3 text-sm leading-6 outline-none ring-1 ring-foreground/[0.075] placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/45 dark:bg-input/30", field.code && "font-mono text-[13px] leading-5 tab-size-2")} />
+                      {field.code ? (
+                        <SolutionCodeEditor
+                          id={`memo-${field.key}`}
+                          value={draft[field.key]}
+                          language={selected.language}
+                          maxLength={field.maxLength}
+                          placeholder={field.placeholder}
+                          ariaLabelledBy={`memo-${field.key}-label`}
+                          onChange={(value) => updateDraft(field.key, value)}
+                        />
+                      ) : (
+                        <textarea id={`memo-${field.key}`} rows={field.rows} value={draft[field.key]} maxLength={field.maxLength} onChange={(event) => updateDraft(field.key, event.target.value)} placeholder={field.placeholder} spellCheck className="w-full resize-y rounded-xl border border-transparent bg-muted/45 px-3.5 py-3 text-sm leading-6 outline-none ring-1 ring-foreground/[0.075] placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/45 dark:bg-input/30" />
+                      )}
                     </div>
                   ))}
                 </div>
