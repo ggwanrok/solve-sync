@@ -98,6 +98,7 @@ export function StudyLounge({
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting")
   const [manualReconnectPending, setManualReconnectPending] = useState(false)
   const [channelGeneration, setChannelGeneration] = useState(0)
+  const messageInputRef = useRef<HTMLInputElement>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const preserveScrollHeightRef = useRef<number | null>(null)
   const initialLoadStartedRef = useRef(false)
@@ -331,6 +332,7 @@ export function StudyLounge({
     setComments((current) => [...current, optimisticComment])
     setMessage("")
     setPending(true)
+    messageInputRef.current?.focus()
     try {
       const inserted = await addStudyComment(studyId, nextMessage)
       setComments((current) => {
@@ -342,7 +344,7 @@ export function StudyLounge({
       })
     } catch (error) {
       setComments((current) => current.filter((comment) => comment.id !== optimisticId))
-      setMessage(nextMessage)
+      setMessage((current) => current || nextMessage)
       toast.error(error instanceof Error ? error.message : "메시지를 보내지 못했어요.")
     } finally {
       setPending(false)
@@ -412,7 +414,7 @@ export function StudyLounge({
           </>}
         </div>
         <form className="mt-4 flex gap-2" onSubmit={handleSubmit}>
-          <Input value={message} onChange={(event) => setMessage(event.target.value)} placeholder="스터디원들에게 메시지 보내기" maxLength={500} disabled={pending} />
+          <Input ref={messageInputRef} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="스터디원들에게 메시지 보내기" maxLength={500} />
           <Button type="submit" size="icon" disabled={pending || !message.trim()} aria-label="메시지 전송"><Send className="size-4" /></Button>
         </form>
       </CardContent>
