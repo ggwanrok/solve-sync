@@ -1,8 +1,9 @@
-import { ChevronDown, ChevronLeft, ChevronRight, Crown, Lock, Search, Users } from "lucide-react"
+import { ChevronLeft, ChevronRight, Crown, Lock, Search, Users } from "lucide-react"
 import Link from "next/link"
 import { CreateStudyDialog } from "@/components/create-study-dialog"
 import { StudyDifficultyRange } from "@/components/study-difficulty-range"
 import { StudyRoomEntryButton } from "@/components/study-room-entry-button"
+import { StudySearchFieldMenu, type StudySearchField } from "@/components/study-search-field-menu"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -12,7 +13,6 @@ import { parseStudyDirectoryView, type StudyDirectoryView } from "@/lib/study-di
 import { redirect } from "next/navigation"
 import { getViewer } from "@/lib/server/viewer"
 
-type SearchField = "title" | "description" | "owner"
 type StudySearchParams = {
   field?: string
   query?: string
@@ -52,7 +52,7 @@ function studyPageHref({
   minDifficulty = 0,
   view = "joined",
 }: {
-  field: SearchField
+  field: StudySearchField
   query: string
   page?: number
   minDifficulty?: DifficultyLevel
@@ -81,8 +81,8 @@ export default async function StudyListPage({
   searchParams: Promise<StudySearchParams>
 }) {
   const params = await searchParams
-  const field: SearchField = ["title", "description", "owner"].includes(params.field || "")
-    ? params.field as SearchField
+  const field: StudySearchField = ["title", "description", "owner"].includes(params.field || "")
+    ? params.field as StudySearchField
     : "title"
   const query = (params.query || "").trim()
   const parsedPage = Number.parseInt(params.page || "1", 10)
@@ -133,19 +133,7 @@ export default async function StudyListPage({
       <form method="get" className="rounded-2xl bg-card p-4 shadow-sm ring-1 ring-foreground/[0.055] sm:p-5">
         <input type="hidden" name="view" value={view} />
         <div className="flex flex-col gap-2 sm:flex-row">
-          <div className="relative sm:w-44">
-            <select
-              name="field"
-              defaultValue={field}
-              aria-label="검색 기준"
-              className="h-11 w-full appearance-none rounded-xl border border-transparent bg-muted/65 py-0 pl-3.5 pr-10 text-sm font-medium outline-none ring-1 ring-foreground/[0.065] focus:ring-2 focus:ring-ring/45"
-            >
-              <option value="title">제목으로 검색</option>
-              <option value="description">설명으로 검색</option>
-              <option value="owner">방장 이름으로 검색</option>
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-          </div>
+          <StudySearchFieldMenu defaultValue={field} />
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input key={params.query || "empty-query"} name="query" defaultValue={params.query || ""} placeholder="검색어를 입력하세요" className="pl-10" />
