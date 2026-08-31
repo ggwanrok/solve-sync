@@ -9,6 +9,7 @@ import { UserAvatar } from "@/components/user-avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { formatStudyRoomTime } from "@/lib/study-room-time"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/utils/supabase/client"
 
@@ -28,15 +29,6 @@ export type LoungeProfile = {
 }
 
 type InsertedComment = Omit<LoungeComment, "profile">
-
-function formatTime(value: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
-    month: "numeric",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value))
-}
 
 function appendComment(comments: LoungeComment[], comment: LoungeComment) {
   if (comments.some((item) => item.id === comment.id)) return comments
@@ -401,7 +393,7 @@ export function StudyLounge({
                   <div className={cn("min-w-0 max-w-[calc(100%-2.5rem)]", isCurrentUser && "text-right")}>
                     <div className={cn("flex items-baseline gap-2", isCurrentUser && "flex-row-reverse")}>
                       <p className="truncate text-xs font-medium">{isCurrentUser ? "나" : name}</p>
-                      <time className="shrink-0 text-[10px] text-muted-foreground" dateTime={comment.created_at}>{formatTime(comment.created_at)}</time>
+                      <time className="shrink-0 text-[10px] text-muted-foreground" dateTime={comment.created_at}>{formatStudyRoomTime(comment.created_at)}</time>
                     </div>
                     <p className={cn(
                       "mt-1 w-fit max-w-full whitespace-pre-wrap break-words rounded-2xl bg-muted px-3 py-2 text-left text-sm",
