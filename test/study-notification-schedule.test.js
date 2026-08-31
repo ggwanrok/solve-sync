@@ -14,20 +14,35 @@ test("study notification crons run at 18:00 and 06:00 KST", async () => {
   ])
 })
 
-test("daily briefings run every morning and weekly briefings only on Monday", async () => {
+test("missed-goal notifications run every morning and weekly checks only on Monday", async () => {
   const migration = await readFile(join(root, "supabase/study-notification-schedule.sql"), "utf8")
 
   assert.match(migration, /notification_phase = 'reminder'/)
   assert.match(migration, /notification_phase = 'briefing'/)
   assert.match(migration, /room\.goal_period = 'daily'/)
   assert.match(migration, /room\.goal_period = 'weekly' and extract\(isodow from local_run_at\) = 1/)
-  assert.match(migration, /case when room\.goal_period = 'daily' then '어제는 ' else '지난주에는 ' end/)
+  assert.match(migration, /select candidate\.study_id, candidate\.user_id, 'goal_missed'/)
+  assert.doesNotMatch(migration, /select room\.id, recipient\.user_id, 'period_summary'/)
 })
 
 test("scheduled pushes only claim fresh notifications for their phase", async () => {
   const migration = await readFile(join(root, "supabase/study-notification-schedule.sql"), "utf8")
 
   assert.match(migration, /notification_phase = 'reminder' and notification\.type = 'goal_reminder'/)
-  assert.match(migration, /notification_phase = 'briefing' and notification\.type in \('goal_missed', 'period_summary'\)/)
+  assert.match(migration, /notification_phase = 'briefing' and notification\.type = 'goal_missed'/)
   assert.match(migration, /notification\.created_at >= now\(\) - interval '12 hours'/)
+})
+
+test("fresh and existing databases stop creating period summaries", async () => {
+  const sources = await Promise.all([
+    "supabase/schema.sql",
+    "supabase/remove-study-period-summary.sql",
+  ].map((path) => readFile(join(root, path), "utf8")))
+
+  for (const source of sources) {
+    assert.match(source, /select candidate\.study_id, candidate\.user_id, 'goal_missed'/)
+    assert.match(source, /notification_phase = 'briefing' and notification\.type = 'goal_missed'/)
+    assert.doesNotMatch(source, /select room\.id, recipient\.user_id, 'period_summary'/)
+    assert.doesNotMatch(source, /'period-summary:' \|\|/)
+  }
 })

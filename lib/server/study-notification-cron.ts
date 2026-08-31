@@ -8,7 +8,7 @@ export type StudyNotificationPhase = "reminder" | "briefing"
 type ClaimedNotification = {
   notification_id: string
   recipient_id: string
-  notification_type: "goal_reminder" | "goal_missed" | "period_summary"
+  notification_type: "goal_reminder" | "goal_missed"
   title: string
   body: string
   url: string

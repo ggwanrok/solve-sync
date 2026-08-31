@@ -1,14 +1,7 @@
 begin;
 
-alter table public.study_notifications
-  drop constraint if exists study_notifications_type_check;
-alter table public.study_notifications
-  add constraint study_notifications_type_check
-  check (type in ('goal_reminder', 'goal_missed', 'weekly_summary', 'period_summary', 'poke'));
-
-drop function if exists public.claim_study_notifications();
-drop function if exists public.claim_study_notifications(text);
-create function public.claim_study_notifications(notification_phase text default 'reminder')
+-- 과거 정리 알림은 알림함 기록으로 유지하고, 이후 스케줄 실행에서만 생성과 발송을 중단한다.
+create or replace function public.claim_study_notifications(notification_phase text default 'reminder')
 returns table(notification_id uuid, recipient_id uuid, notification_type text, title text, body text, url text)
 language plpgsql
 security definer
@@ -22,8 +15,6 @@ begin
   end if;
 
   if notification_phase = 'reminder' then
-    -- 이 작업은 매일 18:00 KST에 실행된다. 일간 목표는 매일, 주간 목표는
-    -- 주간 마감 6시간 전인 일요일에만 아래 기간 조건을 만족한다.
     insert into public.study_notifications(
       study_id, recipient_id, type, title, body, url, deduplication_key
     )
@@ -58,8 +49,6 @@ begin
       and candidate.solved_count < candidate.goal_count
     on conflict(deduplication_key) do nothing;
   else
-    -- 이 작업은 매일 06:00 KST에 실행된다. 일간 스터디는 전날 목표를,
-    -- 주간 스터디는 월요일에만 직전 주 목표의 미달 여부를 확인한다.
     insert into public.study_notifications(
       study_id, recipient_id, type, title, body, url, deduplication_key
     )
