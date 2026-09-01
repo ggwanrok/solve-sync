@@ -9,6 +9,8 @@ const backgroundScript = readFileSync(new URL('../extension/background.js', `fil
 
 function loadBackground({ token = '', connection = null, fetchResponse } = {}) {
   const stored = { token, connection, 'sync-state': {} };
+  const sessionStored = {};
+  const createdWindows = [];
   let externalListener = null;
   let fetchCount = 0;
   const event = { addListener() {} };
@@ -29,6 +31,7 @@ function loadBackground({ token = '', connection = null, fetchResponse } = {}) {
       alarms: { get: async () => ({}), create: async () => {}, onAlarm: event },
       identity: { getRedirectURL: () => 'https://example.chromiumapp.org/solvesync' },
       runtime: {
+        getURL: (path) => `chrome-extension://solvesync/${path}`,
         onInstalled: event,
         onMessage: event,
         onMessageExternal: { addListener(listener) { externalListener = listener; } },
@@ -46,11 +49,29 @@ function loadBackground({ token = '', connection = null, fetchResponse } = {}) {
             Object.assign(stored, values);
           },
         },
+        session: {
+          async get(key) {
+            return { [key]: sessionStored[key] };
+          },
+          async remove(keys) {
+            for (const key of Array.isArray(keys) ? keys : [keys]) delete sessionStored[key];
+          },
+          async set(values) {
+            Object.assign(sessionStored, values);
+          },
+        },
+      },
+      windows: {
+        async create(options) {
+          createdWindows.push(options);
+          return { id: 7 };
+        },
+        onRemoved: event,
       },
     },
   });
   vm.runInContext(backgroundScript, context);
-  return { context, stored, listener: () => externalListener, fetchCount: () => fetchCount };
+  return { context, stored, sessionStored, createdWindows, listener: () => externalListener, fetchCount: () => fetchCount };
 }
 
 function requestStatus(listener, senderUrl = 'https://solve-sync.vercel.app/') {
@@ -132,4 +153,21 @@ test('오프라인 문제 메모 저장은 별도 대기열에 보관하지 않�
 
   assert.equal(result.ok, false);
   assert.equal(background.stored['pending-events'], undefined);
+});
+
+test('문제 메모는 입력 가능한 확장 프로그램 팝업 창으로 연다', async () => {
+  const background = loadBackground();
+  const result = await vm.runInContext(`openProblemMemoWindow({
+    problem: { problemId: '12948', title: '핸드폰 번호 가리기' },
+    memo: { algorithmTags: '문자열' }
+  })`, background.context);
+
+  assert.equal(result.ok, true);
+  assert.equal(background.createdWindows.length, 1);
+  assert.equal(background.createdWindows[0].type, 'popup');
+  assert.equal(background.createdWindows[0].width, 760);
+  assert.equal(background.createdWindows[0].height, 880);
+  const promptKey = Object.keys(background.sessionStored).find((key) => key.startsWith('problem-memo-prompt:'));
+  assert.equal(background.sessionStored[promptKey].problem.problemId, '12948');
+  assert.equal(background.sessionStored[promptKey].memo.algorithmTags, '문자열');
 });

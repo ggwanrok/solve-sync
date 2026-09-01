@@ -7,8 +7,7 @@ const contentScript = readFileSync(new URL('../extension/content.js', `file://${
 
 async function captureAttempt(challengeLevel, selectedLanguage = 'JavaScript', acceptedResponse = { ok: true }) {
   const session = new Map();
-  let sentMessage = null;
-  let openedMemo = null;
+  const sentMessages = [];
   const difficultyNodes = challengeLevel == null
     ? []
     : [{ dataset: { challengeLevel, lessonId: '12948' } }];
@@ -16,17 +15,16 @@ async function captureAttempt(challengeLevel, selectedLanguage = 'JavaScript', a
     chrome: {
       runtime: {
         sendMessage: async (message) => {
-          sentMessage = message;
-          return acceptedResponse;
+          sentMessages.push(message);
+          if (message.type === 'PROGRAMMERS_ACCEPTED') return acceptedResponse;
+          if (message.type === 'OPEN_PROBLEM_MEMO_WINDOW') return { ok: true, windowId: 7 };
+          return { ok: false };
         },
       },
     },
     console,
     confirm: () => true,
     Date,
-    SolveSyncProblemMemoModal: {
-      open(options) { openedMemo = options; },
-    },
     document: {
       body: { innerText: '' },
       documentElement: {},
@@ -58,7 +56,9 @@ async function captureAttempt(challengeLevel, selectedLanguage = 'JavaScript', a
 
   vm.runInContext(contentScript, context);
   await vm.runInContext('capture(false)', context);
-  return { event: sentMessage.event, openedMemo };
+  const acceptedMessage = sentMessages.find((message) => message.type === 'PROGRAMMERS_ACCEPTED');
+  const openMessage = sentMessages.find((message) => message.type === 'OPEN_PROBLEM_MEMO_WINDOW');
+  return { event: acceptedMessage.event, openedPrompt: openMessage?.prompt || null };
 }
 
 async function captureEvent(challengeLevel, selectedLanguage = 'JavaScript') {
@@ -94,32 +94,32 @@ test('SQL 언어는 SQL 풀이로 전송한다', async () => {
 
 test('온라인 저장이 완료되고 개인 설정이 켜진 경우에만 문제 메모를 연다', async () => {
   const existingMemo = { algorithmTags: '그리디', approach: '정렬한다' };
-  const { openedMemo } = await captureAttempt('2', 'Python3', {
+  const { openedPrompt } = await captureAttempt('2', 'Python3', {
     ok: true,
     queued: false,
     memoPrompt: { enabled: true, memo: existingMemo },
   });
 
-  assert.equal(openedMemo.problem.problemId, '12948');
-  assert.equal(openedMemo.memo.algorithmTags, '그리디');
+  assert.equal(openedPrompt.problem.problemId, '12948');
+  assert.equal(openedPrompt.memo.algorithmTags, '그리디');
 });
 
 test('오프라인 대기열에 저장된 풀이는 문제 메모를 열지 않는다', async () => {
-  const { openedMemo } = await captureAttempt('2', 'Python3', {
+  const { openedPrompt } = await captureAttempt('2', 'Python3', {
     ok: true,
     queued: true,
     memoPrompt: { enabled: true, memo: null },
   });
 
-  assert.equal(openedMemo, null);
+  assert.equal(openedPrompt, null);
 });
 
 test('개인 설정이 꺼진 경우 문제 메모를 열지 않는다', async () => {
-  const { openedMemo } = await captureAttempt('2', 'Python3', {
+  const { openedPrompt } = await captureAttempt('2', 'Python3', {
     ok: true,
     queued: false,
     memoPrompt: { enabled: false, memo: null },
   });
 
-  assert.equal(openedMemo, null);
+  assert.equal(openedPrompt, null);
 });

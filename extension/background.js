@@ -4,6 +4,8 @@ const QUEUE_KEY = 'pending-events';
 const SYNC_STATE_KEY = 'sync-state';
 const INSTALLATION_KEY = 'installation-id';
 const CONNECTION_KEY = 'connection';
+const MEMO_PROMPT_PREFIX = 'problem-memo-prompt:';
+const MEMO_WINDOW_PREFIX = 'problem-memo-window:';
 const RETRY_ALARM = 'retry-pending-events';
 const RETRY_INTERVAL_MINUTES = 1;
 const REQUEST_TIMEOUT_MS = 15_000;
@@ -330,6 +332,36 @@ async function saveProblemMemo(input) {
   }
 }
 
+async function openProblemMemoWindow(input) {
+  if (!input?.problem?.problemId) return { ok: false, error: '문제 정보를 확인하지 못했습니다.' };
+
+  const promptId = crypto.randomUUID();
+  const promptKey = `${MEMO_PROMPT_PREFIX}${promptId}`;
+  await chrome.storage.session.set({
+    [promptKey]: {
+      problem: input.problem,
+      memo: input.memo || null,
+      createdAt: new Date().toISOString(),
+    },
+  });
+
+  try {
+    const popup = await chrome.windows.create({
+      url: chrome.runtime.getURL(`problem-memo.html?prompt=${encodeURIComponent(promptId)}`),
+      type: 'popup',
+      width: 760,
+      height: 880,
+      focused: true,
+    });
+    if (popup?.id == null) throw new Error('문제 메모 창을 만들지 못했습니다.');
+    await chrome.storage.session.set({ [`${MEMO_WINDOW_PREFIX}${popup.id}`]: promptKey });
+    return { ok: true, windowId: popup.id };
+  } catch (error) {
+    await chrome.storage.session.remove(promptKey);
+    return { ok: false, error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
 function retryDelay(attempts) {
   return RETRY_DELAYS_MS[Math.min(Math.max(attempts - 1, 0), RETRY_DELAYS_MS.length - 1)];
 }
@@ -509,6 +541,11 @@ chrome.runtime.onMessage.addListener((message, _sender, respond) => {
     return true;
   }
 
+  if (message.type === 'OPEN_PROBLEM_MEMO_WINDOW') {
+    openProblemMemoWindow(message.prompt).then(respond).catch((error) => respond({ ok: false, error: error.message }));
+    return true;
+  }
+
   if (message.type === 'FLUSH_PENDING_EVENTS') {
     flush({ force: true }).then(respond).catch((error) => respond({ error: error.message }));
     return true;
@@ -550,6 +587,14 @@ chrome.runtime.onMessageExternal.addListener((message, sender, respond) => {
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === RETRY_ALARM) void flush();
+});
+
+chrome.windows.onRemoved.addListener((windowId) => {
+  const windowKey = `${MEMO_WINDOW_PREFIX}${windowId}`;
+  void chrome.storage.session.get(windowKey).then(async (stored) => {
+    const promptKey = stored[windowKey];
+    await chrome.storage.session.remove(promptKey ? [windowKey, promptKey] : windowKey);
+  });
 });
 
 chrome.runtime.onStartup.addListener(() => {

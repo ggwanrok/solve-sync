@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>SolveSync 문제 메모</title>
+    <link rel="stylesheet" href="problem-memo.css">
+  </head>
+  <body>
+    <main>
+      <header>
+        <div class="header-copy">
+          <p class="eyebrow">SolveSync 문제 메모</p>
+          <h1 id="problemTitle">문제 정보를 불러오는 중...</h1>
+          <div id="problemMeta" class="meta"></div>
+        </div>
+      </header>
+
+      <form id="memoForm">
+        <p class="intro">방금 해결한 문제에서 다시 볼 핵심 내용을 남겨보세요.</p>
+
+        <div class="field">
+          <div class="field-heading">
+            <label for="algorithmTags">알고리즘 테마</label>
+            <span class="counter" data-counter="algorithmTags">0/300</span>
+          </div>
+          <input id="algorithmTags" name="algorithmTags" maxlength="300" placeholder="예: 그리디, 정렬, 투 포인터" autofocus>
+        </div>
+
+        <div class="field">
+          <div class="field-heading">
+            <label for="approach">접근 방법</label>
+            <span class="counter" data-counter="approach">0/500</span>
+          </div>
+          <textarea id="approach" name="approach" rows="4" maxlength="500" placeholder="문제를 보고 떠올린 핵심 아이디어와 풀이 순서를 적어보세요."></textarea>
+        </div>
+
+        <div class="field">
+          <div class="field-heading">
+            <label for="solutionCode">해결 코드</label>
+            <span class="counter" data-counter="solutionCode">0/10000</span>
+          </div>
+          <textarea id="solutionCode" name="solutionCode" class="code" rows="10" maxlength="10000" spellcheck="false" placeholder="최종 해결 코드를 붙여 넣어보세요."></textarea>
+        </div>
+
+        <div class="field">
+          <div class="field-heading">
+            <label for="difficultyReason">틀리거나 시간이 오래 걸린 이유</label>
+            <span class="counter" data-counter="difficultyReason">0/500</span>
+          </div>
+          <textarea id="difficultyReason" name="difficultyReason" rows="4" maxlength="500" placeholder="막혔던 지점, 잘못 생각한 부분과 오래 걸린 이유를 적어보세요."></textarea>
+        </div>
+
+        <div class="field">
+          <div class="field-heading">
+            <label for="learnings">배운 점</label>
+            <span class="counter" data-counter="learnings">0/300</span>
+          </div>
+          <textarea id="learnings" name="learnings" rows="4" maxlength="300" placeholder="이 문제를 통해 새로 알게 된 점이나 다음에 기억할 내용을 적어보세요."></textarea>
+        </div>
+
+        <footer>
+          <p id="status" class="status" aria-live="polite">저장하면 SolveSync 문제 메모에서 언제든 다시 볼 수 있습니다.</p>
+          <div class="actions">
+            <button id="cancelButton" class="button cancel" type="button">나중에</button>
+            <button id="saveButton" class="button save" type="submit">저장하기</button>
+          </div>
+        </footer>
+      </form>
+    </main>
+    <script src="problem-memo.js"></script>
+  </body>
+</html>

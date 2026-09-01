@@ -64,22 +64,14 @@ function eventFor(id) {
   const selectedLanguage = language();
   return { startKey, event: { problemId: id, title: title(), url: location.origin + location.pathname, language: selectedLanguage, problemType: problemType(selectedLanguage), difficulty: difficulty(), startedAt, acceptedAt, durationSeconds: Math.max(0, Math.round((Date.parse(acceptedAt) - Date.parse(startedAt)) / 1000)) } };
 }
-function openProblemMemo(event, response) {
+async function openProblemMemoWindow(event, response) {
   // 오프라인 큐 적재나 지연 재전송에서는 메모 창을 열지 않습니다.
   if (response.queued || !response.memoPrompt?.enabled) return;
-  const modal = globalThis.SolveSyncProblemMemoModal;
-  if (!modal?.open) {
-    console.info('[SolveSync] 문제 메모 화면을 불러오지 못했습니다.');
-    return;
-  }
-  modal.open({
-    problem: event,
-    memo: response.memoPrompt.memo,
-    onSave: (draft) => chrome.runtime.sendMessage({
-      type: 'SAVE_PROBLEM_MEMO',
-      memo: { problemId: event.problemId, ...draft },
-    }),
+  const result = await chrome.runtime.sendMessage({
+    type: 'OPEN_PROBLEM_MEMO_WINDOW',
+    prompt: { problem: event, memo: response.memoPrompt.memo },
   });
+  if (!result?.ok) console.info('[SolveSync] 문제 메모 창을 열지 못했습니다:', result?.error);
 }
 async function capture(requireSuccess = true) {
   const id = problemId(); const result = resultElement();
@@ -96,7 +88,7 @@ async function capture(requireSuccess = true) {
       return response || { ok: false, error: '확장 프로그램 응답이 없습니다.' };
     }
     if (response.queued) console.info('[SolveSync] 풀이 기록을 로컬에 보관했으며 자동 재전송합니다.');
-    openProblemMemo(event, response);
+    await openProblemMemoWindow(event, response);
     sessionStorage.removeItem(startKey);
     return response;
   } catch (error) {

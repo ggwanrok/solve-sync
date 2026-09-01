@@ -11,9 +11,16 @@ test('문제 메모 자동 열기 개인 설정은 기본적으로 꺼져 있다
   assert.match(migration, /problem_memo_prompt_enabled boolean not null default false/);
 });
 
-test('확장 프로그램은 문제 메모 모달을 정답 감지 스크립트보다 먼저 로드한다', () => {
+test('확장 프로그램은 문제 메모를 독립 팝업 문서로 제공한다', () => {
   const manifest = JSON.parse(readFileSync(join(process.cwd(), 'extension/manifest.json'), 'utf8'));
   const scripts = manifest.content_scripts[0].js;
+  const popup = readFileSync(join(process.cwd(), 'extension/problem-memo.html'), 'utf8');
 
-  assert.deepEqual(scripts.slice(-2), ['problem-memo-modal.js', 'content.js']);
+  assert.deepEqual(scripts, ['content.js']);
+  assert.match(popup, /problem-memo\.css/);
+  assert.match(popup, /problem-memo\.js/);
+  assert.doesNotMatch(popup, /\bdisabled\b/);
+  for (const field of ['algorithmTags', 'approach', 'solutionCode', 'difficultyReason', 'learnings']) {
+    assert.match(popup, new RegExp(`\\bname="${field}"`));
+  }
 });
