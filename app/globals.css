@@ -206,6 +206,6 @@
     @apply text-lg font-semibold tracking-[-0.025em];
   }
   .empty-state {
-    @apply rounded-2xl bg-card px-6 py-16 text-center ring-1 ring-foreground/[0.055];
+    @apply rounded-xl border border-border/80 bg-card px-6 py-16 text-center;
   }
 }

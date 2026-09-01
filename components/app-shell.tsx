@@ -38,9 +38,9 @@ function NavLinks({ pendingFriendRequestCount, onNavigate }: { pendingFriendRequ
             prefetch
             onClick={onNavigate}
             className={cn(
-              "flex h-11 items-center gap-3 rounded-xl px-3.5 text-sm font-semibold transition-[background-color,color,transform] active:scale-[0.99]",
+              "flex h-11 items-center gap-3 rounded-lg px-3.5 text-sm font-semibold transition-[background-color,color,box-shadow,transform] active:scale-[0.99]",
               active
-                ? "bg-primary/10 text-primary"
+                ? "bg-sidebar-accent/80 text-sidebar-accent-foreground shadow-[inset_3px_0_0_var(--sidebar-primary)]"
                 : "text-muted-foreground hover:bg-sidebar-accent/65 hover:text-sidebar-foreground",
             )}
           >
@@ -73,19 +73,19 @@ function SidebarContent({ user, contributions, onNavigate }: { user: ShellUser; 
         <Link
           href="/programmers"
           onClick={onNavigate}
-          className="flex h-10 items-center justify-center gap-2 rounded-xl bg-card px-3 text-xs font-semibold text-sidebar-foreground shadow-sm ring-1 ring-foreground/[0.065] transition-colors hover:bg-sidebar-accent"
+          className="flex h-10 items-center justify-center gap-2 rounded-lg border border-sidebar-border/80 bg-card px-3 text-xs font-semibold text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
         >
           <Chrome className="size-3.5 text-primary" aria-hidden="true" />
           프로그래머스 연동방법
         </Link>
-        <div className="rounded-2xl bg-card px-3 py-4 shadow-sm ring-1 ring-foreground/[0.055]">
+        <div className="rounded-xl border border-sidebar-border/80 bg-card px-3 py-4">
           <div className="mb-2 flex items-center justify-between text-[11px] text-muted-foreground">
             <span className="font-medium text-sidebar-foreground">나의 잔디</span>
             <span>최근 16주</span>
           </div>
           <ContributionGraph data={contributions} compact />
         </div>
-        <div className="flex items-center gap-3 rounded-xl px-2 py-1">
+        <div className="flex items-center gap-3 rounded-lg px-2 py-1">
           <UserAvatar name={user.name} imageUrl={user.avatarUrl} className="size-10" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium">{user.name}</p>
@@ -146,6 +146,12 @@ export function AppShell({ children, user, contributions, notificationInbox }: {
           <div className="flex items-center gap-2 lg:hidden">
             <Logo showText={false} />
           </div>
+
+          {refreshLabel && (
+            <p className="hidden text-sm font-semibold tracking-[-0.015em] lg:block">
+              {refreshLabel}
+            </p>
+          )}
 
           <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
             {refreshLabel && (
