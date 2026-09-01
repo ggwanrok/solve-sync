@@ -10,7 +10,6 @@ import {
   MousePointerClick,
   Pin,
   Puzzle,
-  RefreshCw,
   ShieldCheck,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -173,31 +172,6 @@ export default async function ProgrammersGuidePage() {
           <Button render={<Link href="/" />} nativeButton={false} variant="outline" className="mt-5">
             대시보드에서 확인하기
           </Button>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><RefreshCw className="size-5 text-primary" />연동이 잘되지 않을 때</CardTitle>
-          <CardDescription>아래 항목을 순서대로 확인해 보세요.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-2xl bg-muted/55 p-4">
-            <p className="font-medium">확장 프로그램 아이콘이 안 보여요</p>
-            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">Chrome 도구 모음의 퍼즐 아이콘을 누르고 SolveSync 옆 고정 아이콘을 선택하세요.</p>
-          </div>
-          <div className="rounded-2xl bg-muted/55 p-4">
-            <p className="font-medium">재연동이 필요하다고 나와요</p>
-            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">확장 프로그램의 ‘계정 다시 연결’을 누르고 같은 계정으로 기기 승인을 다시 진행하세요.</p>
-          </div>
-          <div className="rounded-2xl bg-muted/55 p-4">
-            <p className="font-medium">풀이 기록이 바로 안 보여요</p>
-            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">확장 프로그램에서 대기 건수를 확인하고 ‘지금 동기화’를 누른 뒤 대시보드를 새로고침하세요.</p>
-          </div>
-          <div className="rounded-2xl bg-muted/55 p-4">
-            <p className="font-medium">다른 컴퓨터도 연결하고 싶어요</p>
-            <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">새 컴퓨터에도 확장 프로그램을 설치하고 같은 계정으로 연결하세요. 기존 기기 연결은 유지됩니다.</p>
-          </div>
         </CardContent>
       </Card>
 
