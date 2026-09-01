@@ -40,7 +40,7 @@ function NavLinks({ pendingFriendRequestCount, onNavigate }: { pendingFriendRequ
             className={cn(
               "flex h-11 items-center gap-3 rounded-lg px-3.5 text-sm font-semibold transition-[background-color,color,box-shadow,transform] active:scale-[0.99]",
               active
-                ? "bg-sidebar-accent/80 text-sidebar-accent-foreground shadow-[inset_3px_0_0_var(--sidebar-primary)]"
+                ? "bg-sidebar-accent/80 text-sidebar-accent-foreground"
                 : "text-muted-foreground hover:bg-sidebar-accent/65 hover:text-sidebar-foreground",
             )}
           >
