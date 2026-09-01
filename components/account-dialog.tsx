@@ -1,6 +1,6 @@
 "use client"
 
-import { Camera, LoaderCircle, LogOut, MonitorSmartphone, Save, Trash2, Unplug } from "lucide-react"
+import { Camera, LoaderCircle, LogOut, MonitorSmartphone, NotebookPen, Save, Trash2, Unplug } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useCallback, useRef, useState } from "react"
 import { toast } from "sonner"
@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { MAX_EXTENSION_CONNECTIONS } from "@/lib/extension-connect"
 import { isSupportedProfileImage, NICKNAME_MAX_LENGTH, PROFILE_BIO_MAX_LENGTH, PROFILE_IMAGE_INPUT_MAX_BYTES } from "@/lib/profile"
+import { cn } from "@/lib/utils"
 import { createClient } from "@/utils/supabase/client"
 
 export type ExtensionDevice = {
@@ -29,6 +30,7 @@ export type AccountUser = {
   name: string
   handle: string
   bio: string
+  problemMemoPromptEnabled: boolean
   avatarUrl: string | null
   extensionDevices?: ExtensionDevice[]
 }
@@ -43,9 +45,11 @@ export function AccountDialog({ user, browserExtensionStatus }: { user: AccountU
   const [devices, setDevices] = useState(user.extensionDevices || [])
   const [nickname, setNickname] = useState(user.name)
   const [bio, setBio] = useState(user.bio)
+  const [problemMemoPromptEnabled, setProblemMemoPromptEnabled] = useState(user.problemMemoPromptEnabled)
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl)
   const [avatarCropFile, setAvatarCropFile] = useState<File | null>(null)
   const [savingProfile, setSavingProfile] = useState(false)
+  const [savingPreferences, setSavingPreferences] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [revokingDevice, setRevokingDevice] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -71,6 +75,29 @@ export function AccountDialog({ user, browserExtensionStatus }: { user: AccountU
       toast.error("프로필을 변경하지 못했습니다.")
     } finally {
       setSavingProfile(false)
+    }
+  }
+
+  const toggleProblemMemoPrompt = async () => {
+    const nextEnabled = !problemMemoPromptEnabled
+    setSavingPreferences(true)
+    try {
+      const response = await authenticatedFetch("/api/account/preferences", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ problemMemoPromptEnabled: nextEnabled }),
+      })
+      const result = await response.json() as { error?: string; problemMemoPromptEnabled?: boolean }
+      if (!response.ok || typeof result.problemMemoPromptEnabled !== "boolean") {
+        return toast.error(result.error || "개인 설정을 변경하지 못했습니다.")
+      }
+      setProblemMemoPromptEnabled(result.problemMemoPromptEnabled)
+      toast.success(result.problemMemoPromptEnabled ? "풀이 성공 후 문제 메모를 엽니다." : "문제 메모 자동 열기를 껐습니다.")
+      router.refresh()
+    } catch {
+      toast.error("개인 설정을 변경하지 못했습니다.")
+    } finally {
+      setSavingPreferences(false)
     }
   }
 
@@ -160,7 +187,7 @@ export function AccountDialog({ user, browserExtensionStatus }: { user: AccountU
         <UserAvatar name={nickname} imageUrl={avatarUrl} className="size-10" />
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
-        <DialogHeader><DialogTitle>마이페이지</DialogTitle><DialogDescription>프로필과 확장 프로그램 연결 기기를 관리합니다.</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>마이페이지</DialogTitle><DialogDescription>프로필, 개인 설정과 확장 프로그램 연결 기기를 관리합니다.</DialogDescription></DialogHeader>
 
         <div className="rounded-2xl bg-muted/45 p-4">
           <div className="flex items-center gap-4">
@@ -225,6 +252,36 @@ export function AccountDialog({ user, browserExtensionStatus }: { user: AccountU
               </Button>
             </div>
           </form>
+        </div>
+
+        <div className="rounded-2xl bg-muted/45 p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <NotebookPen className="size-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium">풀이 성공 시 문제 메모 열기</p>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">프로그래머스 풀이가 온라인으로 저장되면 바로 메모 작성 창을 엽니다.</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={problemMemoPromptEnabled}
+              aria-label="풀이 성공 시 문제 메모 열기"
+              onClick={toggleProblemMemoPrompt}
+              disabled={savingPreferences}
+              className={cn(
+                "relative h-7 w-12 shrink-0 rounded-full outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50 disabled:cursor-wait disabled:opacity-60",
+                problemMemoPromptEnabled ? "bg-primary" : "bg-muted-foreground/30",
+              )}
+            >
+              <span className={cn(
+                "absolute top-1 left-1 size-5 rounded-full bg-white shadow-sm transition-transform",
+                problemMemoPromptEnabled && "translate-x-5",
+              )} />
+            </button>
+          </div>
+          <p className="mt-3 text-[11px] text-muted-foreground">오프라인 대기열에 저장된 풀이는 나중에 동기화되더라도 메모 창을 열지 않습니다.</p>
         </div>
 
         <div className="rounded-2xl bg-muted/45 p-4">

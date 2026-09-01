@@ -293,6 +293,43 @@ async function sendEvent(token, event) {
   }
 }
 
+async function saveProblemMemo(input) {
+  const { token } = await settings();
+  if (!token) return { ok: false, authRequired: true, error: '연동 토큰이 필요합니다.' };
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetch(`${API_BASE.replace(/\/$/, '')}/api/problem-memos/programmers`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(input),
+      signal: controller.signal,
+    });
+    const result = await parseResponse(response);
+    if (!response.ok) {
+      return {
+        ok: false,
+        authRequired: response.status === 401,
+        error: result.error || '문제 메모를 저장하지 못했습니다.',
+      };
+    }
+    return { ok: true, updatedAt: result.updatedAt };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error?.name === 'AbortError'
+        ? '서버 응답 시간이 초과되었습니다.'
+        : error instanceof Error ? error.message : String(error),
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 function retryDelay(attempts) {
   return RETRY_DELAYS_MS[Math.min(Math.max(attempts - 1, 0), RETRY_DELAYS_MS.length - 1)];
 }
@@ -358,7 +395,12 @@ async function performFlush({ force = false, onlyId = null } = {}) {
         lastError: null,
         authRequired: false,
       });
-      outcomes[item.id] = { ok: true, queued: false, duplicate: Boolean(result.duplicate) };
+      outcomes[item.id] = {
+        ok: true,
+        queued: false,
+        duplicate: Boolean(result.duplicate),
+        memoPrompt: result.memoPrompt || { enabled: false, memo: null },
+      };
     } catch (error) {
       const failure = await markFailure(item, error);
       outcomes[item.id] = {
@@ -459,6 +501,11 @@ chrome.runtime.onMessage.addListener((message, _sender, respond) => {
 
   if (message.type === 'GET_SYNC_STATUS') {
     getSyncStatus().then(respond).catch((error) => respond({ error: error.message }));
+    return true;
+  }
+
+  if (message.type === 'SAVE_PROBLEM_MEMO') {
+    saveProblemMemo(message.memo).then(respond).catch((error) => respond({ ok: false, error: error.message }));
     return true;
   }
 

@@ -5,9 +5,10 @@ const vm = require('node:vm');
 
 const contentScript = readFileSync(new URL('../extension/content.js', `file://${__filename}`), 'utf8');
 
-async function captureEvent(challengeLevel, selectedLanguage = 'JavaScript') {
+async function captureAttempt(challengeLevel, selectedLanguage = 'JavaScript', acceptedResponse = { ok: true }) {
   const session = new Map();
   let sentMessage = null;
+  let openedMemo = null;
   const difficultyNodes = challengeLevel == null
     ? []
     : [{ dataset: { challengeLevel, lessonId: '12948' } }];
@@ -16,13 +17,16 @@ async function captureEvent(challengeLevel, selectedLanguage = 'JavaScript') {
       runtime: {
         sendMessage: async (message) => {
           sentMessage = message;
-          return { ok: true };
+          return acceptedResponse;
         },
       },
     },
     console,
     confirm: () => true,
     Date,
+    SolveSyncProblemMemoModal: {
+      open(options) { openedMemo = options; },
+    },
     document: {
       body: { innerText: '' },
       documentElement: {},
@@ -54,7 +58,11 @@ async function captureEvent(challengeLevel, selectedLanguage = 'JavaScript') {
 
   vm.runInContext(contentScript, context);
   await vm.runInContext('capture(false)', context);
-  return sentMessage.event;
+  return { event: sentMessage.event, openedMemo };
+}
+
+async function captureEvent(challengeLevel, selectedLanguage = 'JavaScript') {
+  return (await captureAttempt(challengeLevel, selectedLanguage)).event;
 }
 
 test('프로그래머스 난이도를 숫자 등급으로 전송한다', async () => {
@@ -82,4 +90,36 @@ test('SQL 언어는 SQL 풀이로 전송한다', async () => {
     const event = await captureEvent('2', language);
     assert.equal(event.problemType, 'sql');
   }
+});
+
+test('온라인 저장이 완료되고 개인 설정이 켜진 경우에만 문제 메모를 연다', async () => {
+  const existingMemo = { algorithmTags: '그리디', approach: '정렬한다' };
+  const { openedMemo } = await captureAttempt('2', 'Python3', {
+    ok: true,
+    queued: false,
+    memoPrompt: { enabled: true, memo: existingMemo },
+  });
+
+  assert.equal(openedMemo.problem.problemId, '12948');
+  assert.equal(openedMemo.memo.algorithmTags, '그리디');
+});
+
+test('오프라인 대기열에 저장된 풀이는 문제 메모를 열지 않는다', async () => {
+  const { openedMemo } = await captureAttempt('2', 'Python3', {
+    ok: true,
+    queued: true,
+    memoPrompt: { enabled: true, memo: null },
+  });
+
+  assert.equal(openedMemo, null);
+});
+
+test('개인 설정이 꺼진 경우 문제 메모를 열지 않는다', async () => {
+  const { openedMemo } = await captureAttempt('2', 'Python3', {
+    ok: true,
+    queued: false,
+    memoPrompt: { enabled: false, memo: null },
+  });
+
+  assert.equal(openedMemo, null);
 });

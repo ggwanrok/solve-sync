@@ -50,7 +50,7 @@ function loadBackground({ token = '', connection = null, fetchResponse } = {}) {
     },
   });
   vm.runInContext(backgroundScript, context);
-  return { listener: () => externalListener, fetchCount: () => fetchCount };
+  return { context, stored, listener: () => externalListener, fetchCount: () => fetchCount };
 }
 
 function requestStatus(listener, senderUrl = 'https://solve-sync.vercel.app/') {
@@ -95,4 +95,41 @@ test('허용하지 않은 웹사이트에는 확장 프로그램 상태를 공�
   );
 
   assert.equal(result, undefined);
+});
+
+test('온라인 풀이 저장 응답의 문제 메모 설정을 콘텐츠 스크립트까지 전달한다', async () => {
+  const background = loadBackground({
+    token: 'secret-extension-token',
+    fetchResponse: {
+      ok: true,
+      status: 201,
+      json: async () => ({
+        duplicate: false,
+        memoPrompt: { enabled: true, memo: { algorithmTags: '그래프' } },
+      }),
+    },
+  });
+
+  const result = await vm.runInContext("record({ problemId: '12948' })", background.context);
+  assert.equal(result.ok, true);
+  assert.equal(result.queued, false);
+  assert.equal(result.memoPrompt.enabled, true);
+  assert.equal(result.memoPrompt.memo.algorithmTags, '그래프');
+});
+
+test('오프라인 풀이 저장은 대기열에만 남고 문제 메모 설정을 전달하지 않는다', async () => {
+  const background = loadBackground({ token: 'secret-extension-token' });
+  const result = await vm.runInContext("record({ problemId: '12948' })", background.context);
+
+  assert.equal(result.ok, true);
+  assert.equal(result.queued, true);
+  assert.equal(result.memoPrompt, undefined);
+});
+
+test('오프라인 문제 메모 저장은 별도 대기열에 보관하지 않는다', async () => {
+  const background = loadBackground({ token: 'secret-extension-token' });
+  const result = await vm.runInContext("saveProblemMemo({ problemId: '12948', approach: '풀이' })", background.context);
+
+  assert.equal(result.ok, false);
+  assert.equal(background.stored['pending-events'], undefined);
 });

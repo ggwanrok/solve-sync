@@ -27,7 +27,7 @@ grant all on public.extension_connection_codes to service_role;
 -- 핸들은 claim_handle RPC로만 최초 설정하고 일반 프로필 수정에서 제외한다.
 revoke all on public.profiles from authenticated;
 grant select on public.profiles to authenticated;
-grant update(nickname, bio, avatar_url, guide_completed_at) on public.profiles to authenticated;
+grant update(nickname, bio, avatar_url, guide_completed_at, problem_memo_prompt_enabled) on public.profiles to authenticated;
 
 -- SECURITY DEFINER 함수의 PostgreSQL 기본 PUBLIC 실행 권한을 제거한다.
 revoke execute on function public.claim_handle(text) from public, anon;

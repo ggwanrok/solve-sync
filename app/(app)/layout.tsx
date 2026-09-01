@@ -41,6 +41,7 @@ export default async function AppGroupLayout({ children }: { children: React.Rea
     name: profile.nickname || profile.handle,
     handle: profile.handle,
     bio: profile.bio || "",
+    problemMemoPromptEnabled: profile.problem_memo_prompt_enabled || false,
     avatarUrl: profile.avatar_url,
     pendingFriendRequestCount,
     extensionDevices: extensions.map((device) => ({

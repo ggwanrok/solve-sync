@@ -97,6 +97,58 @@ export async function POST(request: Request) {
   }
 
   await supabase.from("extension_connections").update({ last_seen_at: new Date().toISOString() }).eq("token_hash", hash(token))
+
+  const { data: preference, error: preferenceError } = await supabase
+    .from("profiles")
+    .select("problem_memo_prompt_enabled")
+    .eq("id", connection.user_id)
+    .maybeSingle()
+  if (preferenceError) {
+    console.error("problem memo prompt preference failed", {
+      userId: connection.user_id,
+      code: preferenceError.code,
+      message: preferenceError.message,
+    })
+  }
+
+  let memo: {
+    algorithmTags: string
+    approach: string
+    solutionCode: string
+    difficultyReason: string
+    learnings: string
+  } | null = null
+  const memoPromptEnabled = Boolean(preference?.problem_memo_prompt_enabled)
+  if (memoPromptEnabled) {
+    const { data: storedMemo, error: memoError } = await supabase
+      .from("problem_memos")
+      .select("algorithm_tags,approach,solution_code,difficulty_reason,learnings")
+      .eq("user_id", connection.user_id)
+      .eq("platform", "programmers")
+      .eq("problem_id", String(input.problemId))
+      .maybeSingle()
+    if (memoError) {
+      console.error("problem memo prompt preload failed", {
+        userId: connection.user_id,
+        problemId: String(input.problemId),
+        code: memoError.code,
+        message: memoError.message,
+      })
+    } else if (storedMemo) {
+      memo = {
+        algorithmTags: storedMemo.algorithm_tags,
+        approach: storedMemo.approach,
+        solutionCode: storedMemo.solution_code,
+        difficultyReason: storedMemo.difficulty_reason,
+        learnings: storedMemo.learnings,
+      }
+    }
+  }
+
   const duplicate = !event
-  return NextResponse.json({ event: event ? { id: event.id } : null, duplicate }, { status: duplicate ? 200 : 201 })
+  return NextResponse.json({
+    event: event ? { id: event.id } : null,
+    duplicate,
+    memoPrompt: { enabled: memoPromptEnabled, memo },
+  }, { status: duplicate ? 200 : 201 })
 }

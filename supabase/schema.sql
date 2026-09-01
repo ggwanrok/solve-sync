@@ -8,6 +8,7 @@ create table if not exists public.profiles (
   handle text unique,
   nickname text not null default '',
   bio text not null default '',
+  problem_memo_prompt_enabled boolean not null default false,
   avatar_url text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -16,6 +17,7 @@ create table if not exists public.profiles (
 
 alter table public.profiles add column if not exists guide_completed_at timestamptz;
 alter table public.profiles add column if not exists bio text not null default '';
+alter table public.profiles add column if not exists problem_memo_prompt_enabled boolean not null default false;
 
 alter table public.profiles drop constraint if exists profiles_bio_length;
 alter table public.profiles add constraint profiles_bio_length check (char_length(bio) <= 40);
@@ -1592,7 +1594,7 @@ using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()))
 grant usage on schema public to authenticated;
 revoke all on public.profiles from authenticated;
 grant select on public.profiles to authenticated;
-grant update(nickname, bio, avatar_url, guide_completed_at) on public.profiles to authenticated;
+grant update(nickname, bio, avatar_url, guide_completed_at, problem_memo_prompt_enabled) on public.profiles to authenticated;
 grant select on public.friend_requests, public.friendships to authenticated;
 revoke all on public.study_rooms from authenticated;
 grant select(id, owner_id, name, description, emoji, weekly_goal, max_members, is_private, created_at, goal_period, goal_count, min_difficulty) on public.study_rooms to authenticated;
