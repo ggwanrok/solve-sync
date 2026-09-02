@@ -49,7 +49,15 @@ as $$
         coalesce(sum(
           case
             when solve.difficulty_position <= 100 and solve.difficulty is not null
-              then (solve.difficulty + 1) * 5
+              then case solve.difficulty
+                when 0 then 5
+                when 1 then 8
+                when 2 then 13
+                when 3 then 21
+                when 4 then 34
+                when 5 then 55
+                else 0
+              end
             else 0
           end
         ), 0)

@@ -1,7 +1,7 @@
 export const RANKING_TOP_PROBLEM_LIMIT = 100
 export const RANKING_SOLVE_BONUS_MAX = 200
 export const RANKING_SOLVE_BONUS_DECAY = 0.997
-export const RANKING_DIFFICULTY_POINTS = [5, 10, 15, 20, 25, 30] as const
+export const RANKING_DIFFICULTY_POINTS = [5, 8, 13, 21, 34, 55] as const
 export const SQL_RANKING_DIVISOR = 2
 
 type RankingDifficultyLevel = 0 | 1 | 2 | 3 | 4 | 5
