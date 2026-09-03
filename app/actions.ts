@@ -32,6 +32,7 @@ export async function sendFriendRequest(formData: FormData) {
 
   switch (status) {
     case "sent":
+      revalidatePath("/friends")
       revalidateStudyFrom(formData)
       return { status, message: "친구 요청을 보냈습니다." }
     case "already_sent":

@@ -1,4 +1,4 @@
-import { Check, X } from "lucide-react"
+import { Check, Clock3, X } from "lucide-react"
 import { respondFriendRequest } from "@/app/actions"
 import type { ContributionDay } from "@/components/contribution-graph"
 import { FriendCard, type FriendCardProfile } from "@/components/friend-card"
@@ -26,13 +26,20 @@ export default async function FriendsPage() {
   if (!user) redirect("/login")
   const today = dayKey(new Date())
   const firstDate = addCalendarDays(today, -111)
-  const [{ data: relations }, { data: incoming }, { data: contributionData, error: contributionError }] = await Promise.all([
+  const [
+    { data: relations },
+    { data: incoming },
+    { data: outgoing },
+    { data: contributionData, error: contributionError },
+  ] = await Promise.all([
     supabase.from("friendships").select("friend_id, friend:profiles!friendships_friend_id_fkey(id,handle,nickname,bio,avatar_url)").eq("user_id", user.id),
-    supabase.from("friend_requests").select("id, sender:profiles!friend_requests_sender_id_fkey(id,handle,nickname,avatar_url)").eq("receiver_id", user.id).eq("status", "pending"),
+    supabase.from("friend_requests").select("id, sender:profiles!friend_requests_sender_id_fkey(id,handle,nickname,avatar_url)").eq("receiver_id", user.id).eq("status", "pending").order("created_at", { ascending: false }),
+    supabase.from("friend_requests").select("id, receiver:profiles!friend_requests_receiver_id_fkey(id,handle,nickname,avatar_url)").eq("sender_id", user.id).eq("status", "pending").order("created_at", { ascending: false }),
     supabase.rpc("friend_contribution_events", { first_date: firstDate }),
   ])
   const friends = (relations || []).map((row) => row.friend as unknown as Profile).filter(Boolean)
-  const requests = (incoming || []).map((row) => ({ id: row.id, profile: row.sender as unknown as Profile })).filter((row) => row.profile)
+  const receivedRequests = (incoming || []).map((row) => ({ id: row.id, profile: row.sender as unknown as Profile })).filter((row) => row.profile)
+  const sentRequests = (outgoing || []).map((row) => ({ id: row.id, profile: row.receiver as unknown as Profile })).filter((row) => row.profile)
   if (contributionError) console.error("friend contribution lookup failed", contributionError)
 
   const problemsByFriend = new Map<string, Map<string, ContributionDay["problems"]>>()
@@ -73,11 +80,35 @@ export default async function FriendsPage() {
             {friends.length ? friends.map((friend) => <FriendCard key={friend.id} friend={friend} contributions={contributionsByFriend.get(friend.id) || []} />) : <p className="col-span-full py-12 text-center text-sm text-muted-foreground">아직 친구가 없어요. @아이디로 첫 친구를 추가해보세요.</p>}
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex-row items-center justify-between"><CardTitle className="text-base">받은 요청</CardTitle>{requests.length > 0 && <Badge>{requests.length}</Badge>}</CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            {requests.length ? requests.map(({ id, profile }) => <div key={id} className="flex items-center gap-3 rounded-xl bg-muted/50 p-3"><UserAvatar name={profile.nickname || profile.handle} imageUrl={profile.avatar_url} className="size-10" /><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{profile.nickname || profile.handle}</p><p className="text-xs text-muted-foreground">@{profile.handle}</p></div><form action={respondFriendRequest} className="flex gap-1.5"><input type="hidden" name="requestId" value={id} /><Button type="submit" name="decision" value="accept" size="icon-sm" aria-label="수락"><Check className="size-4" /></Button><Button type="submit" name="decision" value="decline" size="icon-sm" variant="outline" aria-label="거절"><X className="size-4" /></Button></form></div>) : <p className="py-8 text-center text-sm text-muted-foreground">받은 친구 요청이 없어요.</p>}
-          </CardContent>
+        <Card className="grid min-h-[26rem] grid-rows-[minmax(0,1fr)_minmax(0,1fr)] gap-0 py-0 lg:min-h-0">
+          <section className="flex min-h-0 flex-col gap-5 py-5">
+            <CardHeader className="flex-row items-center justify-between">
+              <CardTitle className="text-base">받은 요청</CardTitle>
+              {receivedRequests.length > 0 && <Badge>{receivedRequests.length}</Badge>}
+            </CardHeader>
+            <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
+              {receivedRequests.length ? receivedRequests.map(({ id, profile }) => <div key={id} className="flex items-center gap-3 rounded-xl bg-muted/50 p-3"><UserAvatar name={profile.nickname || profile.handle} imageUrl={profile.avatar_url} className="size-10" /><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{profile.nickname || profile.handle}</p><p className="text-xs text-muted-foreground">@{profile.handle}</p></div><form action={respondFriendRequest} className="flex gap-1.5"><input type="hidden" name="requestId" value={id} /><Button type="submit" name="decision" value="accept" size="icon-sm" aria-label="수락"><Check className="size-4" /></Button><Button type="submit" name="decision" value="decline" size="icon-sm" variant="outline" aria-label="거절"><X className="size-4" /></Button></form></div>) : <p className="my-auto py-6 text-center text-sm text-muted-foreground">받은 친구 요청이 없어요.</p>}
+            </CardContent>
+          </section>
+
+          <section className="flex min-h-0 flex-col gap-5 border-t py-5">
+            <CardHeader className="flex-row items-center justify-between">
+              <CardTitle className="text-base">보낸 요청</CardTitle>
+              {sentRequests.length > 0 && <Badge variant="secondary">{sentRequests.length}</Badge>}
+            </CardHeader>
+            <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
+              {sentRequests.length ? sentRequests.map(({ id, profile }) => (
+                <div key={id} className="flex items-center gap-3 rounded-xl bg-muted/50 p-3">
+                  <UserAvatar name={profile.nickname || profile.handle} imageUrl={profile.avatar_url} className="size-10" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{profile.nickname || profile.handle}</p>
+                    <p className="truncate text-xs text-muted-foreground">@{profile.handle}</p>
+                  </div>
+                  <Badge variant="outline" className="gap-1 text-muted-foreground"><Clock3 className="size-3" />대기 중</Badge>
+                </div>
+              )) : <p className="my-auto py-6 text-center text-sm text-muted-foreground">보낸 친구 요청이 없어요.</p>}
+            </CardContent>
+          </section>
         </Card>
       </div>
     </div>
