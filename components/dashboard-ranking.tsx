@@ -1,5 +1,8 @@
+"use client"
+
 import { BarChart3, Crown, Gauge, Trophy } from "lucide-react"
 import { DifficultyBadge } from "@/components/difficulty-badge"
+import { MemberProfileDialog } from "@/components/member-profile-dialog"
 import { RankingFormulaHelp } from "@/components/ranking-formula-help"
 import { UserAvatar } from "@/components/user-avatar"
 import { Badge } from "@/components/ui/badge"
@@ -168,10 +171,19 @@ export function LeaderboardCard({ entries, viewerId }: { entries: DashboardRanki
         {entries.length ? entries.map((entry) => {
           const isViewer = entry.userId === viewerId
           return (
-            <div
+            <MemberProfileDialog
               key={entry.userId}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-muted/65",
+              profile={{
+                id: entry.userId,
+                name: entry.nickname || entry.handle,
+                handle: entry.handle,
+                bio: entry.bio,
+                avatarUrl: entry.avatarUrl,
+              }}
+              badgeLabel={isViewer ? "나" : `전체 ${formatScore(entry.rankingPosition)}위`}
+              ranking={entry}
+              triggerClassName={cn(
+                "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left outline-none transition-colors hover:bg-muted/65 focus-visible:ring-2 focus-visible:ring-ring",
                 isViewer && "bg-primary/[0.075]",
               )}
             >
@@ -187,7 +199,7 @@ export function LeaderboardCard({ entries, viewerId }: { entries: DashboardRanki
                 {entry.bio && <p className="truncate text-[11px] text-muted-foreground">{entry.bio}</p>}
               </div>
               <p className="shrink-0 text-sm font-semibold tabular-nums">{formatScore(entry.rankingScore)}<span className="ml-0.5 text-[10px] font-normal text-muted-foreground">점</span></p>
-            </div>
+            </MemberProfileDialog>
           )
         }) : (
           <div className="flex min-h-64 flex-col items-center justify-center rounded-xl bg-muted/45 px-6 text-center">

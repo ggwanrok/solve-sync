@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import { useState } from "react"
 import { Logo } from "@/components/logo"
 import { ContributionGraph, type ContributionDay } from "@/components/contribution-graph"
+import { MemberProfileDialog } from "@/components/member-profile-dialog"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { AccountDialog, type AccountUser } from "@/components/account-dialog"
 import { ExtensionBrowserBadge, useExtensionBrowserStatus } from "@/components/extension-browser-connection"
@@ -85,13 +86,18 @@ function SidebarContent({ user, contributions, onNavigate }: { user: ShellUser; 
           </div>
           <ContributionGraph data={contributions} compact />
         </div>
-        <div className="flex items-center gap-3 rounded-lg px-2 py-1">
+        <MemberProfileDialog
+          profile={{ id: user.id, name: user.name, handle: user.handle, bio: user.bio, avatarUrl: user.avatarUrl }}
+          badgeLabel="나"
+          contributions={contributions}
+          triggerClassName="flex w-full items-center gap-3 rounded-lg px-2 py-1 text-left outline-none transition-colors hover:bg-sidebar-accent/65 focus-visible:ring-2 focus-visible:ring-ring"
+        >
           <UserAvatar name={user.name} imageUrl={user.avatarUrl} className="size-10" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium">{user.name}</p>
             <p className="truncate text-xs text-muted-foreground">@{user.handle}</p>
           </div>
-        </div>
+        </MemberProfileDialog>
       </div>
     </div>
   )

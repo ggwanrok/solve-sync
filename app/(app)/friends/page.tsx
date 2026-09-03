@@ -27,7 +27,7 @@ export default async function FriendsPage() {
   const today = dayKey(new Date())
   const firstDate = addCalendarDays(today, -111)
   const [{ data: relations }, { data: incoming }, { data: contributionData, error: contributionError }] = await Promise.all([
-    supabase.from("friendships").select("friend_id, friend:profiles!friendships_friend_id_fkey(id,handle,nickname,avatar_url)").eq("user_id", user.id),
+    supabase.from("friendships").select("friend_id, friend:profiles!friendships_friend_id_fkey(id,handle,nickname,bio,avatar_url)").eq("user_id", user.id),
     supabase.from("friend_requests").select("id, sender:profiles!friend_requests_sender_id_fkey(id,handle,nickname,avatar_url)").eq("receiver_id", user.id).eq("status", "pending"),
     supabase.rpc("friend_contribution_events", { first_date: firstDate }),
   ])
