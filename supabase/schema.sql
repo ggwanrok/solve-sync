@@ -407,6 +407,32 @@ begin
 end;
 $$;
 
+create or replace function public.cancel_friend_request(request_id uuid)
+returns boolean language plpgsql security definer set search_path = public as $$
+declare
+  current_user_id uuid := auth.uid();
+  req public.friend_requests;
+  removed_rows integer;
+begin
+  if current_user_id is null then raise exception '로그인이 필요합니다.' using errcode = '42501'; end if;
+
+  select * into req
+  from public.friend_requests
+  where id = request_id and sender_id = current_user_id and status = 'pending';
+  if req.id is null then return false; end if;
+
+  perform pg_advisory_xact_lock(hashtextextended(
+    least(req.sender_id::text, req.receiver_id::text) || ':' || greatest(req.sender_id::text, req.receiver_id::text),
+    0
+  ));
+
+  delete from public.friend_requests
+  where id = request_id and sender_id = current_user_id and status = 'pending';
+  get diagnostics removed_rows = row_count;
+  return removed_rows > 0;
+end;
+$$;
+
 create or replace function public.remove_friend(target_user uuid)
 returns boolean language plpgsql security definer set search_path = '' as $$
 declare
@@ -1622,6 +1648,8 @@ revoke all on public.problem_memos from authenticated;
 grant select, insert, update, delete on public.problem_memos to authenticated;
 revoke execute on function public.claim_handle(text), public.is_handle_available(text), public.send_friend_request(text), public.respond_friend_request(uuid, boolean), public.remove_friend(uuid), public.is_study_member(uuid), public.create_study_room(text, text, integer, text, text, integer) from public, anon;
 grant execute on function public.claim_handle(text), public.is_handle_available(text), public.send_friend_request(text), public.respond_friend_request(uuid, boolean), public.remove_friend(uuid), public.is_study_member(uuid), public.create_study_room(text, text, integer, text, text, integer) to authenticated;
+revoke execute on function public.cancel_friend_request(uuid) from public, anon;
+grant execute on function public.cancel_friend_request(uuid) to authenticated;
 grant usage on schema public to anon;
 revoke execute on function public.record_programmers_event(text, text, text, text, text, timestamptz, integer, timestamptz) from public, anon, authenticated;
 revoke execute on function public.exchange_extension_connection_code(text, text, uuid, text) from public, anon, authenticated;

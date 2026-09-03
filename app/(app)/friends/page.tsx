@@ -1,5 +1,6 @@
 import { Check, Clock3, X } from "lucide-react"
 import { respondFriendRequest } from "@/app/actions"
+import { CancelFriendRequestButton } from "@/components/cancel-friend-request-button"
 import type { ContributionDay } from "@/components/contribution-graph"
 import { FriendCard, type FriendCardProfile } from "@/components/friend-card"
 import { FriendRequestForm } from "@/components/friend-request-form"
@@ -97,16 +98,20 @@ export default async function FriendsPage() {
               {sentRequests.length > 0 && <Badge variant="secondary">{sentRequests.length}</Badge>}
             </CardHeader>
             <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
-              {sentRequests.length ? sentRequests.map(({ id, profile }) => (
-                <div key={id} className="flex items-center gap-3 rounded-xl bg-muted/50 p-3">
-                  <UserAvatar name={profile.nickname || profile.handle} imageUrl={profile.avatar_url} className="size-10" />
+              {sentRequests.length ? sentRequests.map(({ id, profile }) => {
+                const name = profile.nickname || profile.handle
+                return <div key={id} className="flex items-center gap-3 rounded-xl bg-muted/50 p-3">
+                  <UserAvatar name={name} imageUrl={profile.avatar_url} className="size-10" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{profile.nickname || profile.handle}</p>
+                    <p className="truncate text-sm font-medium">{name}</p>
                     <p className="truncate text-xs text-muted-foreground">@{profile.handle}</p>
                   </div>
-                  <Badge variant="outline" className="gap-1 text-muted-foreground"><Clock3 className="size-3" />대기 중</Badge>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <Badge variant="outline" className="gap-1 text-muted-foreground"><Clock3 className="size-3" />대기 중</Badge>
+                    <CancelFriendRequestButton requestId={id} memberName={name} />
+                  </div>
                 </div>
-              )) : <p className="my-auto py-6 text-center text-sm text-muted-foreground">보낸 친구 요청이 없어요.</p>}
+              }) : <p className="my-auto py-6 text-center text-sm text-muted-foreground">보낸 친구 요청이 없어요.</p>}
             </CardContent>
           </section>
         </Card>

@@ -62,6 +62,24 @@ export async function respondFriendRequest(formData: FormData) {
   revalidateStudyFrom(formData)
 }
 
+export async function cancelFriendRequest(requestId: string) {
+  const { supabase } = await userClient()
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestId)) {
+    return { ok: false as const, message: "취소할 친구 요청 정보가 올바르지 않습니다." }
+  }
+
+  const { data, error } = await supabase.rpc("cancel_friend_request", { request_id: requestId })
+  if (error) {
+    console.error("friend request cancellation failed", { requestId, code: error.code, message: error.message })
+    return { ok: false as const, message: "친구 요청을 취소하지 못했습니다. 잠시 후 다시 시도해 주세요." }
+  }
+  if (!data) return { ok: false as const, message: "이미 처리되었거나 취소할 수 없는 친구 요청입니다." }
+
+  revalidatePath("/friends")
+  revalidatePath("/study", "layout")
+  return { ok: true as const }
+}
+
 export async function removeFriend(friendId: string) {
   const { supabase, user } = await userClient()
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(friendId)) {
