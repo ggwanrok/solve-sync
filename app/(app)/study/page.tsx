@@ -122,11 +122,6 @@ export default async function StudyListPage({
 
   return (
     <div className="page-container">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="page-description mt-0">{hasSearchFilters ? `${directoryLabel} 검색 결과 ${total}개` : `${directoryLabel} ${total}개`}</p>
-        <CreateStudyDialog />
-      </div>
-
       <form method="get" className="rounded-2xl bg-card p-4 shadow-sm ring-1 ring-foreground/[0.055] sm:p-5">
         <input type="hidden" name="view" value={view} />
         <div className="flex flex-col gap-2 sm:flex-row">
@@ -144,26 +139,32 @@ export default async function StudyListPage({
         </fieldset>
       </form>
 
-      <nav className="flex w-fit rounded-xl bg-muted/70 p-1" aria-label="스터디룸 보기 방식">
-        <Button
-          render={<Link href={joinedHref} />}
-          nativeButton={false}
-          variant="ghost"
-          className={`h-9 rounded-lg px-4 ${joinedOnly ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
-          aria-current={joinedOnly ? "page" : undefined}
-        >
-          참여 중인 스터디룸
-        </Button>
-        <Button
-          render={<Link href={allHref} />}
-          nativeButton={false}
-          variant="ghost"
-          className={`h-9 rounded-lg px-4 ${!joinedOnly ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
-          aria-current={!joinedOnly ? "page" : undefined}
-        >
-          모두 둘러보기
-        </Button>
-      </nav>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <nav className="flex w-fit rounded-xl bg-muted/70 p-1" aria-label="스터디룸 보기 방식">
+          <Button
+            render={<Link href={joinedHref} />}
+            nativeButton={false}
+            variant="ghost"
+            className={`h-9 rounded-lg px-4 ${joinedOnly ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
+            aria-current={joinedOnly ? "page" : undefined}
+          >
+            참여 중인 스터디룸
+          </Button>
+          <Button
+            render={<Link href={allHref} />}
+            nativeButton={false}
+            variant="ghost"
+            className={`h-9 rounded-lg px-4 ${!joinedOnly ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
+            aria-current={!joinedOnly ? "page" : undefined}
+          >
+            모두 둘러보기
+          </Button>
+        </nav>
+        <p className="text-sm leading-6 text-muted-foreground">{hasSearchFilters ? `${directoryLabel} 검색 결과 ${total}개` : `${directoryLabel} ${total}개`}</p>
+        <div className="ml-auto shrink-0">
+          <CreateStudyDialog />
+        </div>
+      </div>
 
       {query && <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">‘{query}’</span>에 해당하는 스터디룸입니다.</p>}
 
