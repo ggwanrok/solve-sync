@@ -8,7 +8,6 @@ import { Button, buttonVariants } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -66,7 +65,6 @@ export function CreateStudyDialog() {
       <DialogContent showCloseButton={!pending} className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>새 스터디룸 만들기</DialogTitle>
-          <DialogDescription>스터디 규칙을 정하고 친구들을 초대해보세요.</DialogDescription>
         </DialogHeader>
 
         <fieldset disabled={pending} className="flex min-w-0 flex-col gap-5 py-2">

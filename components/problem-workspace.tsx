@@ -254,7 +254,6 @@ export function ProblemWorkspace({ initialProblems }: { initialProblems: SolvedP
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
                           <CardTitle className="flex items-center gap-2"><Sparkles className="size-4 text-muted-foreground" />풀이 기록</CardTitle>
-                          <CardDescription className="mt-1">알고리즘 테마와 다시 풀 때 필요한 핵심만 간결하게 남겨보세요.</CardDescription>
                         </div>
                         {selected.memo && <Badge variant="outline">최근 수정 {dateLabel(selected.memo.updatedAt)}</Badge>}
                       </div>

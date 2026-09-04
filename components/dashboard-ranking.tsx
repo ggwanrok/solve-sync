@@ -121,9 +121,6 @@ export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
             <div className="min-w-0">
               <p className="text-xs text-muted-foreground">랭킹 점수</p>
               <p className="mt-1 text-3xl font-bold tracking-tight">{formatScore(ranking.rankingScore)}</p>
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                알고리즘 {formatScore(ranking.algorithmScore)} + SQL {formatScore(ranking.sqlScore)} ÷ 2
-              </p>
             </div>
           </div>
         </div>
