@@ -1,12 +1,11 @@
-import { Check, Clock3, X } from "lucide-react"
-import { respondFriendRequest } from "@/app/actions"
+import { Clock3 } from "lucide-react"
+import { RespondFriendRequestButtons } from "@/components/respond-friend-request-buttons"
 import { CancelFriendRequestButton } from "@/components/cancel-friend-request-button"
 import type { ContributionDay } from "@/components/contribution-graph"
 import { FriendCard, type FriendCardProfile } from "@/components/friend-card"
 import { FriendRequestForm } from "@/components/friend-request-form"
 import { UserAvatar } from "@/components/user-avatar"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { redirect } from "next/navigation"
 import { addCalendarDays, dayKey } from "@/lib/calendar"
@@ -88,7 +87,7 @@ export default async function FriendsPage() {
               {receivedRequests.length > 0 && <Badge>{receivedRequests.length}</Badge>}
             </CardHeader>
             <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
-              {receivedRequests.length ? receivedRequests.map(({ id, profile }) => <div key={id} className="flex items-center gap-3 rounded-xl bg-muted/50 p-3"><UserAvatar name={profile.nickname || profile.handle} imageUrl={profile.avatar_url} className="size-10" /><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{profile.nickname || profile.handle}</p><p className="text-xs text-muted-foreground">@{profile.handle}</p></div><form action={respondFriendRequest} className="flex gap-1.5"><input type="hidden" name="requestId" value={id} /><Button type="submit" name="decision" value="accept" size="icon-sm" aria-label="수락"><Check className="size-4" /></Button><Button type="submit" name="decision" value="decline" size="icon-sm" variant="outline" aria-label="거절"><X className="size-4" /></Button></form></div>) : <p className="my-auto py-6 text-center text-sm text-muted-foreground">받은 친구 요청이 없어요.</p>}
+              {receivedRequests.length ? receivedRequests.map(({ id, profile }) => <div key={id} className="flex items-center gap-3 rounded-xl bg-muted/50 p-3"><UserAvatar name={profile.nickname || profile.handle} imageUrl={profile.avatar_url} className="size-10" /><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{profile.nickname || profile.handle}</p><p className="text-xs text-muted-foreground">@{profile.handle}</p></div><RespondFriendRequestButtons requestId={id} /></div>) : <p className="my-auto py-6 text-center text-sm text-muted-foreground">받은 친구 요청이 없어요.</p>}
             </CardContent>
           </section>
 

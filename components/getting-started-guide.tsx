@@ -1,5 +1,6 @@
 "use client"
 
+import { usePendingAction } from "@/lib/use-pending-action"
 import { useState } from "react"
 import { Check, Chrome, LogIn, SearchCheck } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -16,11 +17,11 @@ const steps = [
 export function GettingStartedGuide({ deviceConnected }: { deviceConnected: boolean }) {
   const [open, setOpen] = useState(true)
   const [step, setStep] = useState(deviceConnected ? 2 : 0)
-  const [pending, setPending] = useState(false)
+  const { pending, start: startPending, finish: finishPending } = usePendingAction()
   const router = useRouter()
 
   async function finish() {
-    setPending(true)
+    if (!startPending()) return
     try {
       await completeGettingStartedGuide()
       setOpen(false)
@@ -28,7 +29,7 @@ export function GettingStartedGuide({ deviceConnected }: { deviceConnected: bool
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "안내 완료 상태를 저장하지 못했습니다.")
     } finally {
-      setPending(false)
+      finishPending()
     }
   }
 
@@ -49,10 +50,10 @@ export function GettingStartedGuide({ deviceConnected }: { deviceConnected: bool
           })}
         </div>
         <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
-          <Button type="button" variant="ghost" onClick={finish} disabled={pending}>나중에 하기</Button>
+          <Button type="button" variant="ghost" onClick={finish} disabled={pending} aria-busy={pending}>나중에 하기</Button>
           {step === 0 && <Button type="button" onClick={() => setStep(1)}>확장 프로그램을 열었어요</Button>}
           {step === 1 && <Button type="button" onClick={() => setStep(2)}>기기 연결을 완료했어요</Button>}
-          {step === 2 && <Button type="button" onClick={finish} disabled={pending}>{pending ? "저장 중..." : "안내 완료"}</Button>}
+          {step === 2 && <Button type="button" onClick={finish} disabled={pending} aria-busy={pending}>{pending ? "저장 중..." : "안내 완료"}</Button>}
         </div>
       </div>
     </div>

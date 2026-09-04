@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { usePendingAction } from "@/lib/use-pending-action"
 import { authenticatedFetch } from "@/lib/authenticated-fetch"
 
 const VERIFIED_PUSH_ENDPOINT_KEY = "solvesync:verified-push-endpoint"
@@ -148,11 +149,11 @@ type SetupStage = "guide" | "confirm" | "help"
 export function StudyNotificationToggle({ studyId, initialEnabled }: { studyId: string; initialEnabled: boolean }) {
   const router = useRouter()
   const [enabled, setEnabled] = useState(initialEnabled)
-  const [pending, setPending] = useState(false)
+  const { pending, start: startPending, finish: finishPending } = usePendingAction()
   const [browserConnection, setBrowserConnection] = useState<BrowserConnection>("checking")
   const [setupOpen, setSetupOpen] = useState(false)
   const [setupStage, setSetupStage] = useState<SetupStage>("guide")
-  const [setupPending, setSetupPending] = useState(false)
+  const { pending: setupPending, start: startSetup, finish: finishSetup } = usePendingAction()
   const [testedSubscription, setTestedSubscription] = useState<PushSubscription | null>(null)
 
   useEffect(() => {
@@ -199,23 +200,24 @@ export function StudyNotificationToggle({ studyId, initialEnabled }: { studyId: 
   }
 
   async function handleToggle() {
+    if (pending || setupPending || browserConnection === "checking") return
     if (browserConnection !== "connected") {
       openSetup()
       return
     }
 
-    setPending(true)
+    if (!startPending()) return
     try {
       await updateStudyNotifications(!enabled)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "스터디 알림 설정을 변경하지 못했습니다.")
     } finally {
-      setPending(false)
+      finishPending()
     }
   }
 
   async function sendTestNotification() {
-    setSetupPending(true)
+    if (!startSetup()) return
     try {
       const subscription = await connectThisBrowser()
       const response = await authenticatedFetch("/api/push/verify", {
@@ -236,13 +238,13 @@ export function StudyNotificationToggle({ studyId, initialEnabled }: { studyId: 
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "테스트 알림을 보내지 못했습니다.")
     } finally {
-      setSetupPending(false)
+      finishSetup()
     }
   }
 
   async function confirmTestNotification() {
     if (!testedSubscription) return
-    setSetupPending(true)
+    if (!startSetup()) return
     try {
       rememberVerifiedBrowser(testedSubscription)
       setBrowserConnection("connected")
@@ -252,7 +254,7 @@ export function StudyNotificationToggle({ studyId, initialEnabled }: { studyId: 
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "스터디 알림을 켜지 못했습니다.")
     } finally {
-      setSetupPending(false)
+      finishSetup()
     }
   }
 
@@ -277,7 +279,8 @@ export function StudyNotificationToggle({ studyId, initialEnabled }: { studyId: 
         aria-label={needsBrowserVerification ? "이 브라우저의 스터디 알림 확인하기" : enabled ? "이 스터디의 알림 끄기" : "이 스터디의 알림 켜기"}
         aria-pressed={enabled && browserConnection === "connected"}
         onClick={handleToggle}
-        disabled={pending || checkingConnection}
+        disabled={pending || setupPending || checkingConnection}
+        aria-busy={pending || setupPending || checkingConnection}
         className="gap-1.5"
       >
         {pending || checkingConnection ? <LoaderCircle className="animate-spin" /> : enabled && !needsBrowserVerification ? <Bell /> : <BellOff />}

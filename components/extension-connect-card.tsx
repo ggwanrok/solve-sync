@@ -1,7 +1,7 @@
 "use client"
 
 import { CheckCircle2, Chrome, LoaderCircle, ShieldCheck, X } from "lucide-react"
-import { useState } from "react"
+import { usePendingAction } from "@/lib/use-pending-action"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { authenticatedFetch } from "@/lib/authenticated-fetch"
@@ -17,7 +17,7 @@ type ConnectRequest = {
 }
 
 export function ExtensionConnectCard({ request, signedIn, accountLabel }: { request: ConnectRequest; signedIn: boolean; accountLabel?: string | null }) {
-  const [pending, setPending] = useState(false)
+  const { pending, start, finish } = usePendingAction()
 
   function connectionPath() {
     const params = new URLSearchParams({
@@ -31,21 +31,23 @@ export function ExtensionConnectCard({ request, signedIn, accountLabel }: { requ
   }
 
   async function signIn() {
-    setPending(true)
-    const callback = new URL("/auth/callback", window.location.origin)
-    callback.searchParams.set("next", connectionPath())
-    const { error } = await createClient().auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: callback.toString() },
-    })
-    if (error) {
-      toast.error(error.message)
-      setPending(false)
+    if (!start()) return
+    try {
+      const callback = new URL("/auth/callback", window.location.origin)
+      callback.searchParams.set("next", connectionPath())
+      const { error } = await createClient().auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: callback.toString() },
+      })
+      if (error) throw error
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "로그인 화면을 열지 못했습니다.")
+      finish()
     }
   }
 
   async function approve() {
-    setPending(true)
+    if (!start()) return
     try {
       const response = await authenticatedFetch("/api/extension/connect/authorize", {
         method: "POST",
@@ -57,11 +59,12 @@ export function ExtensionConnectCard({ request, signedIn, accountLabel }: { requ
       window.location.replace(result.redirectUrl)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "기기 연결을 승인하지 못했습니다.")
-      setPending(false)
+      finish()
     }
   }
 
   function cancel() {
+    if (!start()) return
     const callback = new URL(request.redirectUri)
     callback.searchParams.set("error", "access_denied")
     callback.searchParams.set("state", request.state)

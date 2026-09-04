@@ -2,7 +2,7 @@
 
 import { Check } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
+import { usePendingAction } from "@/lib/use-pending-action"
 import { toast } from "sonner"
 import { Logo } from "@/components/logo"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -28,18 +28,19 @@ const benefits = [
 ]
 
 export default function LoginPage() {
-  const [pending, setPending] = useState(false)
+  const { pending, start, finish } = usePendingAction()
 
   const signInWithGoogle = async () => {
-    setPending(true)
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    })
-    if (error) {
-      setPending(false)
-      toast.error(error.message)
+    if (!start()) return
+    try {
+      const { error } = await createClient().auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      })
+      if (error) throw error
+    } catch (error) {
+      finish()
+      toast.error(error instanceof Error ? error.message : "로그인 화면을 열지 못했습니다.")
     }
   }
 

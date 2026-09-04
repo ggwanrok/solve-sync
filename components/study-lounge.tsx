@@ -1,5 +1,6 @@
 "use client"
 
+import { usePendingAction } from "@/lib/use-pending-action"
 import { useCallback, useEffect, useRef, useState } from "react"
 import type { RealtimeChannel } from "@supabase/supabase-js"
 import { LoaderCircle, MessageSquare, RefreshCw, Send, WifiOff } from "lucide-react"
@@ -83,8 +84,10 @@ export function StudyLounge({
 }) {
   const [comments, setComments] = useState<LoungeComment[]>([])
   const [message, setMessage] = useState("")
-  const [pending, setPending] = useState(false)
+  const { pending, start: startPending, finish: finishPending } = usePendingAction()
   const [loadingInitial, setLoadingInitial] = useState(true)
+  const loadingOlderRef = useRef(false)
+  const reconnectPendingRef = useRef(false)
   const [loadingOlder, setLoadingOlder] = useState(false)
   const [hasOlder, setHasOlder] = useState(false)
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting")
@@ -189,6 +192,7 @@ export function StudyLounge({
         if (status === "SUBSCRIBED") {
           realtimeHealthyRef.current = true
           setRealtimeStatus("connected")
+          reconnectPendingRef.current = false
           setManualReconnectPending(false)
           // Postgres Changes does not replay events missed while reconnecting.
           void loadRecentComments("realtime-subscribed")
@@ -198,6 +202,7 @@ export function StudyLounge({
         realtimeHealthyRef.current = false
         if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
           setRealtimeStatus("degraded")
+          reconnectPendingRef.current = false
           setManualReconnectPending(false)
           console.error("study lounge realtime subscription failed", {
             studyId,
@@ -205,6 +210,8 @@ export function StudyLounge({
             error: error ? describeSyncError(error) : undefined,
           })
         } else if (status === "CLOSED") {
+          reconnectPendingRef.current = false
+          setManualReconnectPending(false)
           setRealtimeStatus("degraded")
         }
       })
@@ -264,7 +271,8 @@ export function StudyLounge({
 
   async function loadOlderComments() {
     const oldest = comments[0]
-    if (!oldest || loadingOlder) return
+    if (!oldest || loadingOlderRef.current) return
+    loadingOlderRef.current = true
     setLoadingOlder(true)
     preserveScrollHeightRef.current = scrollAreaRef.current?.scrollHeight ?? null
     try {
@@ -275,12 +283,14 @@ export function StudyLounge({
       preserveScrollHeightRef.current = null
       toast.error(error instanceof Error ? error.message : "이전 메시지를 불러오지 못했습니다.")
     } finally {
+      loadingOlderRef.current = false
       setLoadingOlder(false)
     }
   }
 
   async function handleRealtimeReconnect() {
-    if (manualReconnectPending) return
+    if (reconnectPendingRef.current) return
+    reconnectPendingRef.current = true
 
     const supabase = supabaseRef.current
     const currentChannel = realtimeChannelRef.current
@@ -309,7 +319,7 @@ export function StudyLounge({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const nextMessage = message.trim()
-    if (!nextMessage || pending) return
+    if (!nextMessage || !startPending()) return
 
     const optimisticId = `optimistic-${crypto.randomUUID()}`
     const optimisticComment: LoungeComment = {
@@ -323,7 +333,6 @@ export function StudyLounge({
 
     setComments((current) => [...current, optimisticComment])
     setMessage("")
-    setPending(true)
     messageInputRef.current?.focus()
     try {
       const inserted = await addStudyComment(studyId, nextMessage)
@@ -339,7 +348,7 @@ export function StudyLounge({
       setMessage((current) => current || nextMessage)
       toast.error(error instanceof Error ? error.message : "메시지를 보내지 못했어요.")
     } finally {
-      setPending(false)
+      finishPending()
     }
   }
 
@@ -407,7 +416,7 @@ export function StudyLounge({
         </div>
         <form className="mt-4 flex gap-2" onSubmit={handleSubmit}>
           <Input ref={messageInputRef} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="스터디원들에게 메시지 보내기" maxLength={500} />
-          <Button type="submit" size="icon" disabled={pending || !message.trim()} aria-label="메시지 전송"><Send className="size-4" /></Button>
+          <Button type="submit" size="icon" disabled={pending || !message.trim()} aria-label="메시지 전송">{pending ? <LoaderCircle className="size-4 animate-spin" /> : <Send className="size-4" />}</Button>
         </form>
       </CardContent>
     </Card>

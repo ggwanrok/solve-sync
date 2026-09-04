@@ -209,3 +209,24 @@
     @apply rounded-xl border border-border/80 bg-card px-6 py-16 text-center;
   }
 }
+
+/* Fade without transforms so fixed dialogs and sticky headers keep their positioning. */
+@keyframes app-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .app-page-enter { animation: app-fade-in 180ms ease-out; }
+  .app-fade-in,
+  [data-slot="tabs-content"] { animation: app-fade-in 150ms ease-out; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -2,7 +2,7 @@
 
 import { Bell, BellRing, Check, CircleAlert, Crown, Hand, LoaderCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useOptimistic } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
@@ -11,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useActionTransition } from "@/lib/use-pending-action"
 import { authenticatedFetch } from "@/lib/authenticated-fetch"
 import type { StudyNotification, StudyNotificationInbox, StudyNotificationType } from "@/lib/study-notification"
 import { cn } from "@/lib/utils"
@@ -49,45 +50,47 @@ async function markRead(id?: string) {
 
 export function NotificationCenter({ inbox }: { inbox: StudyNotificationInbox }) {
   const router = useRouter()
-  const [items, setItems] = useState(inbox.items)
-  const [unreadCount, setUnreadCount] = useState(inbox.unreadCount)
-  const [markingAll, setMarkingAll] = useState(false)
+  const [pending, run] = useActionTransition()
+  const [{ items, unreadCount }, markOptimistically] = useOptimistic(
+    inbox,
+    (current: StudyNotificationInbox, id: string | null): StudyNotificationInbox => {
+      const readAt = new Date().toISOString()
+      const wasUnread = id !== null && current.items.some((item) => item.id === id && !item.readAt)
+      return {
+        ...current,
+        items: current.items.map((item) => !item.readAt && (id === null || item.id === id) ? { ...item, readAt } : item),
+        unreadCount: id === null ? 0 : Math.max(0, current.unreadCount - (wasUnread ? 1 : 0)),
+      }
+    },
+  )
 
-  function readItemOptimistically(id: string) {
-    setItems((current) => current.map((item) => item.id === id && !item.readAt
-      ? { ...item, readAt: new Date().toISOString() }
-      : item))
-    setUnreadCount((current) => {
-      const wasUnread = items.some((item) => item.id === id && !item.readAt)
-      return wasUnread ? Math.max(0, current - 1) : current
+  function openNotification(item: StudyNotification) {
+    run(async () => {
+      if (!item.readAt) {
+        markOptimistically(item.id)
+        try {
+          await markRead(item.id)
+          router.refresh()
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : "알림을 읽음 처리하지 못했습니다.")
+          return
+        }
+      }
+      router.push(item.url)
     })
   }
 
-  async function openNotification(item: StudyNotification) {
-    if (!item.readAt) {
-      readItemOptimistically(item.id)
+  function markAllRead() {
+    if (!unreadCount) return
+    run(async () => {
+      markOptimistically(null)
       try {
-        await markRead(item.id)
+        await markRead()
+        router.refresh()
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "알림을 읽음 처리하지 못했습니다.")
       }
-    }
-    router.push(item.url)
-  }
-
-  async function markAllRead() {
-    setMarkingAll(true)
-    try {
-      await markRead()
-      const readAt = new Date().toISOString()
-      setItems((current) => current.map((item) => ({ ...item, readAt: item.readAt || readAt })))
-      setUnreadCount(0)
-      router.refresh()
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "알림을 읽음 처리하지 못했습니다.")
-    } finally {
-      setMarkingAll(false)
-    }
+    })
   }
 
   return (
@@ -120,8 +123,8 @@ export function NotificationCenter({ inbox }: { inbox: StudyNotificationInbox })
             </p>
           </div>
           {unreadCount > 0 && (
-            <Button type="button" variant="ghost" size="xs" onClick={markAllRead} disabled={markingAll} className="gap-1 text-muted-foreground">
-              {markingAll ? <LoaderCircle className="animate-spin" /> : <Check />}
+            <Button type="button" variant="ghost" size="xs" onClick={markAllRead} disabled={pending} aria-busy={pending} className="gap-1 text-muted-foreground">
+              {pending ? <LoaderCircle className="animate-spin" /> : <Check />}
               모두 읽음
             </Button>
           )}
@@ -140,7 +143,8 @@ export function NotificationCenter({ inbox }: { inbox: StudyNotificationInbox })
               return (
                 <DropdownMenuItem
                   key={item.id}
-                  onClick={() => void openNotification(item)}
+                  disabled={pending}
+                  onClick={() => openNotification(item)}
                   className={cn(
                     "items-start gap-3 rounded-xl px-3.5 py-3.5",
                     !item.readAt && "bg-primary/[0.07] focus:bg-primary/[0.11]",

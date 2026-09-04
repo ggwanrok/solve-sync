@@ -1,8 +1,9 @@
 "use client"
 
+import { useActionTransition } from "@/lib/use-pending-action"
 import { LoaderCircle, Trash2 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useState, useTransition } from "react"
+import { useState } from "react"
 import { toast } from "sonner"
 import { removeFriend } from "@/app/actions"
 import type { ContributionDay } from "@/components/contribution-graph"
@@ -21,7 +22,7 @@ export type FriendCardProfile = {
 export function FriendCard({ friend, contributions }: { friend: FriendCardProfile; contributions: ContributionDay[] }) {
   const router = useRouter()
   const [confirming, setConfirming] = useState(false)
-  const [pending, startTransition] = useTransition()
+  const [pending, startTransition] = useActionTransition()
   const name = friend.nickname || friend.handle
 
   function handleRemove() {
@@ -47,7 +48,7 @@ export function FriendCard({ friend, contributions }: { friend: FriendCardProfil
         badgeLabel="친구"
         contributions={contributions}
         triggerClassName="flex min-w-0 flex-1 items-center gap-3 rounded-xl p-1 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
-        onTriggerClick={() => setConfirming(false)}
+        onTriggerClick={() => { if (!pending) setConfirming(false) }}
       >
         <UserAvatar name={name} imageUrl={friend.avatar_url} className="size-11" />
         <span className="min-w-0 flex-1">
@@ -58,8 +59,8 @@ export function FriendCard({ friend, contributions }: { friend: FriendCardProfil
 
       {confirming ? (
         <div className="flex shrink-0 items-center gap-1.5" aria-live="polite">
-          <Button type="button" variant="outline" size="xs" onClick={() => setConfirming(false)} disabled={pending}>취소</Button>
-          <Button type="button" variant="destructive" size="xs" onClick={handleRemove} disabled={pending}>
+          <Button type="button" variant="outline" size="xs" onClick={() => setConfirming(false)} disabled={pending} aria-busy={pending}>취소</Button>
+          <Button type="button" variant="destructive" size="xs" onClick={handleRemove} disabled={pending} aria-busy={pending}>
             {pending && <LoaderCircle className="animate-spin" />}
             {pending ? "삭제 중" : "삭제"}
           </Button>

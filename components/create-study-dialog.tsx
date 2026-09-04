@@ -1,6 +1,7 @@
 "use client"
 
-import { Plus, Minus } from "lucide-react"
+import { usePendingAction } from "@/lib/use-pending-action"
+import { Plus, Minus, LoaderCircle } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -28,7 +29,7 @@ export function CreateStudyDialog() {
   const [description, setDescription] = useState("")
   const [isPrivate, setIsPrivate] = useState(false)
   const [password, setPassword] = useState("")
-  const [pending, setPending] = useState(false)
+  const { pending, start: startPending, finish: finishPending } = usePendingAction()
 
   const handleCreate = async () => {
     if (!name.trim()) {
@@ -39,7 +40,7 @@ export function CreateStudyDialog() {
       toast.error("비공개방 비밀번호는 8자 이상 입력해주세요.")
       return
     }
-    setPending(true)
+    if (!startPending()) return
     try {
       await createStudyRoom({
         name: name.trim(),
@@ -53,22 +54,22 @@ export function CreateStudyDialog() {
       setOpen(false); setName(""); setDescription(""); setCount(5); setMinDifficulty(0); setUnit("주"); setIsPrivate(false); setPassword("")
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "스터디룸을 만들지 못했어요.")
-    } finally { setPending(false) }
+    } finally { finishPending() }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(value) => { if (!pending) setOpen(value) }}>
       <DialogTrigger className={buttonVariants({ className: "gap-2" })}>
         <Plus className="size-4" />
         스터디룸 만들기
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent showCloseButton={!pending} className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>새 스터디룸 만들기</DialogTitle>
           <DialogDescription>스터디 규칙을 정하고 친구들을 초대해보세요.</DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-5 py-2">
+        <fieldset disabled={pending} className="flex min-w-0 flex-col gap-5 py-2">
           <div className="flex flex-col gap-2">
             <Label>스터디룸 이름</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="예: 코테 마스터" />
@@ -84,7 +85,7 @@ export function CreateStudyDialog() {
           <div className="flex flex-col gap-2">
             <Label>스터디 규칙</Label>
             <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-muted/55 p-3">
-              <Select value={unit} onValueChange={(v) => setUnit(v as "일" | "주")}>
+              <Select disabled={pending} value={unit} onValueChange={(v) => setUnit(v as "일" | "주")}>
                 <SelectTrigger className="w-24 bg-background">
                   <SelectValue />
                 </SelectTrigger>
@@ -127,7 +128,7 @@ export function CreateStudyDialog() {
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="min-difficulty">난이도 수준</Label>
-            <Select value={String(minDifficulty)} onValueChange={(value) => setMinDifficulty(Number(value) as DifficultyLevel)}>
+            <Select disabled={pending} value={String(minDifficulty)} onValueChange={(value) => setMinDifficulty(Number(value) as DifficultyLevel)}>
               <SelectTrigger id="min-difficulty" className="w-full bg-background">
                 <SelectValue>{minimumDifficultyLabel(minDifficulty)}</SelectValue>
               </SelectTrigger>
@@ -150,13 +151,13 @@ export function CreateStudyDialog() {
             </button>
             {isPrivate && <Input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="비밀번호 8자 이상" minLength={8} maxLength={50} autoComplete="new-password" />}
           </div>
-        </div>
+        </fieldset>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={pending}>
             취소
           </Button>
-          <Button onClick={handleCreate} disabled={pending}>{pending ? "만드는 중..." : "스터디룸 만들기"}</Button>
+          <Button onClick={handleCreate} disabled={pending} aria-busy={pending}>{pending && <LoaderCircle className="animate-spin" />}{pending ? "만드는 중..." : "스터디룸 만들기"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

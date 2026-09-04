@@ -1,5 +1,6 @@
 "use client"
 
+import { usePendingAction } from "@/lib/use-pending-action"
 import { LoaderCircle, Move, ZoomIn } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
@@ -32,7 +33,7 @@ export function ProfileImageCropDialog({
   const [image, setImage] = useState<ImageInfo | null>(null)
   const [zoom, setZoom] = useState(1)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
-  const [pending, setPending] = useState(false)
+  const { pending, start: startPending, finish: finishPending } = usePendingAction()
   const dragRef = useRef<{ pointerId: number; x: number; y: number; offsetX: number; offsetY: number } | null>(null)
 
   useEffect(() => {
@@ -97,7 +98,7 @@ export function ProfileImageCropDialog({
 
   async function applyCrop() {
     if (!file || !image || pending) return
-    setPending(true)
+    if (!startPending()) return
     try {
       const optimizedFile = await optimizeProfileImage(file, {
         zoom,
@@ -109,7 +110,7 @@ export function ProfileImageCropDialog({
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "이미지를 처리하지 못했습니다.")
     } finally {
-      setPending(false)
+      finishPending()
     }
   }
 
@@ -164,7 +165,7 @@ export function ProfileImageCropDialog({
         </label>
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={onCancel} disabled={pending}>취소</Button>
+          <Button type="button" variant="outline" onClick={onCancel} disabled={pending} aria-busy={pending}>취소</Button>
           <Button type="button" onClick={applyCrop} disabled={!image || pending}>
             {pending && <LoaderCircle className="animate-spin" />}
             {pending ? "적용 중..." : "이 영역 사용"}

@@ -1,15 +1,15 @@
 "use client"
 
+import { useActionTransition } from "@/lib/use-pending-action"
 import { LoaderCircle, X } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useTransition } from "react"
 import { toast } from "sonner"
 import { cancelFriendRequest } from "@/app/actions"
 import { Button } from "@/components/ui/button"
 
 export function CancelFriendRequestButton({ requestId, memberName }: { requestId: string; memberName: string }) {
   const router = useRouter()
-  const [pending, startTransition] = useTransition()
+  const [pending, startTransition] = useActionTransition()
 
   function cancelRequest() {
     startTransition(async () => {
@@ -35,7 +35,7 @@ export function CancelFriendRequestButton({ requestId, memberName }: { requestId
       size="xs"
       className="text-muted-foreground hover:text-destructive"
       onClick={cancelRequest}
-      disabled={pending}
+      disabled={pending} aria-busy={pending}
       aria-label={`${memberName}님에게 보낸 친구 요청 취소`}
     >
       {pending ? <LoaderCircle className="animate-spin" /> : <X />}

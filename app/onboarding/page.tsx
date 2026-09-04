@@ -8,6 +8,7 @@ import { Logo } from "@/components/logo"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { usePendingAction, useActionTransition } from "@/lib/use-pending-action"
 import { createClient } from "@/utils/supabase/client"
 
 export default function OnboardingPage() {
@@ -15,8 +16,8 @@ export default function OnboardingPage() {
   const [handle, setHandle] = useState("")
   const [checkedHandle, setCheckedHandle] = useState<string | null>(null)
   const [availabilityMessage, setAvailabilityMessage] = useState("")
-  const [checking, setChecking] = useState(false)
-  const [pending, setPending] = useState(false)
+  const { pending: checking, start: startChecking, finish: finishChecking } = usePendingAction()
+  const [pending, runSubmit] = useActionTransition()
 
   const normalizedHandle = handle
   const isValidHandle = /^[a-z0-9_]{3,20}$/.test(normalizedHandle)
@@ -29,42 +30,33 @@ export default function OnboardingPage() {
       return
     }
 
-    setChecking(true)
+    if (pending || !startChecking()) return
     setAvailabilityMessage("")
-    const supabase = createClient()
-    const { data, error } = await supabase.rpc("is_handle_available", {
-      desired_handle: normalizedHandle,
-    })
-    setChecking(false)
-
-    if (error) {
+    try {
+      const { data, error } = await createClient().rpc("is_handle_available", { desired_handle: normalizedHandle })
+      if (error) throw error
+      setCheckedHandle(data ? normalizedHandle : null)
+      setAvailabilityMessage(data ? "사용할 수 있는 아이디입니다." : "이미 사용 중인 아이디입니다.")
+    } catch (error) {
       setCheckedHandle(null)
-      setAvailabilityMessage(`사용 가능 여부를 확인하지 못했습니다. (${error.message})`)
-      return
+      setAvailabilityMessage(error instanceof Error ? error.message : "사용 가능 여부를 확인하지 못했습니다.")
+    } finally {
+      finishChecking()
     }
-
-    if (!data) {
-      setCheckedHandle(null)
-      setAvailabilityMessage("이미 사용 중인 아이디입니다.")
-      return
-    }
-
-    setCheckedHandle(normalizedHandle)
-    setAvailabilityMessage("사용할 수 있는 아이디입니다.")
   }
 
-  const submit = async (event: React.FormEvent) => {
+  const submit = (event: React.FormEvent) => {
     event.preventDefault()
-    if (!isAvailable) return
-    setPending(true)
-    const supabase = createClient()
-    const { error } = await supabase.rpc("claim_handle", { desired_handle: normalizedHandle })
-    if (error) {
-      setPending(false)
-      toast.error(error.message)
-      return
-    }
-    router.replace("/")
+    if (!isAvailable || checking) return
+    runSubmit(async () => {
+      try {
+        const { error } = await createClient().rpc("claim_handle", { desired_handle: normalizedHandle })
+        if (error) throw error
+        router.replace("/")
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "아이디를 설정하지 못했습니다.")
+      }
+    })
   }
 
   return (
@@ -95,6 +87,7 @@ export default function OnboardingPage() {
               <div className="relative flex-1">
                 <Input
                   id="handle"
+                  disabled={checking || pending}
                   value={handle}
                   onChange={(event) => {
                     setHandle(event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))
@@ -107,7 +100,7 @@ export default function OnboardingPage() {
                   required
                 />
               </div>
-              <Button type="button" variant="outline" onClick={checkAvailability} disabled={checking || !handle} className="gap-1.5">
+              <Button type="button" variant="outline" onClick={checkAvailability} disabled={checking || pending || !handle} aria-busy={checking} className="gap-1.5">
                 {checking ? "확인 중" : "중복 확인"}
                 {!checking && <Search className="size-4" />}
               </Button>

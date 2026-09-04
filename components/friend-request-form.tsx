@@ -7,6 +7,7 @@ import { sendFriendRequest } from "@/app/actions"
 import { UserAvatar } from "@/components/user-avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { usePendingAction } from "@/lib/use-pending-action"
 import { authenticatedFetch } from "@/lib/authenticated-fetch"
 
 type SearchProfile = {
@@ -23,6 +24,7 @@ export function FriendRequestForm() {
   const [results, setResults] = useState<SearchProfile[]>([])
   const [searchStatus, setSearchStatus] = useState<SearchStatus>("idle")
   const [pendingHandle, setPendingHandle] = useState<string | null>(null)
+  const request = usePendingAction()
   const normalizedHandle = query.trim().replace(/^@+/, "")
 
   useEffect(() => {
@@ -53,6 +55,7 @@ export function FriendRequestForm() {
   }, [normalizedHandle])
 
   async function requestFriend(handle: string) {
+    if (!request.start()) return
     setPendingHandle(handle)
 
     try {
@@ -74,6 +77,7 @@ export function FriendRequestForm() {
       toast.error(error instanceof Error ? error.message : "친구 요청을 보내지 못했습니다.")
     } finally {
       setPendingHandle(null)
+      request.finish()
     }
   }
 

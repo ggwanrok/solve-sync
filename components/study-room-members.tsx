@@ -10,9 +10,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { UserAvatar } from "@/components/user-avatar"
 import { authenticatedFetch } from "@/lib/authenticated-fetch"
+import { usePendingActions } from "@/lib/use-pending-action"
+import { nextPokeExpiration, pokeExpiresAt, POKE_COOLDOWN_MS } from "@/lib/study-poke"
 import type { StudyRoomProfile } from "@/lib/study-room-data"
-
-const POKE_COOLDOWN_MS = 10 * 60 * 1000
 
 export type StudyMemberFriendStatus = "self" | "friend" | "none" | "outgoing_pending" | "incoming_pending"
 
@@ -44,28 +44,39 @@ export function StudyRoomMembers({
   currentUserNotificationsEnabled: boolean
 }) {
   const router = useRouter()
-  const [statuses, setStatuses] = useState<Record<string, StudyMemberFriendStatus>>(
-    Object.fromEntries(members.map((member) => [member.userId, member.friendStatus])),
-  )
-  const [pendingMemberId, setPendingMemberId] = useState<string | null>(null)
-  const [pokedMemberIds, setPokedMemberIds] = useState<Set<string>>(new Set())
+  const [statuses, setStatuses] = useState<Record<string, StudyMemberFriendStatus>>({})
+  const [previousMembers, setPreviousMembers] = useState(members)
+  if (previousMembers !== members) {
+    const previous = new Map(previousMembers.map((member) => [member.userId, member]))
+    const unchanged = new Set(members.filter((member) => {
+      const old = previous.get(member.userId)
+      return old?.friendStatus === member.friendStatus && old?.friendRequestId === member.friendRequestId
+    }).map((member) => member.userId))
+    setPreviousMembers(members)
+    setStatuses((current) => Object.fromEntries(Object.entries(current).filter(([id]) => unchanged.has(id))))
+  }
+  const actions = usePendingActions()
+  const [pokeExpirations, setPokeExpirations] = useState<Record<string, number>>({})
+  const [now, setNow] = useState(Date.now)
 
   useEffect(() => {
-    const nextExpiration = members.reduce<number | null>((earliest, member) => {
-      if (!member.lastPokedAt) return earliest
-      const expiration = Date.parse(member.lastPokedAt) + POKE_COOLDOWN_MS
-      if (!Number.isFinite(expiration)) return earliest
-      return earliest == null ? expiration : Math.min(earliest, expiration)
-    }, null)
-    if (nextExpiration == null) return
-
-    const timeout = window.setTimeout(() => router.refresh(), Math.max(0, nextExpiration - Date.now() + 250))
-    return () => window.clearTimeout(timeout)
-  }, [members, router])
+    const updateClock = () => setNow(Date.now())
+    const nextExpiration = nextPokeExpiration(
+      members.map((member) => pokeExpiresAt(member.lastPokedAt, pokeExpirations[member.userId])),
+      now,
+    )
+    const timeout = nextExpiration == null ? undefined : window.setTimeout(updateClock, Math.max(0, nextExpiration - Date.now()) + 50)
+    window.addEventListener("focus", updateClock)
+    document.addEventListener("visibilitychange", updateClock)
+    return () => {
+      window.clearTimeout(timeout)
+      window.removeEventListener("focus", updateClock)
+      document.removeEventListener("visibilitychange", updateClock)
+    }
+  }, [members, pokeExpirations, now])
 
   async function requestFriend(member: StudyRoomMemberWithFriendStatus) {
-    if (!member.profile?.handle) return
-    setPendingMemberId(member.userId)
+    if (!member.profile?.handle || !actions.start(`friend:${member.userId}`)) return
 
     try {
       const formData = new FormData()
@@ -93,13 +104,12 @@ export function StudyRoomMembers({
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "친구 요청을 보내지 못했습니다.")
     } finally {
-      setPendingMemberId(null)
+      actions.finish(`friend:${member.userId}`)
     }
   }
 
   async function acceptFriend(member: StudyRoomMemberWithFriendStatus) {
-    if (!member.friendRequestId) return
-    setPendingMemberId(member.userId)
+    if (!member.friendRequestId || !actions.start(`friend:${member.userId}`)) return
 
     try {
       const formData = new FormData()
@@ -113,30 +123,26 @@ export function StudyRoomMembers({
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "친구 요청을 수락하지 못했습니다.")
     } finally {
-      setPendingMemberId(null)
+      actions.finish(`friend:${member.userId}`)
     }
   }
 
   async function pokeMember(member: StudyRoomMemberWithFriendStatus) {
-    setPendingMemberId(member.userId)
+    if (!isCurrentUserMember || member.userId === currentUserId
+      || !currentUserNotificationsEnabled || !member.notificationsEnabled
+      || pokeExpiresAt(member.lastPokedAt, pokeExpirations[member.userId]) > Date.now()
+      || !actions.start(`poke:${member.userId}`)) return
     try {
       const response = await authenticatedFetch(`/api/studies/${studyId}/members/${member.userId}/poke`, { method: "POST" })
       const result = await response.json() as { error?: string }
       if (!response.ok) return toast.error(result.error || "콕 찌르기 알림을 보내지 못했습니다.")
 
-      setPokedMemberIds((current) => new Set(current).add(member.userId))
-      window.setTimeout(() => {
-        setPokedMemberIds((current) => {
-          const next = new Set(current)
-          next.delete(member.userId)
-          return next
-        })
-      }, POKE_COOLDOWN_MS)
+      setPokeExpirations((current) => ({ ...current, [member.userId]: Date.now() + POKE_COOLDOWN_MS }))
       toast.success(`${memberName(member.profile)}님을 콕 찔렀어요.`)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "콕 찌르기 알림을 보내지 못했습니다.")
     } finally {
-      setPendingMemberId(null)
+      actions.finish(`poke:${member.userId}`)
     }
   }
 
@@ -150,13 +156,14 @@ export function StudyRoomMembers({
         <ul className="max-h-80 divide-y overflow-y-auto">
           {members.map((member) => {
             const name = memberName(member.profile)
-            const status = statuses[member.userId]
-            const pending = pendingMemberId === member.userId
-            const pokedRecently = pokedMemberIds.has(member.userId) || member.lastPokedAt != null
+            const status = statuses[member.userId] || member.friendStatus
+            const friendPending = actions.keys.has(`friend:${member.userId}`)
+            const pokePending = actions.keys.has(`poke:${member.userId}`)
+            const pokedRecently = pokeExpiresAt(member.lastPokedAt, pokeExpirations[member.userId]) > now
             const showPoke = isCurrentUserMember && member.userId !== currentUserId
             const canPoke = currentUserNotificationsEnabled
               && member.notificationsEnabled
-            const pokeLabel = pending
+            const pokeLabel = pokePending
               ? "전송 중"
               : pokedRecently
                 ? "콕 완료"
@@ -191,15 +198,15 @@ export function StudyRoomMembers({
                     {status === "friend" && <Badge variant="outline" className="gap-1 text-primary"><UserCheck className="size-3" />친구</Badge>}
                     {status === "outgoing_pending" && <Badge variant="secondary">요청 보냄</Badge>}
                     {status === "incoming_pending" && (
-                      <Button type="button" size="xs" variant="outline" disabled={pending} onClick={() => acceptFriend(member)}>
-                        {pending ? <LoaderCircle className="animate-spin" /> : <UserCheck />}
-                        {pending ? "수락 중" : "친구 수락"}
+                      <Button type="button" size="xs" variant="outline" disabled={friendPending} aria-busy={friendPending} onClick={() => acceptFriend(member)}>
+                        {friendPending ? <LoaderCircle className="animate-spin" /> : <UserCheck />}
+                        {friendPending ? "수락 중" : "친구 수락"}
                       </Button>
                     )}
                     {status === "none" && (
-                      <Button type="button" size="xs" variant="outline" disabled={pending || !member.profile?.handle} onClick={() => requestFriend(member)}>
-                        {pending ? <LoaderCircle className="animate-spin" /> : <UserPlus />}
-                        {pending ? "요청 중" : "친구 신청"}
+                      <Button type="button" size="xs" variant="outline" disabled={friendPending || !member.profile?.handle} aria-busy={friendPending} onClick={() => requestFriend(member)}>
+                        {friendPending ? <LoaderCircle className="animate-spin" /> : <UserPlus />}
+                        {friendPending ? "요청 중" : "친구 신청"}
                       </Button>
                     )}
                   </div>
@@ -209,11 +216,12 @@ export function StudyRoomMembers({
                         type="button"
                         size="xs"
                         variant="secondary"
-                        disabled={pending || pokedRecently || !canPoke}
+                        disabled={pokePending || pokedRecently || !canPoke}
+                        aria-busy={pokePending}
                         title={pokeDisabledReason}
                         onClick={() => pokeMember(member)}
                       >
-                        {pending ? <LoaderCircle className="animate-spin" /> : <BellRing />}
+                        {pokePending ? <LoaderCircle className="animate-spin" /> : <BellRing />}
                         {pokeLabel}
                       </Button>
                     )}

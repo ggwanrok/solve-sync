@@ -4,6 +4,7 @@ import { Camera, LoaderCircle, LogOut, MonitorSmartphone, NotebookPen, Save, Tra
 import { useRouter } from "next/navigation"
 import { useCallback, useRef, useState } from "react"
 import { toast } from "sonner"
+import { usePendingActions } from "@/lib/use-pending-action"
 import { authenticatedFetch } from "@/lib/authenticated-fetch"
 import { ExtensionBrowserStatusPanel, useExtensionConnection } from "@/components/extension-browser-connection"
 import { ProfileImageCropDialog } from "@/components/profile-image-crop-dialog"
@@ -36,21 +37,24 @@ export function AccountDialog({ user }: { user: AccountUser }) {
   const router = useRouter()
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const { devices, recheck } = useExtensionConnection()
+  const actions = usePendingActions()
+  const loggingOut = actions.keys.has("logout")
   const [nickname, setNickname] = useState(user.name)
   const [bio, setBio] = useState(user.bio)
+  const [savedProfile, setSavedProfile] = useState({ nickname: user.name, bio: user.bio })
   const [problemMemoPromptEnabled, setProblemMemoPromptEnabled] = useState(user.problemMemoPromptEnabled)
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl)
   const [avatarCropFile, setAvatarCropFile] = useState<File | null>(null)
-  const [savingProfile, setSavingProfile] = useState(false)
-  const [savingPreferences, setSavingPreferences] = useState(false)
-  const [uploadingAvatar, setUploadingAvatar] = useState(false)
-  const [revokingDevice, setRevokingDevice] = useState<string | null>(null)
+  const savingProfile = actions.keys.has("profile")
+  const savingPreferences = actions.keys.has("preferences")
+  const uploadingAvatar = actions.keys.has("avatar")
+  const [revokedDevices, setRevokedDevices] = useState<Record<string, string>>({})
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const [deleting, setDeleting] = useState(false)
+  const deleting = actions.keys.has("delete")
 
   const saveProfile = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setSavingProfile(true)
+    if (!actions.start("profile")) return
     try {
       const response = await authenticatedFetch("/api/account", {
         method: "PATCH",
@@ -59,6 +63,7 @@ export function AccountDialog({ user }: { user: AccountUser }) {
       })
       const result = await response.json() as { error?: string; nickname?: string; bio?: string }
       if (!response.ok || !result.nickname) return toast.error(result.error || "프로필을 변경하지 못했습니다.")
+      setSavedProfile({ nickname: result.nickname, bio: result.bio || "" })
       setNickname(result.nickname)
       setBio(result.bio || "")
       toast.success("프로필을 변경했습니다.")
@@ -66,13 +71,13 @@ export function AccountDialog({ user }: { user: AccountUser }) {
     } catch {
       toast.error("프로필을 변경하지 못했습니다.")
     } finally {
-      setSavingProfile(false)
+      actions.finish("profile")
     }
   }
 
   const toggleProblemMemoPrompt = async () => {
     const nextEnabled = !problemMemoPromptEnabled
-    setSavingPreferences(true)
+    if (!actions.start("preferences")) return
     try {
       const response = await authenticatedFetch("/api/account/preferences", {
         method: "PATCH",
@@ -89,7 +94,7 @@ export function AccountDialog({ user }: { user: AccountUser }) {
     } catch {
       toast.error("개인 설정을 변경하지 못했습니다.")
     } finally {
-      setSavingPreferences(false)
+      actions.finish("preferences")
     }
   }
 
@@ -104,7 +109,7 @@ export function AccountDialog({ user }: { user: AccountUser }) {
   }
 
   const uploadAvatar = async (optimizedFile: File) => {
-    setUploadingAvatar(true)
+    if (!actions.start("avatar")) return false
     try {
       const formData = new FormData()
       formData.set("avatar", optimizedFile)
@@ -122,7 +127,7 @@ export function AccountDialog({ user }: { user: AccountUser }) {
       toast.error(error instanceof Error ? error.message : "프로필 사진을 업로드하지 못했습니다.")
       return false
     } finally {
-      setUploadingAvatar(false)
+      actions.finish("avatar")
     }
   }
 
@@ -132,7 +137,7 @@ export function AccountDialog({ user }: { user: AccountUser }) {
   }, [])
 
   const revokeDevice = async (installationId: string) => {
-    setRevokingDevice(installationId)
+    if (!actions.start(`device:${installationId}`)) return
     try {
       const response = await authenticatedFetch("/api/extension/devices", {
         method: "DELETE",
@@ -141,17 +146,20 @@ export function AccountDialog({ user }: { user: AccountUser }) {
       })
       const result = await response.json()
       if (!response.ok) return toast.error(result.error || "기기 연결을 해제하지 못했습니다.")
+      const device = devices?.find((device) => device.installationId === installationId)
+      if (device) setRevokedDevices((current) => ({ ...current, [installationId]: device.connectedAt }))
       toast.success("선택한 기기의 연결을 해제했습니다.")
       recheck()
     } catch {
       toast.error("기기 연결을 해제하지 못했습니다.")
     } finally {
-      setRevokingDevice(null)
+      actions.finish(`device:${installationId}`)
     }
   }
 
   const deleteAccount = async () => {
-    setDeleting(true)
+    if (actions.getSnapshot().size > 0) return
+    if (!actions.start("delete")) return
     try {
       const response = await authenticatedFetch("/api/account", { method: "DELETE" })
       const body = await response.text()
@@ -163,14 +171,23 @@ export function AccountDialog({ user }: { user: AccountUser }) {
     } catch {
       toast.error("탈퇴 요청을 완료하지 못했습니다. 네트워크 상태를 확인해 주세요.")
     } finally {
-      setDeleting(false)
+      actions.finish("delete")
     }
   }
 
   const logout = async () => {
-    await createClient().auth.signOut({ scope: "local" })
-    window.location.replace("/auth/signout")
+    if (actions.getSnapshot().size > 0 || !actions.start("logout")) return
+    try {
+      const { error } = await createClient().auth.signOut({ scope: "local" })
+      if (error) throw error
+      window.location.replace("/auth/signout")
+    } catch {
+      toast.error("로그아웃하지 못했습니다. 다시 시도해 주세요.")
+      actions.finish("logout")
+    }
   }
+
+  const visibleDevices = devices?.filter((device) => revokedDevices[device.installationId] !== device.connectedAt) ?? null
 
   return (
     <Dialog>
@@ -180,6 +197,7 @@ export function AccountDialog({ user }: { user: AccountUser }) {
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
         <DialogHeader><DialogTitle>마이페이지</DialogTitle><DialogDescription>프로필, 개인 설정과 확장 프로그램 연결 기기를 관리합니다.</DialogDescription></DialogHeader>
 
+        <fieldset disabled={deleting || loggingOut} className="min-w-0 space-y-5">
         <div className="rounded-2xl bg-muted/45 p-4">
           <div className="flex items-center gap-4">
             <UserAvatar name={nickname} imageUrl={avatarUrl} className="size-16" />
@@ -236,7 +254,7 @@ export function AccountDialog({ user }: { user: AccountUser }) {
               <Button
                 type="submit"
                 size="sm"
-                disabled={savingProfile || (nickname.trim() === user.name && bio.trim() === user.bio)}
+                disabled={savingProfile || (nickname.trim() === savedProfile.nickname && bio.trim() === savedProfile.bio)}
               >
                 {savingProfile ? <LoaderCircle className="animate-spin" /> : <Save />}
                 {savingProfile ? "저장 중" : "저장"}
@@ -278,7 +296,7 @@ export function AccountDialog({ user }: { user: AccountUser }) {
         <div className="rounded-2xl bg-muted/45 p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-medium">{registeredExtensionDevicesLabel(devices?.length ?? null)}</p>
+              <p className="text-sm font-medium">{registeredExtensionDevicesLabel(visibleDevices?.length ?? null)}</p>
               <p className="mt-1 text-xs leading-relaxed text-muted-foreground">다른 브라우저에서 연결한 기기도 포함됩니다. 계정당 최대 {MAX_EXTENSION_CONNECTIONS}개까지 등록할 수 있습니다.</p>
             </div>
             <MonitorSmartphone className="size-5 shrink-0 text-muted-foreground" />
@@ -288,9 +306,9 @@ export function AccountDialog({ user }: { user: AccountUser }) {
 
           {devices === null ? (
             <p className="mt-3 rounded-xl bg-card p-3 text-xs text-muted-foreground">등록된 기기를 불러오지 못했습니다. 다시 확인을 눌러 주세요.</p>
-          ) : devices.length ? (
+          ) : visibleDevices?.length ? (
             <div className="mt-3 space-y-2">
-              {devices.map((device) => (
+              {visibleDevices.map((device) => (
                 <div key={device.installationId} className="flex items-center gap-3 rounded-xl bg-card p-3 shadow-sm">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{device.deviceName}</p>
@@ -305,9 +323,9 @@ export function AccountDialog({ user }: { user: AccountUser }) {
                     className="shrink-0 text-destructive hover:text-destructive"
                     aria-label={`${device.deviceName} 연결 해제`}
                     onClick={() => revokeDevice(device.installationId)}
-                    disabled={revokingDevice === device.installationId}
+                    disabled={actions.keys.has(`device:${device.installationId}`)} aria-busy={actions.keys.has(`device:${device.installationId}`)}
                   >
-                    <Unplug className="size-4" />
+                    {actions.keys.has(`device:${device.installationId}`) ? <LoaderCircle className="size-4 animate-spin" /> : <Unplug className="size-4" />}
                   </Button>
                 </div>
               ))}
@@ -317,9 +335,10 @@ export function AccountDialog({ user }: { user: AccountUser }) {
           )}
         </div>
 
-        <Button type="button" variant="outline" className="w-full" onClick={logout}><LogOut className="size-4" />로그아웃</Button>
+        </fieldset>
+        <Button type="button" variant="outline" className="w-full" onClick={logout} disabled={actions.keys.size > 0} aria-busy={loggingOut}>{loggingOut ? <LoaderCircle className="size-4 animate-spin" /> : <LogOut className="size-4" />}{loggingOut ? "로그아웃 중" : "로그아웃"}</Button>
         <div className="rounded-2xl bg-destructive/5 p-4 ring-1 ring-destructive/20">
-          {!confirmDelete ? <Button type="button" variant="destructive" className="w-full" onClick={() => setConfirmDelete(true)}><Trash2 className="size-4" />회원 탈퇴</Button> : <div className="space-y-3"><p className="text-sm text-destructive">계정과 모든 풀이·친구·스터디 데이터가 삭제되며 복구할 수 없습니다.</p><div className="flex gap-2"><Button type="button" variant="outline" className="flex-1" onClick={() => setConfirmDelete(false)} disabled={deleting}>취소</Button><Button type="button" variant="destructive" className="flex-1" onClick={deleteAccount} disabled={deleting}>{deleting ? "삭제 중..." : "영구 삭제"}</Button></div></div>}
+          {!confirmDelete ? <Button type="button" variant="destructive" className="w-full" onClick={() => setConfirmDelete(true)} disabled={actions.keys.size > 0}><Trash2 className="size-4" />회원 탈퇴</Button> : <div className="space-y-3"><p className="text-sm text-destructive">계정과 모든 풀이·친구·스터디 데이터가 삭제되며 복구할 수 없습니다.</p><div className="flex gap-2"><Button type="button" variant="outline" className="flex-1" onClick={() => setConfirmDelete(false)} disabled={deleting}>취소</Button><Button type="button" variant="destructive" className="flex-1" onClick={deleteAccount} disabled={actions.keys.size > 0} aria-busy={deleting}>{deleting ? "삭제 중..." : "영구 삭제"}</Button></div></div>}
         </div>
         {avatarCropFile && <ProfileImageCropDialog file={avatarCropFile} onCancel={closeAvatarCrop} onApply={uploadAvatar} />}
       </DialogContent>

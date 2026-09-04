@@ -1,8 +1,8 @@
 "use client"
 
-import { LayoutDashboard, Users, BookOpen, Chrome, Menu, NotebookPen, RefreshCw } from "lucide-react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { LayoutDashboard, Users, BookOpen, Chrome, Menu, NotebookPen, RefreshCw, LoaderCircle } from "lucide-react"
+import Link, { useLinkStatus } from "next/link"
+import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
 import { Logo } from "@/components/logo"
 import { ContributionGraph, type ContributionDay } from "@/components/contribution-graph"
@@ -10,10 +10,12 @@ import { MemberProfileDialog } from "@/components/member-profile-dialog"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { AccountDialog, type AccountUser } from "@/components/account-dialog"
 import { ExtensionBrowserHeader, ExtensionConnectionProvider } from "@/components/extension-browser-connection"
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { NotificationCenter } from "@/components/notification-center"
 import { UserAvatar } from "@/components/user-avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { useActionTransition } from "@/lib/use-pending-action"
 import { cn } from "@/lib/utils"
 import type { StudyNotificationInbox } from "@/lib/study-notification"
 
@@ -26,6 +28,11 @@ const nav = [
   { href: "/notes", label: "문제 메모", icon: NotebookPen },
 ]
 
+function NavigationProgress() {
+  const { pending } = useLinkStatus()
+  return pending ? <LoaderCircle className="ml-auto size-4 animate-spin" role="status" aria-label="페이지 이동 중" /> : null
+}
+
 function NavLinks({ pendingFriendRequestCount, onNavigate }: { pendingFriendRequestCount: number; onNavigate?: () => void }) {
   const pathname = usePathname()
   return (
@@ -36,6 +43,7 @@ function NavLinks({ pendingFriendRequestCount, onNavigate }: { pendingFriendRequ
           <Link
             key={item.href}
             href={item.href}
+            aria-current={active ? "page" : undefined}
             prefetch
             onClick={onNavigate}
             className={cn(
@@ -47,6 +55,7 @@ function NavLinks({ pendingFriendRequestCount, onNavigate }: { pendingFriendRequ
           >
             <item.icon className="size-5" strokeWidth={active ? 2.4 : 2} />
             {item.label}
+            <NavigationProgress />
             {item.href === "/friends" && pendingFriendRequestCount > 0 && (
               <Badge className="ml-auto h-5 min-w-5 justify-center rounded-full px-1.5 text-[10px]" aria-label={`받은 친구 요청 ${pendingFriendRequestCount}건`}>
                 {pendingFriendRequestCount > 99 ? "99+" : pendingFriendRequestCount}
@@ -105,7 +114,8 @@ function SidebarContent({ user, contributions, onNavigate }: { user: ShellUser; 
 
 export function AppShell({ children, user, contributions, notificationInbox }: { children: React.ReactNode; user: ShellUser; contributions: ContributionDay[]; notificationInbox: StudyNotificationInbox }) {
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [refreshPending, setRefreshPending] = useState(false)
+  const [refreshPending, runRefresh] = useActionTransition()
+  const router = useRouter()
   const pathname = usePathname()
   const refreshLabel = pathname === "/"
     ? "대시보드"
@@ -120,10 +130,7 @@ export function AppShell({ children, user, contributions, notificationInbox }: {
         : null
 
   function refreshCurrentPage() {
-    setRefreshPending(true)
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => window.location.reload())
-    })
+    runRefresh(() => router.refresh())
   }
 
   return (
@@ -133,14 +140,13 @@ export function AppShell({ children, user, contributions, notificationInbox }: {
         <SidebarContent user={user} contributions={contributions} />
       </aside>
 
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-foreground/30 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
-          <div className="absolute left-0 top-0 h-full w-72 border-r border-sidebar-border/70 bg-sidebar shadow-2xl">
-            <SidebarContent user={user} contributions={contributions} onNavigate={() => setMobileOpen(false)} />
-          </div>
-        </div>
-      )}
+      <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
+        <DialogContent className="inset-y-0 left-0 top-0 h-dvh w-72 max-w-[85vw] translate-x-0 translate-y-0 gap-0 rounded-none border-r border-sidebar-border/70 bg-sidebar p-0 sm:max-w-72 sm:p-0 data-open:zoom-in-100 data-closed:zoom-out-100 data-open:slide-in-from-left-4 data-closed:slide-out-to-left-4">
+          <DialogTitle className="sr-only">메뉴</DialogTitle>
+          <DialogDescription className="sr-only">대시보드, 친구, 스터디룸과 문제 메모로 이동합니다.</DialogDescription>
+          <SidebarContent user={user} contributions={contributions} onNavigate={() => setMobileOpen(false)} />
+        </DialogContent>
+      </Dialog>
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border/55 bg-background/88 px-4 backdrop-blur-xl md:px-6">
@@ -175,13 +181,15 @@ export function AppShell({ children, user, contributions, notificationInbox }: {
               </Button>
             )}
             <ExtensionBrowserHeader className="hidden md:flex" />
-            <NotificationCenter key={`${notificationInbox.unreadCount}:${notificationInbox.items[0]?.id || "empty"}:${notificationInbox.items[0]?.readAt || "unread"}`} inbox={notificationInbox} />
+            <NotificationCenter inbox={notificationInbox} />
             <ThemeToggle />
             <AccountDialog user={user} />
           </div>
         </header>
 
-        <main className="flex-1 px-4 py-6 md:px-6 lg:px-8">{children}</main>
+        <main className="flex-1 px-4 py-6 md:px-6 lg:px-8">
+          <div key={pathname} className="app-page-enter">{children}</div>
+        </main>
         <footer className="px-4 pb-6 text-center text-xs text-muted-foreground md:px-6 lg:px-8">
           <Link href="/about" className="underline-offset-4 hover:text-foreground hover:underline">
             서비스 소개 · 개인정보 처리방침

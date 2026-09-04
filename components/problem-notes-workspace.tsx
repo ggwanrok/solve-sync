@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from "lucide-react"
 import { toast } from "sonner"
+import { usePendingActions } from "@/lib/use-pending-action"
 import { saveProblemMemo } from "@/app/actions"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -73,9 +74,29 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
     initialProblems.map((problem) => [problem.id, initialDraft(problem)]),
   ))
   const [dirtyIds, setDirtyIds] = useState<Set<string>>(new Set())
-  const [savingId, setSavingId] = useState<string | null>(null)
+  const saves = usePendingActions()
+  const draftVersions = useRef<Record<string, number>>({})
   const [mobileEditorOpen, setMobileEditorOpen] = useState(false)
   const editorHeadingRef = useRef<HTMLHeadingElement>(null)
+
+  const [previousProblems, setPreviousProblems] = useState(initialProblems)
+  if (previousProblems !== initialProblems) {
+    const currentById = new Map(problems.map((problem) => [problem.id, problem]))
+    const refreshed = initialProblems.map((problem) => {
+      const current = currentById.get(problem.id)
+      return current?.memo && (!problem.memo || current.memo.updatedAt > problem.memo.updatedAt)
+        ? { ...problem, memo: current.memo }
+        : problem
+    })
+    setPreviousProblems(initialProblems)
+    setProblems(refreshed)
+    setDrafts((current) => Object.fromEntries(refreshed.map((problem) => [
+      problem.id,
+      (dirtyIds.has(problem.id) || saves.keys.has(problem.id)) && current[problem.id]
+        ? current[problem.id]
+        : initialDraft(problem),
+    ])))
+  }
 
   const selected = problems.find((problem) => problem.id === selectedId) || problems[0] || null
   const draft = selected ? drafts[selected.id] || initialDraft(selected) : null
@@ -93,6 +114,7 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
 
   function updateDraft<K extends keyof ProblemMemoFields>(key: K, value: ProblemMemoFields[K]) {
     if (!selected) return
+    draftVersions.current[selected.id] = (draftVersions.current[selected.id] || 0) + 1
     setDrafts((current) => ({ ...current, [selected.id]: { ...current[selected.id], [key]: value } }))
     setDirtyIds((current) => new Set(current).add(selected.id))
   }
@@ -118,8 +140,8 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
   }
 
   async function save() {
-    if (!selected || !draft) return
-    setSavingId(selected.id)
+    if (!selected || !draft || !saves.start(selected.id)) return
+    const savedVersion = draftVersions.current[selected.id] || 0
     try {
       const result = await saveProblemMemo({ problemId: selected.problemId, ...draft })
       if (!result.ok) {
@@ -129,16 +151,17 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
 
       const memo = { ...draft, updatedAt: result.updatedAt }
       setProblems((current) => current.map((problem) => problem.id === selected.id ? { ...problem, memo } : problem))
+      const hasNewEdits = (draftVersions.current[selected.id] || 0) !== savedVersion
       setDirtyIds((current) => {
         const next = new Set(current)
-        next.delete(selected.id)
+        if (!hasNewEdits) next.delete(selected.id)
         return next
       })
       toast.success("문제 메모를 저장했습니다.")
     } catch {
       toast.error("메모를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.")
     } finally {
-      setSavingId(null)
+      saves.finish(selected.id)
     }
   }
 
@@ -277,16 +300,16 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
 
                 <div className="flex flex-col gap-3 border-t pt-5 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-start gap-2 text-xs text-muted-foreground"><Lightbulb className="mt-0.5 size-3.5 shrink-0 text-primary" /><span>한 문제당 하나의 메모가 유지되며, 다시 저장하면 기존 메모가 수정됩니다.</span></div>
-                  <Button type="button" onClick={save} disabled={savingId === selected.id} className="hidden sm:min-w-28 md:inline-flex">
-                    {savingId === selected.id ? <><Loader2 className="animate-spin" />저장 중</> : dirtyIds.has(selected.id) ? <><NotebookPen />저장</> : <><Check />저장</>}
+                  <Button type="button" onClick={save} disabled={saves.keys.has(selected.id)} aria-busy={saves.keys.has(selected.id)} className="hidden sm:min-w-28 md:inline-flex">
+                    {saves.keys.has(selected.id) ? <><Loader2 className="animate-spin" />저장 중</> : dirtyIds.has(selected.id) ? <><NotebookPen />저장</> : <><Check />저장</>}
                   </Button>
                 </div>
               </CardContent>
             </Card>
 
             <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(0,0,0,0.08)] backdrop-blur md:hidden">
-              <Button type="button" onClick={save} disabled={savingId === selected.id} className="h-11 w-full">
-                {savingId === selected.id ? <><Loader2 className="animate-spin" />저장 중</> : dirtyIds.has(selected.id) ? <><NotebookPen />메모 저장</> : <><Check />저장</>}
+              <Button type="button" onClick={save} disabled={saves.keys.has(selected.id)} aria-busy={saves.keys.has(selected.id)} className="h-11 w-full">
+                {saves.keys.has(selected.id) ? <><Loader2 className="animate-spin" />저장 중</> : dirtyIds.has(selected.id) ? <><NotebookPen />메모 저장</> : <><Check />저장</>}
               </Button>
             </div>
           </div>

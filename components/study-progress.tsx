@@ -355,6 +355,8 @@ export function StudyProgress({
   const [historyPage, setHistoryPage] = useState(1)
   const [historyTotalPages, setHistoryTotalPages] = useState(0)
   const [historyLoaded, setHistoryLoaded] = useState(false)
+  const historyRequestRef = useRef(false)
+  const problemRequestsRef = useRef(new Set<string>())
   const [loadingHistory, setLoadingHistory] = useState(false)
   const [openCurrentMembers, setOpenCurrentMembers] = useState<Set<string>>(() => new Set())
   const [openHistoryPeriod, setOpenHistoryPeriod] = useState<string | null>(null)
@@ -364,6 +366,8 @@ export function StudyProgress({
   const currentProgressSignature = currentMembers.map((member) => `${member.userId}:${member.solvedCount}`).join("|")
 
   async function loadHistoryPage(page: number, order: HistoryOrder) {
+    if (historyRequestRef.current) return
+    historyRequestRef.current = true
     setLoadingHistory(true)
     try {
       const { data, error } = await supabaseRef.current.rpc("study_goal_history_page", {
@@ -392,12 +396,14 @@ export function StudyProgress({
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "지난 기록을 불러오지 못했습니다.")
     } finally {
+      historyRequestRef.current = false
       setLoadingHistory(false)
     }
   }
 
   const loadProblems = useCallback(async (userId: string, periodStart: string, key: string) => {
-    if (Object.prototype.hasOwnProperty.call(problemsByKey, key) || loadingProblemKeys[key]) return
+    if (Object.prototype.hasOwnProperty.call(problemsByKey, key) || problemRequestsRef.current.has(key)) return
+    problemRequestsRef.current.add(key)
     setLoadingProblemKeys((current) => ({ ...current, [key]: true }))
     try {
       const { data, error } = await supabaseRef.current.rpc("study_member_period_solve_events", {
@@ -420,9 +426,10 @@ export function StudyProgress({
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "문제 목록을 불러오지 못했습니다.")
     } finally {
+      problemRequestsRef.current.delete(key)
       setLoadingProblemKeys((current) => ({ ...current, [key]: false }))
     }
-  }, [loadingProblemKeys, problemsByKey, studyId])
+  }, [problemsByKey, studyId])
 
   useEffect(() => {
     if (!currentPeriod) return
