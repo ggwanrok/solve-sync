@@ -10,7 +10,7 @@ import { ExtensionBrowserStatusPanel, useExtensionConnection } from "@/component
 import { ProfileImageCropDialog } from "@/components/profile-image-crop-dialog"
 import { UserAvatar } from "@/components/user-avatar"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { MAX_EXTENSION_CONNECTIONS } from "@/lib/extension-connect"
@@ -195,7 +195,7 @@ export function AccountDialog({ user }: { user: AccountUser }) {
         <UserAvatar name={nickname} imageUrl={avatarUrl} className="size-10" />
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
-        <DialogHeader><DialogTitle>마이페이지</DialogTitle><DialogDescription>프로필, 개인 설정과 확장 프로그램 연결 기기를 관리합니다.</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>마이페이지</DialogTitle></DialogHeader>
 
         <fieldset disabled={deleting || loggingOut} className="min-w-0 space-y-5">
         <div className="rounded-2xl bg-muted/45 p-4">
@@ -270,7 +270,6 @@ export function AccountDialog({ user }: { user: AccountUser }) {
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium">풀이 성공 시 문제 메모 열기</p>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">프로그래머스 풀이가 온라인으로 저장되면 바로 메모 작성 창을 엽니다.</p>
             </div>
             <button
               type="button"
@@ -290,7 +289,6 @@ export function AccountDialog({ user }: { user: AccountUser }) {
               )} />
             </button>
           </div>
-          <p className="mt-3 text-[11px] text-muted-foreground">오프라인 대기열에 저장된 풀이는 나중에 동기화되더라도 메모 창을 열지 않습니다.</p>
         </div>
 
         <div className="rounded-2xl bg-muted/45 p-4">

@@ -1,7 +1,7 @@
 import { cache } from "react"
 import { addCalendarDays, dayKey } from "@/lib/calendar"
 import { createClient } from "@/utils/supabase/server"
-import type { ProblemMemoRecord, SolvedProblemNote } from "@/lib/problem-memo"
+import { loadProblemNotes } from "@/lib/server/problem-notes"
 import type { StudyNotification, StudyNotificationInbox, StudyNotificationType } from "@/lib/study-notification"
 
 export const getViewer = cache(async () => {
@@ -119,76 +119,8 @@ export const getViewerSidebarSolves = cache(async () => {
   return (data || []) as ViewerSidebarSolve[]
 })
 
-type SolveRow = {
-  id: string
-  problem_id: string
-  title: string
-  url: string
-  language: string | null
-  problem_type: "algorithm" | "sql"
-  difficulty: number | null
-  accepted_at: string
-}
-
-type MemoRow = {
-  problem_id: string
-  algorithm_tags: string
-  approach: string
-  solution_code: string
-  difficulty_reason: string
-  learnings: string
-  updated_at: string
-}
-
 export const getViewerProblemNotes = cache(async () => {
   const { supabase, user } = await getViewer()
-  if (!user) return [] as SolvedProblemNote[]
-
-  const { data: solves, error: solveError } = await supabase
-    .from("solve_events")
-    .select("id,problem_id,title,url,language,problem_type,difficulty,accepted_at")
-    .eq("user_id", user.id)
-    .eq("platform", "programmers")
-    .order("accepted_at", { ascending: false })
-    .limit(500)
-  if (solveError) {
-    console.error("problem memo solves failed", solveError)
-    return [] as SolvedProblemNote[]
-  }
-
-  const solveRows = (solves || []) as SolveRow[]
-  if (!solveRows.length) return [] as SolvedProblemNote[]
-
-  const problemIds = solveRows.map((solve) => solve.problem_id)
-  const { data: memos, error: memoError } = await supabase
-    .from("problem_memos")
-    .select("problem_id,algorithm_tags,approach,solution_code,difficulty_reason,learnings,updated_at")
-    .eq("user_id", user.id)
-    .eq("platform", "programmers")
-    .in("problem_id", problemIds)
-  if (memoError) console.error("problem memos failed", memoError)
-
-  const memoByProblem = new Map((memos || []).map((memo) => [(memo as MemoRow).problem_id, memo as MemoRow]))
-
-  return solveRows.map((solve) => {
-    const memo = memoByProblem.get(solve.problem_id)
-    return {
-      id: solve.id,
-      problemId: solve.problem_id,
-      title: solve.title || `문제 ${solve.problem_id}`,
-      url: solve.url,
-      language: solve.language,
-      problemType: solve.problem_type,
-      difficulty: solve.difficulty,
-      acceptedAt: solve.accepted_at,
-      memo: memo ? {
-        algorithmTags: memo.algorithm_tags,
-        approach: memo.approach,
-        solutionCode: memo.solution_code,
-        difficultyReason: memo.difficulty_reason,
-        learnings: memo.learnings,
-        updatedAt: memo.updated_at,
-      } : null,
-    }
-  }) satisfies SolvedProblemNote[]
+  if (!user) return []
+  return loadProblemNotes(supabase, user.id)
 })

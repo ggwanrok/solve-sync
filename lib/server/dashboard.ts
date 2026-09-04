@@ -48,7 +48,22 @@ export async function getDashboardSolves(page = 1): Promise<DashboardResult<Dash
     console.error("dashboard solves page failed", error)
     return { ok: false, message: "풀이 기록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요." }
   }
-  return { ok: true, data: data as DashboardSolvesPage }
+  const result = data as DashboardSolvesPage
+  if (!result.entries.length) return { ok: true, data: result }
+  const { data: reviews, error: reviewError } = await supabase.from("problem_reviews")
+    .select("problem_id")
+    .eq("user_id", user.id)
+    .eq("platform", "programmers")
+    .in("problem_id", result.entries.map((solve) => solve.problem_id))
+  if (reviewError) {
+    console.error("dashboard problem reviews failed", reviewError)
+    return { ok: false, message: "복습 지정을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요." }
+  }
+  const reviewIds = new Set((reviews || []).map((review) => review.problem_id))
+  return { ok: true, data: {
+    ...result,
+    entries: result.entries.map((solve) => ({ ...solve, needsReview: reviewIds.has(solve.problem_id) })),
+  } }
 }
 
 export async function getDashboardSummary(): Promise<DashboardSummary | null> {

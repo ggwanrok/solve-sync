@@ -5,7 +5,6 @@ import Link from "next/link"
 import {
   ArrowLeft,
   Check,
-  ChevronRight,
   ExternalLink,
   Lightbulb,
   Loader2,
@@ -22,6 +21,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { ProblemDifficultyBadge } from "@/components/difficulty-badge"
 import { SolutionCodeEditor } from "@/components/solution-code-editor"
+import { ProblemReviewButton } from "@/components/problem-review-button"
+import { useProblemReview } from "@/lib/use-problem-review"
 import {
   EMPTY_PROBLEM_MEMO,
   PROBLEM_MEMO_APPROACH_LIMIT,
@@ -29,12 +30,12 @@ import {
   PROBLEM_MEMO_DIFFICULTY_REASON_LIMIT,
   PROBLEM_MEMO_LEARNINGS_LIMIT,
   PROBLEM_MEMO_TAGS_LIMIT,
+  filterProblemNotes,
+  type MemoFilter,
   type ProblemMemoFields,
   type SolvedProblemNote,
 } from "@/lib/problem-memo"
 import { cn } from "@/lib/utils"
-
-type MemoFilter = "all" | "written" | "empty"
 
 const fieldDescriptions: Array<{
   key: Exclude<keyof ProblemMemoFields, "algorithmTags">
@@ -75,6 +76,9 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
   ))
   const [dirtyIds, setDirtyIds] = useState<Set<string>>(new Set())
   const saves = usePendingActions()
+  const reviews = useProblemReview((problemId, needsReview) => {
+    setProblems((current) => current.map((problem) => problem.problemId === problemId ? { ...problem, needsReview } : problem))
+  })
   const draftVersions = useRef<Record<string, number>>({})
   const [mobileEditorOpen, setMobileEditorOpen] = useState(false)
   const editorHeadingRef = useRef<HTMLHeadingElement>(null)
@@ -101,16 +105,8 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
   const selected = problems.find((problem) => problem.id === selectedId) || problems[0] || null
   const draft = selected ? drafts[selected.id] || initialDraft(selected) : null
   const writtenCount = problems.filter((problem) => problem.memo).length
-  const filteredProblems = useMemo(() => {
-    const query = search.trim().toLocaleLowerCase("ko-KR")
-    return problems.filter((problem) => {
-      if (filter === "written" && !problem.memo) return false
-      if (filter === "empty" && problem.memo) return false
-      if (!query) return true
-      return [problem.title, problem.problemId, problem.language, problem.memo?.algorithmTags]
-        .some((value) => value?.toLocaleLowerCase("ko-KR").includes(query))
-    })
-  }, [filter, problems, search])
+  const reviewCount = problems.filter((problem) => problem.needsReview).length
+  const filteredProblems = useMemo(() => filterProblemNotes(problems, filter, search), [filter, problems, search])
 
   function updateDraft<K extends keyof ProblemMemoFields>(key: K, value: ProblemMemoFields[K]) {
     if (!selected) return
@@ -186,9 +182,10 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
     <div className="page-container-wide">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight sm:text-3xl"><NotebookPen className="size-6 text-primary" />문제 메모</h1>
-        <div className="flex gap-2 text-xs">
+        <div className="flex flex-wrap gap-2 text-xs">
           <Badge variant="outline">풀이 {problems.length}개</Badge>
           <Badge variant="secondary">메모 {writtenCount}개</Badge>
+          <Badge variant="outline">다시 풀 문제 {reviewCount}개</Badge>
         </div>
       </header>
 
@@ -199,31 +196,32 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
             <CardDescription>메모할 문제를 선택하세요.</CardDescription>
             <div className="relative mt-2">
               <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="문제명, 알고리즘 검색" className="pl-8" />
+              <Input value={search} onChange={(event) => setSearch(event.target.value)} aria-label="문제명, 알고리즘 검색" placeholder="문제명, 알고리즘 검색" className="pl-8" />
             </div>
-            <div className="mt-2 grid grid-cols-3 gap-1 rounded-xl bg-muted/70 p-1">
-              {([['all', '전체'], ['written', '작성'], ['empty', '미작성']] as const).map(([value, label]) => (
-                <button key={value} type="button" onClick={() => setFilter(value)} className={cn("rounded-lg px-2 py-2 text-xs font-semibold transition-colors", filter === value ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>{label}</button>
+            <div role="group" aria-label="문제 메모 필터" className="mt-2 grid grid-cols-2 gap-1 rounded-xl bg-muted/70 p-1">
+              {([['all', '전체'], ['written', '작성'], ['empty', '미작성'], ['review', '다시 풀 문제']] as const).map(([value, label]) => (
+                <button key={value} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)} className={cn("rounded-lg px-2 py-2 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", filter === value ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>{label}</button>
               ))}
             </div>
           </CardHeader>
-          <CardContent className="max-h-[calc(100vh-19rem)] min-h-40 overflow-auto px-2">
+          <CardContent className="max-h-[calc(100vh-22rem)] min-h-40 overflow-auto px-2">
             {filteredProblems.length ? (
               <div className="flex flex-col gap-1">
                 {filteredProblems.map((problem) => (
-                  <button
-                    key={problem.id}
-                    type="button"
-                    onClick={() => selectProblem(problem.id)}
-                    className={cn("group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-3 text-left transition-colors", selected?.id === problem.id ? "bg-primary/10 text-foreground" : "hover:bg-muted/60")}
-                  >
-                    <span className={cn("flex size-7 shrink-0 items-center justify-center rounded-full", problem.memo ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>{problem.memo ? <Check className="size-3.5" /> : <NotebookPen className="size-3.5" />}</span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium">{problem.title}</span>
-                      <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{problem.language || "언어 미확인"} · {dateLabel(problem.acceptedAt)}{dirtyIds.has(problem.id) ? " · 저장 전" : ""}</span>
-                    </span>
-                    <ChevronRight className="size-4 shrink-0 text-muted-foreground group-hover:text-foreground" />
-                  </button>
+                  <div key={problem.id} className={cn("flex min-w-0 items-center rounded-xl pr-1", selected?.id === problem.id && "bg-primary/10")}>
+                    <button
+                      type="button"
+                      onClick={() => selectProblem(problem.id)}
+                      className="group flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2.5 py-3 text-left transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <span className={cn("flex size-7 shrink-0 items-center justify-center rounded-full", problem.memo ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>{problem.memo ? <Check className="size-3.5" /> : <NotebookPen className="size-3.5" />}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium">{problem.title}</span>
+                        <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{problem.language || "언어 미확인"} · {dateLabel(problem.acceptedAt)}{dirtyIds.has(problem.id) ? " · 저장 전" : ""}</span>
+                      </span>
+                    </button>
+                    <ProblemReviewButton compact title={problem.title} needsReview={problem.needsReview} pending={reviews.pendingIds.has(problem.problemId)} onClick={() => reviews.toggle(problem.problemId, problem.needsReview)} />
+                  </div>
                 ))}
               </div>
             ) : <p className="py-10 text-center text-xs text-muted-foreground">조건에 맞는 문제가 없습니다.</p>}
@@ -251,7 +249,10 @@ export function ProblemNotesWorkspace({ initialProblems }: { initialProblems: So
                   <h2 ref={editorHeadingRef} tabIndex={-1} className="mt-3 text-xl font-bold tracking-tight outline-none sm:text-2xl">{selected.title}</h2>
                   <p className="mt-1 text-xs text-muted-foreground">{dateLabel(selected.acceptedAt)} 해결 · 문제 #{selected.problemId}</p>
                 </div>
-                <Button render={<a href={selected.url} target="_blank" rel="noreferrer" />} nativeButton={false} variant="outline" className="shrink-0">문제 열기 <ExternalLink /></Button>
+                <div className="flex shrink-0 flex-wrap gap-2">
+                  <ProblemReviewButton title={selected.title} needsReview={selected.needsReview} pending={reviews.pendingIds.has(selected.problemId)} onClick={() => reviews.toggle(selected.problemId, selected.needsReview)} />
+                  <Button render={<a href={selected.url} target="_blank" rel="noreferrer" />} nativeButton={false} variant="outline">문제 열기 <ExternalLink /></Button>
+                </div>
               </div>
             </section>
 

@@ -9,7 +9,7 @@ import { RankingFormulaHelp } from "@/components/ranking-formula-help"
 import { UserAvatar } from "@/components/user-avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import type { DashboardRankingPage, DashboardResult, ViewerRanking } from "@/lib/dashboard"
 import { useDashboardPage } from "@/lib/use-dashboard-page"
@@ -97,10 +97,9 @@ export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
           <Trophy className="size-4.5 text-primary" />
           나의 랭킹
         </CardTitle>
-        <CardDescription className="flex items-center gap-1">
-          <span>풀이 기록을 바탕으로 계산한 SolveSync 랭킹이에요.</span>
+        <CardAction>
           <RankingFormulaHelp />
-        </CardDescription>
+        </CardAction>
       </CardHeader>
       <CardContent className="grid gap-7 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
         <div className="grid self-center grid-cols-2 gap-3 lg:grid-cols-1">
@@ -152,7 +151,6 @@ export function LeaderboardCard({ initialResult, viewerId }: { initialResult: Da
     <Card className="h-full min-w-0" aria-busy={pending}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2"><Trophy className="size-4.5 text-primary" />전체 랭킹</CardTitle>
-        <CardDescription>{data ? `총 ${data.totalCount.toLocaleString("ko-KR")}명 · 순위순으로 10명씩` : "순위순으로 10명씩"}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col">
         <div className="flex flex-1 flex-col gap-1">

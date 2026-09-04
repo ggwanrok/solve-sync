@@ -284,6 +284,17 @@ create table if not exists public.problem_memos (
 create index if not exists problem_memos_user_updated_at
   on public.problem_memos(user_id, updated_at desc);
 
+-- 복습 지정은 메모 작성 여부와 독립적으로 관리한다.
+create table if not exists public.problem_reviews (
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  platform text not null default 'programmers',
+  problem_id text not null,
+  created_at timestamptz not null default now(),
+  primary key (user_id, platform, problem_id),
+  foreign key (user_id, platform, problem_id)
+    references public.solve_events(user_id, platform, problem_id) on delete cascade
+);
+
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = '' as $$
 begin
@@ -1590,6 +1601,7 @@ alter table public.extension_connections enable row level security;
 alter table public.extension_connection_codes enable row level security;
 alter table public.solve_events enable row level security;
 alter table public.problem_memos enable row level security;
+alter table public.problem_reviews enable row level security;
 
 drop policy if exists profiles_read_authenticated on public.profiles;
 create policy profiles_read_authenticated on public.profiles for select to authenticated using (true);
@@ -1625,6 +1637,11 @@ drop policy if exists problem_memos_self on public.problem_memos;
 create policy problem_memos_self on public.problem_memos for all to authenticated
 using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
 
+drop policy if exists problem_reviews_self on public.problem_reviews;
+create policy problem_reviews_self on public.problem_reviews for all to authenticated
+  using (user_id = (select auth.uid()))
+  with check (user_id = (select auth.uid()));
+
 grant usage on schema public to authenticated;
 revoke all on public.profiles from authenticated;
 grant select on public.profiles to authenticated;
@@ -1646,6 +1663,9 @@ grant all on public.extension_connection_codes to service_role;
 grant select on public.solve_events to authenticated;
 revoke all on public.problem_memos from authenticated;
 grant select, insert, update, delete on public.problem_memos to authenticated;
+revoke all on public.problem_reviews from public, anon, authenticated;
+grant select, insert, delete on public.problem_reviews to authenticated;
+grant all on public.problem_reviews to service_role;
 revoke execute on function public.claim_handle(text), public.is_handle_available(text), public.send_friend_request(text), public.respond_friend_request(uuid, boolean), public.remove_friend(uuid), public.is_study_member(uuid), public.create_study_room(text, text, integer, text, text, integer) from public, anon;
 grant execute on function public.claim_handle(text), public.is_handle_available(text), public.send_friend_request(text), public.respond_friend_request(uuid, boolean), public.remove_friend(uuid), public.is_study_member(uuid), public.create_study_room(text, text, integer, text, text, integer) to authenticated;
 revoke execute on function public.cancel_friend_request(uuid) from public, anon;

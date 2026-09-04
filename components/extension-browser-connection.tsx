@@ -134,7 +134,7 @@ export function ExtensionBrowserStatusPanel({ className }: { className?: string 
           <p className="text-sm font-medium">현재 브라우저</p>
           <ExtensionBrowserBadge status={status} showScope={false} />
         </div>
-        <p className="text-xs leading-relaxed text-muted-foreground">{extensionBrowserStatusCopy[status].description}</p>
+        {status !== "connected" && <p className="text-xs leading-relaxed text-muted-foreground">{extensionBrowserStatusCopy[status].description}</p>}
       </div>
       <Button type="button" variant="outline" size="sm" className="mt-3" onClick={recheck} disabled={status === "checking"}>
         <RefreshCw className={status === "checking" ? "animate-spin" : undefined} />

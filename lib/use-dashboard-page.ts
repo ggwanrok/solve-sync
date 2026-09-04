@@ -25,5 +25,5 @@ export function useDashboardPage<T>(initialResult: DashboardResult<T>, fetchPage
     })
   }
 
-  return { data, error, pending, loadPage }
+  return { data, setData, error, pending, loadPage }
 }

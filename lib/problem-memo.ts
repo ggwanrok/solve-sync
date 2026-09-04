@@ -29,7 +29,21 @@ export type SolvedProblemNote = {
   problemType: "algorithm" | "sql"
   difficulty: number | null
   acceptedAt: string
+  needsReview: boolean
   memo: ProblemMemoRecord | null
+}
+
+export type MemoFilter = "all" | "written" | "empty" | "review"
+
+export function filterProblemNotes(problems: SolvedProblemNote[], filter: MemoFilter, search: string) {
+  const query = search.trim().toLocaleLowerCase("ko-KR")
+  return problems.filter((problem) => {
+    if (filter === "written" && !problem.memo) return false
+    if (filter === "empty" && problem.memo) return false
+    if (filter === "review" && !problem.needsReview) return false
+    return !query || [problem.title, problem.problemId, problem.language, problem.memo?.algorithmTags]
+      .some((value) => value?.toLocaleLowerCase("ko-KR").includes(query))
+  })
 }
 
 export const EMPTY_PROBLEM_MEMO: ProblemMemoFields = {

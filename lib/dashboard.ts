@@ -29,6 +29,7 @@ export type DashboardSolve = {
   problem_type: "algorithm" | "sql"
   difficulty: number | null
   accepted_at: string
+  needsReview: boolean
 }
 export type DashboardSolvesPage = {
   entries: DashboardSolve[]
