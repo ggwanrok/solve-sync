@@ -5,25 +5,18 @@ import { useRouter } from "next/navigation"
 import { useCallback, useRef, useState } from "react"
 import { toast } from "sonner"
 import { authenticatedFetch } from "@/lib/authenticated-fetch"
-import { extensionBrowserStatusCopy, type ExtensionBrowserStatus } from "@/components/extension-browser-connection"
+import { ExtensionBrowserStatusPanel, useExtensionConnection } from "@/components/extension-browser-connection"
 import { ProfileImageCropDialog } from "@/components/profile-image-crop-dialog"
 import { UserAvatar } from "@/components/user-avatar"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { MAX_EXTENSION_CONNECTIONS } from "@/lib/extension-connect"
+import { registeredExtensionDevicesLabel, type ExtensionDevice } from "@/lib/extension-browser-connection"
 import { isSupportedProfileImage, NICKNAME_MAX_LENGTH, PROFILE_BIO_MAX_LENGTH, PROFILE_IMAGE_INPUT_MAX_BYTES } from "@/lib/profile"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/utils/supabase/client"
-
-export type ExtensionDevice = {
-  installationId: string
-  deviceName: string
-  connectedAt: string
-  lastSeenAt: string | null
-}
 
 export type AccountUser = {
   id: string
@@ -32,17 +25,17 @@ export type AccountUser = {
   bio: string
   problemMemoPromptEnabled: boolean
   avatarUrl: string | null
-  extensionDevices?: ExtensionDevice[]
+  extensionDevices: ExtensionDevice[] | null
 }
 
 function formatDate(value: string) {
   return new Date(value).toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" })
 }
 
-export function AccountDialog({ user, browserExtensionStatus }: { user: AccountUser; browserExtensionStatus: ExtensionBrowserStatus }) {
+export function AccountDialog({ user }: { user: AccountUser }) {
   const router = useRouter()
   const avatarInputRef = useRef<HTMLInputElement>(null)
-  const [devices, setDevices] = useState(user.extensionDevices || [])
+  const { devices, recheck } = useExtensionConnection()
   const [nickname, setNickname] = useState(user.name)
   const [bio, setBio] = useState(user.bio)
   const [problemMemoPromptEnabled, setProblemMemoPromptEnabled] = useState(user.problemMemoPromptEnabled)
@@ -54,7 +47,6 @@ export function AccountDialog({ user, browserExtensionStatus }: { user: AccountU
   const [revokingDevice, setRevokingDevice] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const browserStatusCopy = extensionBrowserStatusCopy[browserExtensionStatus]
 
   const saveProfile = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -149,9 +141,8 @@ export function AccountDialog({ user, browserExtensionStatus }: { user: AccountU
       })
       const result = await response.json()
       if (!response.ok) return toast.error(result.error || "기기 연결을 해제하지 못했습니다.")
-      setDevices((current) => current.filter((device) => device.installationId !== installationId))
       toast.success("선택한 기기의 연결을 해제했습니다.")
-      router.refresh()
+      recheck()
     } catch {
       toast.error("기기 연결을 해제하지 못했습니다.")
     } finally {
@@ -287,23 +278,17 @@ export function AccountDialog({ user, browserExtensionStatus }: { user: AccountU
         <div className="rounded-2xl bg-muted/45 p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-medium">연결된 기기 {devices.length}/{MAX_EXTENSION_CONNECTIONS}대</p>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">계정당 최대 {MAX_EXTENSION_CONNECTIONS}개까지 연결할 수 있으며, 각 PC의 확장 프로그램에서 추가할 수 있습니다.</p>
+              <p className="text-sm font-medium">{registeredExtensionDevicesLabel(devices?.length ?? null)}</p>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">다른 브라우저에서 연결한 기기도 포함됩니다. 계정당 최대 {MAX_EXTENSION_CONNECTIONS}개까지 등록할 수 있습니다.</p>
             </div>
             <MonitorSmartphone className="size-5 shrink-0 text-muted-foreground" />
           </div>
 
-          <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-card p-3 shadow-sm">
-            <div className="min-w-0">
-              <p className="text-sm font-medium">현재 브라우저</p>
-              <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">{browserStatusCopy.description}</p>
-            </div>
-            <Badge variant={browserExtensionStatus === "connected" ? "default" : "secondary"} className="shrink-0">
-              {browserStatusCopy.label}
-            </Badge>
-          </div>
+          <ExtensionBrowserStatusPanel className="mt-3" />
 
-          {devices.length ? (
+          {devices === null ? (
+            <p className="mt-3 rounded-xl bg-card p-3 text-xs text-muted-foreground">등록된 기기를 불러오지 못했습니다. 다시 확인을 눌러 주세요.</p>
+          ) : devices.length ? (
             <div className="mt-3 space-y-2">
               {devices.map((device) => (
                 <div key={device.installationId} className="flex items-center gap-3 rounded-xl bg-card p-3 shadow-sm">
@@ -328,7 +313,7 @@ export function AccountDialog({ user, browserExtensionStatus }: { user: AccountU
               ))}
             </div>
           ) : (
-            <p className="mt-3 rounded-xl bg-card p-3 text-center text-xs text-muted-foreground">연결된 기기가 없습니다.</p>
+            <p className="mt-3 rounded-xl bg-card p-3 text-center text-xs text-muted-foreground">계정에 등록된 기기가 없습니다.</p>
           )}
         </div>
 

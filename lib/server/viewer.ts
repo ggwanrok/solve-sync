@@ -32,11 +32,15 @@ export type ViewerExtensionDevice = {
 export const getViewerExtensions = cache(async () => {
   const { supabase, user } = await getViewer()
   if (!user) return [] as ViewerExtensionDevice[]
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("extension_connections")
     .select("installation_id,device_name,created_at,last_seen_at")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
+  if (error) {
+    console.error("viewer extension devices failed", error)
+    return null
+  }
   return (data || []) as ViewerExtensionDevice[]
 })
 

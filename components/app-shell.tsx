@@ -9,7 +9,7 @@ import { ContributionGraph, type ContributionDay } from "@/components/contributi
 import { MemberProfileDialog } from "@/components/member-profile-dialog"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { AccountDialog, type AccountUser } from "@/components/account-dialog"
-import { ExtensionBrowserBadge, useExtensionBrowserStatus } from "@/components/extension-browser-connection"
+import { ExtensionBrowserHeader, ExtensionConnectionProvider } from "@/components/extension-browser-connection"
 import { NotificationCenter } from "@/components/notification-center"
 import { UserAvatar } from "@/components/user-avatar"
 import { Badge } from "@/components/ui/badge"
@@ -107,8 +107,6 @@ export function AppShell({ children, user, contributions, notificationInbox }: {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [refreshPending, setRefreshPending] = useState(false)
   const pathname = usePathname()
-  const extensionConnectionVersion = (user.extensionDevices || []).map((device) => device.installationId).join(",")
-  const browserExtensionStatus = useExtensionBrowserStatus(user.id, extensionConnectionVersion)
   const refreshLabel = pathname === "/"
     ? "대시보드"
     : pathname === "/friends"
@@ -129,6 +127,7 @@ export function AppShell({ children, user, contributions, notificationInbox }: {
   }
 
   return (
+    <ExtensionConnectionProvider accountId={user.id} devices={user.extensionDevices}>
     <div className="flex min-h-screen bg-background">
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-r border-sidebar-border/70 bg-sidebar lg:block">
         <SidebarContent user={user} contributions={contributions} />
@@ -175,10 +174,10 @@ export function AppShell({ children, user, contributions, notificationInbox }: {
                 <span className="hidden sm:inline">새로고침</span>
               </Button>
             )}
-            <ExtensionBrowserBadge status={browserExtensionStatus} className="hidden md:flex" />
+            <ExtensionBrowserHeader className="hidden md:flex" />
             <NotificationCenter key={`${notificationInbox.unreadCount}:${notificationInbox.items[0]?.id || "empty"}:${notificationInbox.items[0]?.readAt || "unread"}`} inbox={notificationInbox} />
             <ThemeToggle />
-            <AccountDialog user={user} browserExtensionStatus={browserExtensionStatus} />
+            <AccountDialog user={user} />
           </div>
         </header>
 
@@ -190,5 +189,6 @@ export function AppShell({ children, user, contributions, notificationInbox }: {
         </footer>
       </div>
     </div>
+    </ExtensionConnectionProvider>
   )
 }

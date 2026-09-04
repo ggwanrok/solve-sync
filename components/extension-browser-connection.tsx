@@ -1,132 +1,148 @@
 "use client"
 
-import { CircleAlert, LoaderCircle, Puzzle } from "lucide-react"
-import { useEffect, useState } from "react"
+import { CircleAlert, LoaderCircle, Puzzle, RefreshCw } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import {
+  extensionBrowserStatusCopy,
+  registeredExtensionDevicesLabel,
+  requestExtensionBrowserStatus,
+  type ChromeRuntime,
+  type ExtensionBrowserStatus,
+  type ExtensionDevice,
+} from "@/lib/extension-browser-connection"
 import { cn } from "@/lib/utils"
 
-const DEFAULT_EXTENSION_ID = "dgghaooaokpafdhjgieajelgbilacmkd"
-const EXTENSION_RESPONSE_TIMEOUT_MS = 2_000
-
-type ExternalConnectionResponse = {
-  installed?: boolean
-  connected?: boolean
-  authRequired?: boolean
-  unavailable?: boolean
-  accountId?: string
-}
-
-type ChromeRuntime = {
-  lastError?: { message?: string }
-  sendMessage: (
-    extensionId: string,
-    message: { type: "GET_CONNECTION_STATUS" },
-    callback: (response?: ExternalConnectionResponse) => void,
-  ) => void
-}
-
-export type ExtensionBrowserStatus =
-  | "checking"
-  | "connected"
-  | "different-account"
-  | "disconnected"
-  | "not-detected"
-  | "unavailable"
-
-export const extensionBrowserStatusCopy: Record<ExtensionBrowserStatus, { label: string; description: string }> = {
-  checking: {
-    label: "확인 중",
-    description: "현재 브라우저의 SolveSync 확장 프로그램 상태를 확인하고 있습니다.",
-  },
-  connected: {
-    label: "연동됨",
-    description: "현재 브라우저의 확장 프로그램이 이 계정에 연결되어 있습니다.",
-  },
-  "different-account": {
-    label: "다른 계정",
-    description: "현재 브라우저의 확장 프로그램이 다른 SolveSync 계정에 연결되어 있습니다.",
-  },
-  disconnected: {
-    label: "미연동",
-    description: "확장 프로그램은 설치되어 있지만 현재 계정에 연결되어 있지 않습니다.",
-  },
-  "not-detected": {
-    label: "확인 필요",
-    description: "확장 프로그램이 설치되어 있지 않거나 현재 버전에서는 상태 확인을 지원하지 않습니다.",
-  },
-  unavailable: {
-    label: "확인 불가",
-    description: "현재 브라우저의 연동 상태를 확인하지 못했습니다. 잠시 후 새로고침해 주세요.",
-  },
-}
-
-function runtimeFromWindow() {
-  return (window as Window & { chrome?: { runtime?: ChromeRuntime } }).chrome?.runtime
-}
-
-function requestConnectionStatus(runtime: ChromeRuntime) {
-  const extensionId = process.env.NEXT_PUBLIC_SOLVESYNC_EXTENSION_ID || DEFAULT_EXTENSION_ID
-
-  return new Promise<ExternalConnectionResponse | null>((resolve) => {
-    let settled = false
-    const finish = (response: ExternalConnectionResponse | null) => {
-      if (settled) return
-      settled = true
-      window.clearTimeout(timeout)
-      resolve(response)
-    }
-    const timeout = window.setTimeout(() => finish(null), EXTENSION_RESPONSE_TIMEOUT_MS)
-
-    try {
-      runtime.sendMessage(extensionId, { type: "GET_CONNECTION_STATUS" }, (response) => {
-        if (runtime.lastError) return finish(null)
-        finish(response?.installed ? response : null)
-      })
-    } catch {
-      finish(null)
-    }
-  })
-}
-
-export function useExtensionBrowserStatus(accountId: string, connectionVersion: string) {
+function useExtensionBrowserStatus(accountId: string, connectionVersion: string, refreshDevices: () => void) {
   const [status, setStatus] = useState<ExtensionBrowserStatus>("checking")
+  const recheckRef = useRef<() => void>(() => {})
+  const recheck = useCallback(() => recheckRef.current(), [])
 
   useEffect(() => {
     let cancelled = false
-    const check = async () => {
-      setStatus("checking")
-      const runtime = runtimeFromWindow()
-      if (!runtime) {
-        if (!cancelled) setStatus("not-detected")
-        return
-      }
+    let controller: AbortController | null = null
+    let scheduled: ReturnType<typeof setTimeout> | undefined
 
-      const response = await requestConnectionStatus(runtime)
-      if (cancelled) return
-      if (!response) setStatus("not-detected")
-      else if (response.unavailable) setStatus("unavailable")
-      else if (!response.connected) setStatus("disconnected")
-      else if (response.accountId === accountId) setStatus("connected")
-      else setStatus("different-account")
+    const check = (refreshAccount = false) => {
+      if (refreshAccount) refreshDevices()
+      controller?.abort()
+      const requestController = new AbortController()
+      controller = requestController
+      setStatus("checking")
+      const runtime = (window as Window & { chrome?: { runtime?: ChromeRuntime } }).chrome?.runtime
+      return requestExtensionBrowserStatus(runtime, accountId, requestController.signal)
+        .then((nextStatus) => {
+          if (!cancelled && !requestController.signal.aborted) setStatus(nextStatus)
+        })
     }
 
+    const recheckNow = () => {
+      clearTimeout(scheduled)
+      void check(true)
+    }
+    const onReturn = () => {
+      if (document.visibilityState !== "visible") return
+      // Tab visibility and window focus often change together; refresh once for both.
+      clearTimeout(scheduled)
+      scheduled = setTimeout(recheckNow, 150)
+    }
+
+    recheckRef.current = recheckNow
     void check()
+    window.addEventListener("focus", onReturn)
+    window.addEventListener("online", onReturn)
+    document.addEventListener("visibilitychange", onReturn)
     return () => {
       cancelled = true
+      controller?.abort()
+      clearTimeout(scheduled)
+      recheckRef.current = () => {}
+      window.removeEventListener("focus", onReturn)
+      window.removeEventListener("online", onReturn)
+      document.removeEventListener("visibilitychange", onReturn)
     }
-  }, [accountId, connectionVersion])
+  }, [accountId, connectionVersion, refreshDevices])
 
-  return status
+  return { status, recheck }
 }
 
-export function ExtensionBrowserBadge({ status, className }: { status: ExtensionBrowserStatus; className?: string }) {
-  const copy = extensionBrowserStatusCopy[status]
-  const Icon = status === "checking" ? LoaderCircle : status === "unavailable" ? CircleAlert : Puzzle
+type ExtensionConnectionState = {
+  devices: ExtensionDevice[] | null
+  status: ExtensionBrowserStatus
+  recheck: () => void
+}
+
+const ExtensionConnectionContext = createContext<ExtensionConnectionState | null>(null)
+
+export function ExtensionConnectionProvider({ accountId, devices, children }: {
+  accountId: string
+  devices: ExtensionDevice[] | null
+  children: ReactNode
+}) {
+  const router = useRouter()
+  const refreshDevices = useCallback(() => router.refresh(), [router])
+  const connectionVersion = devices?.map((device) => device.installationId).join(",") ?? "unavailable"
+  const { status, recheck } = useExtensionBrowserStatus(accountId, connectionVersion, refreshDevices)
 
   return (
-    <Badge variant="outline" className={cn("gap-1.5", className)} title={copy.description}>
+    <ExtensionConnectionContext.Provider value={{ devices, status, recheck }}>
+      {children}
+    </ExtensionConnectionContext.Provider>
+  )
+}
+
+export function useExtensionConnection() {
+  const connection = useContext(ExtensionConnectionContext)
+  if (!connection) throw new Error("ExtensionConnectionProvider is required")
+  return connection
+}
+
+export function RegisteredExtensionDevicesBadge() {
+  const { devices } = useExtensionConnection()
+  return <Badge variant="secondary">{registeredExtensionDevicesLabel(devices?.length ?? null)}</Badge>
+}
+
+export function ExtensionBrowserBadge({ status, showScope = true }: { status: ExtensionBrowserStatus; showScope?: boolean }) {
+  const copy = extensionBrowserStatusCopy[status]
+  const Icon = status === "checking" ? LoaderCircle : status === "unavailable" || status === "timeout" ? CircleAlert : Puzzle
+
+  return (
+    <Badge variant="outline" className="gap-1.5" title={copy.description}>
       <Icon className={cn("size-3.5", status === "checking" && "animate-spin", status === "connected" ? "text-primary" : "text-muted-foreground")} />
-      현재 브라우저 {copy.label}
+      {showScope ? `현재 브라우저: ${copy.label}` : copy.label}
     </Badge>
+  )
+}
+
+export function ExtensionBrowserHeader({ className }: { className?: string }) {
+  const { status, recheck } = useExtensionConnection()
+  return (
+    <div className={cn("items-center gap-1", className)}>
+      <span role="status"><ExtensionBrowserBadge status={status} /></span>
+      <Button type="button" variant="ghost" size="icon-sm" onClick={recheck} disabled={status === "checking"} aria-label="연결 상태 다시 확인" title="연결 상태 다시 확인">
+        <RefreshCw className={status === "checking" ? "animate-spin" : undefined} />
+      </Button>
+    </div>
+  )
+}
+
+export function ExtensionBrowserStatusPanel({ className }: { className?: string }) {
+  const { status, recheck } = useExtensionConnection()
+  return (
+    <div className={cn("rounded-xl bg-card p-3 shadow-sm", className)}>
+      <div role="status" className="space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-medium">현재 브라우저</p>
+          <ExtensionBrowserBadge status={status} showScope={false} />
+        </div>
+        <p className="text-xs leading-relaxed text-muted-foreground">{extensionBrowserStatusCopy[status].description}</p>
+      </div>
+      <Button type="button" variant="outline" size="sm" className="mt-3" onClick={recheck} disabled={status === "checking"}>
+        <RefreshCw className={status === "checking" ? "animate-spin" : undefined} />
+        {status === "checking" ? "확인 중" : "다시 확인"}
+      </Button>
+    </div>
   )
 }

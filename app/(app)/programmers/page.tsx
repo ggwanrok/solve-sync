@@ -15,7 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { getViewerExtensions } from "@/lib/server/viewer"
+import { ExtensionBrowserStatusPanel, RegisteredExtensionDevicesBadge } from "@/components/extension-browser-connection"
 
 export const metadata: Metadata = {
   title: "프로그래머스 연동 방법 | SolveSync",
@@ -91,18 +91,13 @@ function StepList({ steps }: { steps: typeof installSteps }) {
   )
 }
 
-export default async function ProgrammersGuidePage() {
-  const devices = await getViewerExtensions()
-  const connected = devices.length > 0
-
+export default function ProgrammersGuidePage() {
   return (
     <div className="page-container max-w-4xl">
       <section className="overflow-hidden rounded-3xl bg-card shadow-[0_1px_2px_rgba(15,23,42,0.025),0_14px_40px_rgba(15,23,42,0.045)] ring-1 ring-foreground/[0.055]">
         <div className="p-6 sm:p-8">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant={connected ? "default" : "secondary"}>
-              {connected ? "연동됨" : "현재 미연동"}
-            </Badge>
+            <RegisteredExtensionDevicesBadge />
             <Badge variant="outline">데스크톱 Chrome</Badge>
           </div>
           <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
@@ -126,6 +121,10 @@ export default async function ProgrammersGuidePage() {
               <ExternalLink />
               Chrome 웹 스토어에서 설치
             </Button>
+          </div>
+          <div className="mt-5 rounded-2xl bg-muted/45 p-3">
+            <p className="mb-3 text-xs leading-relaxed text-muted-foreground">등록된 기기에는 다른 브라우저에서 연결한 기기도 포함됩니다. 지금 사용하는 브라우저의 연결 상태는 아래에서 확인하세요.</p>
+            <ExtensionBrowserStatusPanel />
           </div>
         </div>
       </section>
@@ -179,7 +178,7 @@ export default async function ProgrammersGuidePage() {
         <div className="flex items-start gap-3">
           <MonitorSmartphone className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
           <div>
-            <p className="text-sm font-medium">현재 연결된 기기는 마이페이지에서 관리할 수 있어요.</p>
+            <p className="text-sm font-medium">계정에 등록된 기기는 마이페이지에서 관리할 수 있어요.</p>
             <p className="mt-1 text-xs text-muted-foreground">오른쪽 위 프로필 사진을 누르면 기기별 마지막 동기화 시각을 확인하거나 연결을 해제할 수 있습니다.</p>
           </div>
         </div>

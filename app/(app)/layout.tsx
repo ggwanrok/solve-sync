@@ -44,11 +44,11 @@ export default async function AppGroupLayout({ children }: { children: React.Rea
     problemMemoPromptEnabled: profile.problem_memo_prompt_enabled || false,
     avatarUrl: profile.avatar_url,
     pendingFriendRequestCount,
-    extensionDevices: extensions.map((device) => ({
+    extensionDevices: extensions?.map((device) => ({
       installationId: device.installation_id,
       deviceName: device.device_name,
       connectedAt: device.created_at,
       lastSeenAt: device.last_seen_at,
-    })),
+    })) ?? null,
   }} contributions={sidebarContributions} notificationInbox={notificationInbox}>{children}</AppShell>
 }
