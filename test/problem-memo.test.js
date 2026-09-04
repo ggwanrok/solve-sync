@@ -44,10 +44,10 @@ test("문제 메모 필터와 북마크 목록은 독립적으로 검색하고 �
   ]
   const ids = (filter, query = "") => filterProblemNotes(problems, filter, query).map((problem) => problem.problemId)
   const bookmarkIds = (query = "") => filterBookmarkedProblems(problems, query).map((problem) => problem.problemId)
-  assert.deepEqual(ids("all"), ["1", "2", "3", "4"])
-  assert.deepEqual(ids("written"), ["2", "3"])
+  assert.deepEqual(ids("all"), ["3", "1", "2", "4"])
+  assert.deepEqual(ids("written"), ["3", "2"])
   assert.deepEqual(ids("empty"), ["1", "4"])
-  assert.deepEqual(bookmarkIds(), ["1", "3"])
+  assert.deepEqual(bookmarkIds(), ["3", "1"])
   assert.deepEqual(bookmarkIds(" bfs "), ["3"])
   assert.deepEqual(bookmarkIds("문자열"), ["1"])
   assert.deepEqual(bookmarkIds("정렬"), [])
@@ -55,6 +55,29 @@ test("문제 메모 필터와 북마크 목록은 독립적으로 검색하고 �
   problems[0].needsReview = false
   assert.deepEqual(bookmarkIds(), ["3"])
   assert.deepEqual(ids("empty"), ["1", "4"])
+})
+
+test("북마크와 메모 우선순위가 바뀌어도 그룹 내 최신순과 원본 목록을 유지한다", async () => {
+  const { filterProblemNotes, EMPTY_PROBLEM_MEMO } = await import("../lib/problem-memo.ts")
+  const memo = { ...EMPTY_PROBLEM_MEMO, approach: "풀이 기록" }
+  const problems = Object.freeze([
+    { problemId: "1", needsReview: false, memo: null },
+    { problemId: "2", needsReview: false, memo },
+    { problemId: "3", needsReview: true, memo: null },
+    { problemId: "4", needsReview: true, memo },
+    { problemId: "5", needsReview: false, memo: null },
+    { problemId: "6", needsReview: false, memo },
+    { problemId: "7", needsReview: true, memo: null },
+    { problemId: "8", needsReview: true, memo },
+  ])
+  const ids = () => filterProblemNotes(problems, "all", "").map((problem) => problem.problemId)
+  assert.deepEqual(ids(), ["4", "8", "3", "7", "2", "6", "1", "5"])
+  assert.deepEqual(problems.map((problem) => problem.problemId), ["1", "2", "3", "4", "5", "6", "7", "8"])
+
+  problems[1].needsReview = true
+  problems[2].memo = memo
+  problems[3].needsReview = false
+  assert.deepEqual(ids(), ["2", "3", "8", "7", "4", "6", "1", "5"])
 })
 
 test("문제 메모 스키마는 간소화된 다섯 항목만 저장한다", () => {

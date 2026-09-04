@@ -37,12 +37,16 @@ export type MemoFilter = "all" | "written" | "empty"
 
 export function filterProblemNotes(problems: SolvedProblemNote[], filter: MemoFilter, search: string) {
   const query = search.trim().toLocaleLowerCase("ko-KR")
+  // 북마크+메모 → 북마크 → 메모 → 일반 문제. 같은 그룹은 입력된 최신순을 유지한다.
   return problems.filter((problem) => {
     if (filter === "written" && !problem.memo) return false
     if (filter === "empty" && problem.memo) return false
     return !query || [problem.title, problem.problemId, problem.language, problem.memo?.algorithmTags]
       .some((value) => value?.toLocaleLowerCase("ko-KR").includes(query))
-  })
+  }).sort((left, right) =>
+    Number(right.needsReview) - Number(left.needsReview)
+    || Number(Boolean(right.memo)) - Number(Boolean(left.memo)),
+  )
 }
 
 export function filterBookmarkedProblems(problems: SolvedProblemNote[], search: string) {

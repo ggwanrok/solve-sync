@@ -72,7 +72,7 @@ function dateLabel(value: string) {
 export function ProblemWorkspace({ initialProblems }: { initialProblems: SolvedProblemNote[] }) {
   const [tab, setTab] = useState<"notes" | "bookmarks">("notes")
   const [problems, setProblems] = useState(initialProblems)
-  const [selectedId, setSelectedId] = useState(initialProblems[0]?.id || "")
+  const [selectedId, setSelectedId] = useState(() => filterProblemNotes(initialProblems, "all", "")[0]?.id || "")
   const [search, setSearch] = useState("")
   const [filter, setFilter] = useState<MemoFilter>("all")
   const [drafts, setDrafts] = useState<Record<string, ProblemMemoFields>>(() => Object.fromEntries(
@@ -108,8 +108,6 @@ export function ProblemWorkspace({ initialProblems }: { initialProblems: SolvedP
 
   const selected = problems.find((problem) => problem.id === selectedId) || problems[0] || null
   const draft = selected ? drafts[selected.id] || initialDraft(selected) : null
-  const writtenCount = problems.filter((problem) => problem.memo).length
-  const reviewCount = problems.filter((problem) => problem.needsReview).length
   const filteredProblems = useMemo(() => filterProblemNotes(problems, filter, search), [filter, problems, search])
 
   function updateDraft<K extends keyof ProblemMemoFields>(key: K, value: ProblemMemoFields[K]) {
@@ -167,12 +165,6 @@ export function ProblemWorkspace({ initialProblems }: { initialProblems: SolvedP
 
   return (
     <div className="page-container-wide">
-      <div className="flex flex-wrap gap-2 text-xs sm:justify-end">
-        <Badge variant="outline">풀이 {problems.length}개</Badge>
-        <Badge variant="secondary">메모 {writtenCount}개</Badge>
-        <Badge variant="outline">북마크 {reviewCount}개</Badge>
-      </div>
-
       <Tabs value={tab} onValueChange={(value) => {
         if (value === "notes" || value === "bookmarks") setTab(value)
       }} className="gap-5">

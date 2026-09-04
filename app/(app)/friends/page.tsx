@@ -71,7 +71,6 @@ export default async function FriendsPage() {
 
   return (
     <div className="page-container">
-      <p className="page-description mt-0">@아이디로 친구를 찾고 함께 성장하세요.</p>
       <FriendRequestForm />
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">

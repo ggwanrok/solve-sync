@@ -48,7 +48,7 @@ test("1000개를 넘는 풀이에서도 오래된 복습 문제와 메모를 빠
   const problems = await loadProblemNotes(fixtureClient(), "viewer")
   assert.equal(problems.length, 1005)
   assert.equal(new Set(problems.map((problem) => problem.id)).size, 1005)
-  assert.deepEqual(filterBookmarkedProblems(problems, "").map((problem) => problem.problemId), ["1003", "1004"])
+  assert.deepEqual(filterBookmarkedProblems(problems, "").map((problem) => problem.problemId), ["1004", "1003"])
   assert.equal(problems[1003].memo, null)
   assert.equal(problems[1004].memo.approach, "큐 사용")
   assert.equal(problems[1].needsReview, false)
