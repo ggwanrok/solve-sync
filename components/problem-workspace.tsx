@@ -4,7 +4,6 @@ import { useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import {
   ArrowLeft,
-  BookOpenCheck,
   Bookmark,
   Check,
   ExternalLink,
@@ -168,14 +167,11 @@ export function ProblemWorkspace({ initialProblems }: { initialProblems: SolvedP
 
   return (
     <div className="page-container-wide">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight sm:text-3xl"><BookOpenCheck className="size-6 text-primary" />문제</h1>
-        <div className="flex flex-wrap gap-2 text-xs">
-          <Badge variant="outline">풀이 {problems.length}개</Badge>
-          <Badge variant="secondary">메모 {writtenCount}개</Badge>
-          <Badge variant="outline">북마크 {reviewCount}개</Badge>
-        </div>
-      </header>
+      <div className="flex flex-wrap gap-2 text-xs sm:justify-end">
+        <Badge variant="outline">풀이 {problems.length}개</Badge>
+        <Badge variant="secondary">메모 {writtenCount}개</Badge>
+        <Badge variant="outline">북마크 {reviewCount}개</Badge>
+      </div>
 
       <Tabs value={tab} onValueChange={(value) => {
         if (value === "notes" || value === "bookmarks") setTab(value)

@@ -6,7 +6,6 @@ import { Card, CardContent } from "@/components/ui/card"
 export default function ProblemNotesError({ reset }: { reset: () => void }) {
   return (
     <div className="page-container max-w-3xl">
-      <h1 className="text-2xl font-bold">문제</h1>
       <Card>
         <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
           <p role="alert" className="text-sm text-muted-foreground">문제 메모와 북마크를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p>

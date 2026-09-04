@@ -154,17 +154,19 @@ export function AppShell({ children, user, contributions, notificationInbox }: {
             <Menu className="size-5" />
           </Button>
 
-          <div className="flex items-center gap-2 lg:hidden">
-            <Logo showText={false} />
-          </div>
-
-          {refreshLabel && (
-            <p className="hidden text-sm font-semibold tracking-[-0.015em] lg:block">
-              {refreshLabel}
-            </p>
+          {!refreshLabel && (
+            <div className="flex items-center gap-2 lg:hidden">
+              <Logo showText={false} />
+            </div>
           )}
 
-          <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+          {refreshLabel && (
+            <h1 className="min-w-0 truncate text-sm font-semibold tracking-[-0.015em]">
+              {refreshLabel}
+            </h1>
+          )}
+
+          <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
             {refreshLabel && (
               <Button
                 type="button"

@@ -123,10 +123,7 @@ export default async function StudyListPage({
   return (
     <div className="page-container">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="page-heading">스터디룸</h1>
-          <p className="page-description">{hasSearchFilters ? `${directoryLabel} 검색 결과 ${total}개` : `${directoryLabel} ${total}개`} · 함께 공부할 방을 찾아보세요.</p>
-        </div>
+        <p className="page-description mt-0">{hasSearchFilters ? `${directoryLabel} 검색 결과 ${total}개` : `${directoryLabel} ${total}개`} · 함께 공부할 방을 찾아보세요.</p>
         <CreateStudyDialog />
       </div>
 
