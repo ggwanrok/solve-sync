@@ -117,14 +117,11 @@ export function ExtensionBrowserBadge({ status, showScope = true }: { status: Ex
 }
 
 export function ExtensionBrowserHeader({ className }: { className?: string }) {
-  const { status, recheck } = useExtensionConnection()
+  const { status } = useExtensionConnection()
   return (
-    <div className={cn("items-center gap-1", className)}>
-      <span role="status"><ExtensionBrowserBadge status={status} /></span>
-      <Button type="button" variant="ghost" size="icon-sm" onClick={recheck} disabled={status === "checking"} aria-label="연결 상태 다시 확인" title="연결 상태 다시 확인">
-        <RefreshCw className={status === "checking" ? "animate-spin" : undefined} />
-      </Button>
-    </div>
+    <span role="status" className={className}>
+      <ExtensionBrowserBadge status={status} />
+    </span>
   )
 }
 
