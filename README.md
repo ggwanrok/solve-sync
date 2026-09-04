@@ -11,7 +11,7 @@ SolveSync(솔브싱크)는 프로그래머스 풀이 기록을 자동으로 모�
 ## 주요 기능
 
 - **풀이 자동 기록** — 프로그래머스에서 정답을 제출하면 문제, 난이도, 언어, 풀이 시각과 소요 시간을 자동으로 저장합니다.
-- **성장 대시보드** — 누적 풀이와 최근 활동, 기여 그래프로 알고리즘 학습 흐름을 확인합니다.
+- **성장 대시보드** — 누적 풀이와 최근 활동, 기여 그래프로 알고리즘 학습 흐름을 확인합니다. 전체 풀이 기록과 랭킹을 각각 10개씩 페이지로 넘겨 볼 수 있습니다.
 - **유형별 랭킹** — 알고리즘과 SQL 점수를 각각 산출하고 `알고리즘 점수 + SQL 점수 / 2`로 순위를 계산합니다.
 - **친구 연결** — 고유한 `@핸들`로 사용자를 찾고 친구 요청을 주고받습니다.
 - **스터디룸** — 일간 또는 주간 목표와 최소 문제 난이도를 정하고 멤버별 달성 현황을 함께 확인합니다.
@@ -108,6 +108,8 @@ npm install
 기존 데이터베이스를 업데이트하는 경우 다중 기기 연결을 위해 먼저 `supabase/extension-multi-device.sql`을 실행하고, 계정당 연결을 5개로 제한하려면 `supabase/extension-connection-limit.sql`을 이어서 실행합니다. 익스텐션에서 문제 난이도와 알고리즘/SQL 유형을 저장하려면 `supabase/solve-event-difficulty.sql`, `supabase/solve-event-problem-type.sql`을 차례로 실행합니다. 문제 메모 항목을 간소화하려면 `supabase/simplify-problem-memos.sql`을 실행하고, 항목별 글자 수 제한에는 `supabase/problem-memo-length-limits.sql`, 풀이 성공 후 메모 열기 설정에는 `supabase/problem-memo-prompt.sql`을 이어서 실행합니다. 스터디룸 성능 개선을 적용하려면 `supabase/study-room-directory-pagination.sql`과 `supabase/study-room-detail-performance.sql`을 순서대로 실행한 뒤, 난이도 목표 기능을 위한 `supabase/study-difficulty-filter.sql`과 목록 필터를 위한 `supabase/study-directory-filters.sql`을 차례대로 실행합니다. 친구 삭제와 프로필 사진 저장소를 추가하려면 `supabase/profile-management.sql`을 실행하고, 친구 잔디 조회에는 `supabase/friend-contributions.sql`, 보낸 친구 요청 취소에는 `supabase/cancel-friend-request.sql`을 실행합니다. 프로필 한 줄 소개와 전체 랭킹 집계를 적용하려면 `supabase/profile-bio.sql`, `supabase/dashboard-ranking.sql` 순서로 실행합니다. 스터디 푸시 알림에는 `supabase/study-push-notifications.sql`을 실행하며, 기존 설치의 콕 재전송 제한을 10분으로 바꾸고 목표 달성자 제한을 없애려면 `supabase/study-poke-cooldown.sql`을 추가로 실행합니다. 앱 내 알림함과 오늘의 풀이왕에는 `supabase/in-app-study-notifications.sql`을 실행하고, 풀이왕을 목표 조건과 분리하려면 `supabase/study-daily-champion-independent-of-goal.sql`을 이어서 실행합니다. 목표 알림을 오후 6시, 목표 미달 알림을 다음 오전 6시에 분리하려면 `supabase/study-notification-schedule.sql`을 실행하고, 기존 설치에서 기간 정리 알림을 중단하려면 `supabase/remove-study-period-summary.sql`을 이어서 실행합니다. 그 밖의 필요한 기능 SQL을 적용한 다음 `supabase/security-hardening.sql`을 마지막에 실행합니다. 스터디 라운지 메시지를 실시간으로 동기화하려면 `supabase/study-comments-realtime.sql`을 실행합니다.
 
 기존 DB에서 SQL 풀이를 스터디 집계에 포함하고 유형별 랭킹 산식을 적용하려면 `supabase/solve-event-problem-type.sql` 적용 후 `supabase/study-difficulty-filter.sql`, `supabase/dashboard-ranking.sql`을 순서대로 다시 실행합니다. 랭킹 산식은 유형별로 난이도 상위 100문제와 풀이 보너스를 독립 계산한 뒤 `알고리즘 점수 + (SQL 점수 / 2)`를 최종 점수로 사용하며, SQL 점수 나눗셈의 소수점은 버립니다.
+
+대시보드에서 전체 풀이 기록과 랭킹을 10개씩 조회하려면 `supabase/dashboard-pagination.sql`을 실행합니다. 기존 `dashboard-ranking.sql` 적용 이후에 실행하며, 페이지 조회 함수와 전체 풀이 통계 함수, 정렬용 인덱스를 추가합니다. 새 설치용 `schema.sql`에는 포함되어 있습니다. 페이지 조회 DB 통합 테스트는 역할과 테이블이 없는 임시 PostgreSQL에 `DASHBOARD_TEST_DATABASE_URL`을 지정한 뒤 `node --test test/dashboard-pagination.test.js`로 실행할 수 있으며, 테스트 데이터는 롤백됩니다.
 
 ### 3. Google 로그인 구성
 

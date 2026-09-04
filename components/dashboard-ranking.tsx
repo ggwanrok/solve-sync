@@ -1,34 +1,18 @@
 "use client"
 
 import { BarChart3, Crown, Gauge, Trophy } from "lucide-react"
+import { loadDashboardRanking } from "@/app/dashboard-actions"
+import { DashboardPagination } from "@/components/dashboard-pagination"
 import { DifficultyBadge } from "@/components/difficulty-badge"
 import { MemberProfileDialog } from "@/components/member-profile-dialog"
 import { RankingFormulaHelp } from "@/components/ranking-formula-help"
 import { UserAvatar } from "@/components/user-avatar"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
-
-export type DashboardRankingEntry = {
-  rankingPosition: number
-  userId: string
-  handle: string
-  nickname: string
-  bio: string
-  avatarUrl: string | null
-  rankingScore: number
-  algorithmScore: number
-  sqlScore: number
-  algorithmSolved: number
-  sqlSolved: number
-  totalSolved: number
-  levelSolved: [number, number, number, number, number, number]
-  unknownSolved: number
-}
-
-export type ViewerRanking = Omit<DashboardRankingEntry, "rankingPosition"> & {
-  rankingPosition: number | null
-}
+import type { DashboardRankingPage, DashboardResult, ViewerRanking } from "@/lib/dashboard"
+import { useDashboardPage } from "@/lib/use-dashboard-page"
 
 const rankStyle: Record<number, string> = {
   1: "bg-amber-400/15 text-amber-600 dark:text-amber-300",
@@ -160,54 +144,62 @@ export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
   )
 }
 
-export function LeaderboardCard({ entries, viewerId }: { entries: DashboardRankingEntry[]; viewerId: string }) {
+export function LeaderboardCard({ initialResult, viewerId }: { initialResult: DashboardResult<DashboardRankingPage>; viewerId: string }) {
+  const { data, error, pending, loadPage } = useDashboardPage(initialResult, loadDashboardRanking)
+  const entries = data?.entries || []
+
   return (
-    <Card className="h-full">
+    <Card className="h-full min-w-0" aria-busy={pending}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2"><Trophy className="size-4.5 text-primary" />전체 랭킹</CardTitle>
-        <CardDescription>랭킹 점수 상위 10명</CardDescription>
+        <CardDescription>{data ? `총 ${data.totalCount.toLocaleString("ko-KR")}명 · 순위순으로 10명씩` : "순위순으로 10명씩"}</CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-1">
-        {entries.length ? entries.map((entry) => {
-          const isViewer = entry.userId === viewerId
-          return (
-            <MemberProfileDialog
-              key={entry.userId}
-              profile={{
-                id: entry.userId,
-                name: entry.nickname || entry.handle,
-                handle: entry.handle,
-                bio: entry.bio,
-                avatarUrl: entry.avatarUrl,
-              }}
-              badgeLabel={isViewer ? "나" : `전체 ${formatScore(entry.rankingPosition)}위`}
-              ranking={entry}
-              triggerClassName={cn(
-                "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left outline-none transition-colors hover:bg-muted/65 focus-visible:ring-2 focus-visible:ring-ring",
-                isViewer && "bg-primary/[0.075]",
-              )}
-            >
-              <div className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg text-xs font-bold tabular-nums", rankStyle[entry.rankingPosition] || "text-muted-foreground")}>
-                {entry.rankingPosition}
-              </div>
-              <UserAvatar name={entry.nickname || entry.handle} imageUrl={entry.avatarUrl} className="size-9" />
-              <div className="min-w-0 flex-1">
-                <div className="flex min-w-0 items-center gap-1.5">
-                  <p className="truncate text-sm font-medium">{entry.nickname || entry.handle}</p>
-                  {isViewer && <Badge variant="secondary" className="h-4 shrink-0 px-1.5 text-[9px]">나</Badge>}
+      <CardContent className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col gap-1">
+          {entries.length ? entries.map((entry) => {
+            const isViewer = entry.userId === viewerId
+            return (
+              <MemberProfileDialog
+                key={entry.userId}
+                profile={{
+                  id: entry.userId,
+                  name: entry.nickname || entry.handle,
+                  handle: entry.handle,
+                  bio: entry.bio,
+                  avatarUrl: entry.avatarUrl,
+                }}
+                badgeLabel={isViewer ? "나" : `전체 ${formatScore(entry.rankingPosition)}위`}
+                ranking={entry}
+                triggerClassName={cn(
+                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left outline-none transition-colors hover:bg-muted/65 focus-visible:ring-2 focus-visible:ring-ring",
+                  isViewer && "bg-primary/[0.075]",
+                )}
+              >
+                <div className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg text-xs font-bold tabular-nums", rankStyle[entry.rankingPosition] || "text-muted-foreground")}>
+                  {entry.rankingPosition}
                 </div>
-                {entry.bio && <p className="truncate text-[11px] text-muted-foreground">{entry.bio}</p>}
-              </div>
-              <p className="shrink-0 text-sm font-semibold tabular-nums">{formatScore(entry.rankingScore)}<span className="ml-0.5 text-[10px] font-normal text-muted-foreground">점</span></p>
-            </MemberProfileDialog>
-          )
-        }) : (
-          <div className="flex min-h-64 flex-col items-center justify-center rounded-xl bg-muted/45 px-6 text-center">
-            <Trophy className="mb-3 size-8 text-muted-foreground/55" />
-            <p className="text-sm font-medium">아직 집계된 랭킹이 없습니다.</p>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">첫 풀이가 기록되면 랭킹이 시작돼요.</p>
-          </div>
-        )}
+                <UserAvatar name={entry.nickname || entry.handle} imageUrl={entry.avatarUrl} className="size-9" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <p className="truncate text-sm font-medium">{entry.nickname || entry.handle}</p>
+                    {isViewer && <Badge variant="secondary" className="h-4 shrink-0 px-1.5 text-[9px]">나</Badge>}
+                  </div>
+                  {entry.bio && <p className="truncate text-[11px] text-muted-foreground">{entry.bio}</p>}
+                </div>
+                <p className="shrink-0 text-sm font-semibold tabular-nums">{formatScore(entry.rankingScore)}<span className="ml-0.5 text-[10px] font-normal text-muted-foreground">점</span></p>
+              </MemberProfileDialog>
+            )
+          }) : data ? (
+            <div className="flex min-h-64 flex-col items-center justify-center rounded-xl bg-muted/45 px-6 text-center">
+              <Trophy className="mb-3 size-8 text-muted-foreground/55" />
+              <p className="text-sm font-medium">아직 집계된 랭킹이 없습니다.</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">첫 풀이가 기록되면 랭킹이 시작돼요.</p>
+            </div>
+          ) : null}
+        </div>
+        {error && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
+        {!data && <Button type="button" variant="outline" className="mt-3 self-center" disabled={pending} onClick={() => loadPage(1)}>다시 시도</Button>}
+        {data && <DashboardPagination page={data.page} totalCount={data.totalCount} pending={pending} label="전체 랭킹" onPageChange={loadPage} />}
       </CardContent>
     </Card>
   )
