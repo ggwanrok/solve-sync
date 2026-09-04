@@ -44,11 +44,11 @@ function fixtureClient(failingTable) {
 
 test("1000개를 넘는 풀이에서도 오래된 복습 문제와 메모를 빠짐없이 가져온다", async () => {
   const { loadProblemNotes } = await import("../lib/server/problem-notes.ts")
-  const { filterProblemNotes } = await import("../lib/problem-memo.ts")
+  const { filterBookmarkedProblems } = await import("../lib/problem-memo.ts")
   const problems = await loadProblemNotes(fixtureClient(), "viewer")
   assert.equal(problems.length, 1005)
   assert.equal(new Set(problems.map((problem) => problem.id)).size, 1005)
-  assert.deepEqual(filterProblemNotes(problems, "review", "").map((problem) => problem.problemId), ["1003", "1004"])
+  assert.deepEqual(filterBookmarkedProblems(problems, "").map((problem) => problem.problemId), ["1003", "1004"])
   assert.equal(problems[1003].memo, null)
   assert.equal(problems[1004].memo.approach, "큐 사용")
   assert.equal(problems[1].needsReview, false)

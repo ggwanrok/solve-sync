@@ -35,6 +35,13 @@ export function DashboardSolvesCard({ initialResult }: { initialResult: Dashboar
         <div className="flex flex-1 flex-col gap-1.5">
           {data?.entries.map((solve) => (
             <div key={solve.id} className="flex min-w-0 items-center gap-1">
+              <ProblemReviewButton
+                compact
+                title={solve.title || `문제 ${solve.problem_id}`}
+                needsReview={solve.needsReview}
+                pending={pending || reviews.pendingIds.has(solve.problem_id)}
+                onClick={() => reviews.toggle(solve.problem_id, solve.needsReview)}
+              />
               <a href={solve.url} target="_blank" rel="noreferrer" className="block min-w-0 flex-1 rounded-lg px-3 py-2.5 transition-colors hover:bg-muted/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <div className="flex min-w-0 items-center gap-2">
                   <p className="min-w-0 flex-1 truncate text-sm font-medium">{solve.title || `문제 ${solve.problem_id}`}</p>
@@ -45,13 +52,6 @@ export function DashboardSolvesCard({ initialResult }: { initialResult: Dashboar
                 <p className="text-xs text-muted-foreground">{solve.language && <>{solve.language} · </>}{new Date(solve.accepted_at).toLocaleDateString("ko-KR", { timeZone: APP_TIME_ZONE })}</p>
                 <span className="sr-only">새 탭에서 문제 열기</span>
               </a>
-              <ProblemReviewButton
-                compact
-                title={solve.title || `문제 ${solve.problem_id}`}
-                needsReview={solve.needsReview}
-                pending={pending || reviews.pendingIds.has(solve.problem_id)}
-                onClick={() => reviews.toggle(solve.problem_id, solve.needsReview)}
-              />
             </div>
           ))}
           {data && !data.entries.length && <p className="py-8 text-center text-sm text-muted-foreground">아직 수집된 풀이가 없습니다.</p>}

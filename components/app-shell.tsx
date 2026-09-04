@@ -1,6 +1,6 @@
 "use client"
 
-import { LayoutDashboard, Users, BookOpen, Chrome, Menu, NotebookPen, RefreshCw, LoaderCircle } from "lucide-react"
+import { LayoutDashboard, Users, BookOpen, BookOpenCheck, Chrome, Menu, RefreshCw, LoaderCircle } from "lucide-react"
 import Link, { useLinkStatus } from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useState } from "react"
@@ -25,7 +25,7 @@ const nav = [
   { href: "/", label: "대시보드", icon: LayoutDashboard },
   { href: "/friends", label: "친구", icon: Users },
   { href: "/study", label: "스터디룸", icon: BookOpen },
-  { href: "/notes", label: "문제 메모", icon: NotebookPen },
+  { href: "/notes", label: "문제", icon: BookOpenCheck },
 ]
 
 function NavigationProgress() {
@@ -124,7 +124,7 @@ export function AppShell({ children, user, contributions, notificationInbox }: {
       : pathname.startsWith("/study")
         ? "스터디룸"
         : pathname.startsWith("/notes")
-          ? "문제 메모"
+          ? "문제"
         : pathname === "/programmers"
           ? "연동 안내"
         : null
@@ -143,7 +143,7 @@ export function AppShell({ children, user, contributions, notificationInbox }: {
       <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
         <DialogContent className="inset-y-0 left-0 top-0 h-dvh w-72 max-w-[85vw] translate-x-0 translate-y-0 gap-0 rounded-none border-r border-sidebar-border/70 bg-sidebar p-0 sm:max-w-72 sm:p-0 data-open:zoom-in-100 data-closed:zoom-out-100 data-open:slide-in-from-left-4 data-closed:slide-out-to-left-4">
           <DialogTitle className="sr-only">메뉴</DialogTitle>
-          <DialogDescription className="sr-only">대시보드, 친구, 스터디룸과 문제 메모로 이동합니다.</DialogDescription>
+          <DialogDescription className="sr-only">대시보드, 친구, 스터디룸과 문제로 이동합니다.</DialogDescription>
           <SidebarContent user={user} contributions={contributions} onNavigate={() => setMobileOpen(false)} />
         </DialogContent>
       </Dialog>

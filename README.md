@@ -111,7 +111,7 @@ npm install
 
 대시보드에서 전체 풀이 기록과 랭킹을 10개씩 조회하려면 `supabase/dashboard-pagination.sql`을 실행합니다. 기존 `dashboard-ranking.sql` 적용 이후에 실행하며, 페이지 조회 함수와 전체 풀이 통계 함수, 정렬용 인덱스를 추가합니다. 새 설치용 `schema.sql`에는 포함되어 있습니다. 페이지 조회 DB 통합 테스트는 역할과 테이블이 없는 임시 PostgreSQL에 `DASHBOARD_TEST_DATABASE_URL`을 지정한 뒤 `node --test test/dashboard-pagination.test.js`로 실행할 수 있으며, 테스트 데이터는 롤백됩니다.
 
-풀이 기록과 문제 메모에서 다시 풀 문제를 지정하려면 `supabase/problem-reviews.sql`을 실행합니다. 복습 지정은 메모와 별도로 저장되며, 문제 메모에서 **전체 · 작성 · 미작성 · 다시 풀 문제**로 필터링할 수 있습니다. 메모를 작성하거나 수정해도 복습 지정은 유지됩니다. 새 설치용 `schema.sql`에도 포함되어 있습니다.
+풀이 기록과 문제 메모에서 다시 풀 문제를 지정하려면 `supabase/problem-reviews.sql`을 실행합니다. 복습 지정은 메모와 별도로 저장되며, **문제** 메뉴의 **문제 메모 · 북마크** 탭으로 나누어 관리합니다. 문제 메모에서는 **전체 · 작성 · 미작성**으로 필터링하고, 북마크에서는 지정한 문제만 모아 검색하고 해제할 수 있습니다. 메모를 작성하거나 수정해도 복습 지정은 유지됩니다. 새 설치용 `schema.sql`에도 포함되어 있습니다.
 
 ### 3. Google 로그인 구성
 

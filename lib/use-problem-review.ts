@@ -16,7 +16,7 @@ export function useProblemReview(onSaved: (problemId: string, needsReview: boole
         return
       }
       onSaved(problemId, result.needsReview)
-      toast.success(result.needsReview ? "다시 풀 문제로 지정했습니다." : "다시 풀 문제 지정을 해제했습니다.")
+      toast.success(result.needsReview ? "북마크에 추가했습니다." : "북마크를 해제했습니다.")
     } catch {
       toast.error("복습 지정을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.")
     } finally {

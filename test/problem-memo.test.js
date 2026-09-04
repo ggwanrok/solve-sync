@@ -34,8 +34,8 @@ test("허용하지 않는 문제 ID를 걸러낸다", async () => {
   assert.equal(normalizeProblemMemoInput({ problemId: "not-a-problem", ...EMPTY_PROBLEM_MEMO }), null)
 })
 
-test("복습 지정은 메모 작성 여부와 독립적으로 필터링한다", async () => {
-  const { filterProblemNotes, EMPTY_PROBLEM_MEMO } = await import("../lib/problem-memo.ts")
+test("문제 메모 필터와 북마크 목록은 독립적으로 검색하고 분류한다", async () => {
+  const { filterProblemNotes, filterBookmarkedProblems, EMPTY_PROBLEM_MEMO } = await import("../lib/problem-memo.ts")
   const problems = [
     { problemId: "1", title: "문자열", needsReview: true, memo: null },
     { problemId: "2", title: "정렬", needsReview: false, memo: { ...EMPTY_PROBLEM_MEMO, algorithmTags: "정렬" } },
@@ -43,16 +43,17 @@ test("복습 지정은 메모 작성 여부와 독립적으로 필터링한다",
     { problemId: "4", title: "집계", needsReview: false, memo: null },
   ]
   const ids = (filter, query = "") => filterProblemNotes(problems, filter, query).map((problem) => problem.problemId)
+  const bookmarkIds = (query = "") => filterBookmarkedProblems(problems, query).map((problem) => problem.problemId)
   assert.deepEqual(ids("all"), ["1", "2", "3", "4"])
   assert.deepEqual(ids("written"), ["2", "3"])
   assert.deepEqual(ids("empty"), ["1", "4"])
-  assert.deepEqual(ids("review"), ["1", "3"])
-  assert.deepEqual(ids("review", " bfs "), ["3"])
-  assert.deepEqual(ids("review", "문자열"), ["1"])
-  assert.deepEqual(ids("review", "정렬"), [])
+  assert.deepEqual(bookmarkIds(), ["1", "3"])
+  assert.deepEqual(bookmarkIds(" bfs "), ["3"])
+  assert.deepEqual(bookmarkIds("문자열"), ["1"])
+  assert.deepEqual(bookmarkIds("정렬"), [])
 
   problems[0].needsReview = false
-  assert.deepEqual(ids("review"), ["3"])
+  assert.deepEqual(bookmarkIds(), ["3"])
   assert.deepEqual(ids("empty"), ["1", "4"])
 })
 

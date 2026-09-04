@@ -1,13 +1,13 @@
 import type { Metadata } from "next"
-import { ProblemNotesWorkspace } from "@/components/problem-notes-workspace"
+import { ProblemWorkspace } from "@/components/problem-workspace"
 import { getViewerProblemNotes } from "@/lib/server/viewer"
 
 export const metadata: Metadata = {
-  title: "문제 메모 | SolveSync",
-  description: "내가 풀이한 문제의 알고리즘 테마, 접근 방법과 배운 점을 기록하고 복습합니다.",
+  title: "문제 | SolveSync",
+  description: "풀이한 문제의 메모를 기록하고 북마크한 문제를 모아 복습합니다.",
 }
 
-export default async function ProblemNotesPage() {
+export default async function ProblemsPage() {
   const problems = await getViewerProblemNotes()
-  return <ProblemNotesWorkspace initialProblems={problems} />
+  return <ProblemWorkspace initialProblems={problems} />
 }
