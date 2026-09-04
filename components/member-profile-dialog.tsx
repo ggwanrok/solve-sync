@@ -75,11 +75,11 @@ export function MemberProfileDialog({
           <DialogDescription>{profile.name}님의 프로필과 풀이 현황입니다.</DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col items-center rounded-2xl bg-primary/[0.065] px-5 py-7 text-center sm:flex-row sm:text-left">
+        <div className="flex flex-col items-center rounded-2xl bg-muted/60 px-5 py-7 text-center sm:flex-row sm:text-left">
           <UserAvatar name={profile.name} imageUrl={profile.avatarUrl} className="size-24 ring-4 ring-background" />
           <div className="mt-4 min-w-0 sm:ml-5 sm:mt-0">
             <p className="truncate text-2xl font-bold tracking-tight">{profile.name}</p>
-            <p className="mt-0.5 truncate text-sm text-primary">@{profile.handle}</p>
+            <p className="mt-0.5 truncate text-sm text-muted-foreground">@{profile.handle}</p>
             {badgeLabel && <Badge variant="secondary" className="mt-3">{badgeLabel}</Badge>}
             <p className="mt-3 text-sm leading-6 text-muted-foreground">
               {profile.bio || "아직 한 줄 소개가 없어요."}
@@ -90,7 +90,7 @@ export function MemberProfileDialog({
         {ranking && (
           <div className="rounded-2xl bg-muted/45 p-4">
             <div className="mb-4 flex items-center gap-2.5">
-              <span className="flex size-9 items-center justify-center rounded-lg bg-accent text-primary">
+              <span className="flex size-9 items-center justify-center rounded-lg bg-accent text-muted-foreground">
                 <Trophy className="size-4.5" aria-hidden="true" />
               </span>
               <div>
@@ -153,7 +153,7 @@ export function MemberProfileDialog({
           <div className="rounded-2xl bg-muted/45 p-4">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
-                <span className="flex size-9 items-center justify-center rounded-lg bg-accent text-primary">
+                <span className="flex size-9 items-center justify-center rounded-lg bg-accent text-muted-foreground">
                   <Sprout className="size-4.5" aria-hidden="true" />
                 </span>
                 <div>

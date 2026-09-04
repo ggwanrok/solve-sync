@@ -176,7 +176,7 @@ export function ProblemWorkspace({ initialProblems }: { initialProblems: SolvedP
           {!problems.length ? (
             <Card>
               <CardContent className="flex flex-col items-center gap-4 py-14 text-center">
-                <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10"><NotebookPen className="size-7 text-primary" /></div>
+                <div className="flex size-14 items-center justify-center rounded-2xl bg-muted"><NotebookPen className="size-7 text-muted-foreground" /></div>
                 <div><p className="font-semibold">아직 기록된 풀이가 없습니다</p><p className="mt-1 text-sm text-muted-foreground">프로그래머스 연동 후 문제를 풀면 이곳에서 바로 메모할 수 있어요.</p></div>
                 <Button render={<Link href="/programmers" />} nativeButton={false}>프로그래머스 연동하기</Button>
               </CardContent>
@@ -201,13 +201,13 @@ export function ProblemWorkspace({ initialProblems }: { initialProblems: SolvedP
                   {filteredProblems.length ? (
                     <div className="flex flex-col gap-1">
                       {filteredProblems.map((problem) => (
-                        <div key={problem.id} className={cn("flex min-w-0 items-center rounded-xl pr-1", selected?.id === problem.id && "bg-primary/10")}>
+                        <div key={problem.id} className={cn("flex min-w-0 items-center rounded-xl pr-1", selected?.id === problem.id && "bg-muted")}>
                           <button
                             type="button"
                             onClick={() => selectProblem(problem.id)}
                             className="group flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2.5 py-3 text-left transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                           >
-                            <span className={cn("flex size-7 shrink-0 items-center justify-center rounded-full", problem.memo ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>{problem.memo ? <Check className="size-3.5" /> : <NotebookPen className="size-3.5" />}</span>
+                            <span className={cn("flex size-7 shrink-0 items-center justify-center rounded-full", problem.memo ? "bg-card text-primary" : "bg-muted text-muted-foreground")}>{problem.memo ? <Check className="size-3.5" /> : <NotebookPen className="size-3.5" />}</span>
                             <span className="min-w-0 flex-1">
                               <span className="block truncate text-sm font-medium">{problem.title}</span>
                               <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{problem.language || "언어 미확인"} · {dateLabel(problem.acceptedAt)}{dirtyIds.has(problem.id) ? " · 저장 전" : ""}</span>
@@ -253,7 +253,7 @@ export function ProblemWorkspace({ initialProblems }: { initialProblems: SolvedP
                     <CardHeader className="border-b">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
-                          <CardTitle className="flex items-center gap-2"><Sparkles className="size-4 text-primary" />풀이 기록</CardTitle>
+                          <CardTitle className="flex items-center gap-2"><Sparkles className="size-4 text-muted-foreground" />풀이 기록</CardTitle>
                           <CardDescription className="mt-1">알고리즘 테마와 다시 풀 때 필요한 핵심만 간결하게 남겨보세요.</CardDescription>
                         </div>
                         {selected.memo && <Badge variant="outline">최근 수정 {dateLabel(selected.memo.updatedAt)}</Badge>}
@@ -293,7 +293,7 @@ export function ProblemWorkspace({ initialProblems }: { initialProblems: SolvedP
                       </div>
 
                       <div className="flex flex-col gap-3 border-t pt-5 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex items-start gap-2 text-xs text-muted-foreground"><Lightbulb className="mt-0.5 size-3.5 shrink-0 text-primary" /><span>한 문제당 하나의 메모가 유지되며, 다시 저장하면 기존 메모가 수정됩니다.</span></div>
+                        <div className="flex items-start gap-2 text-xs text-muted-foreground"><Lightbulb className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" /><span>한 문제당 하나의 메모가 유지되며, 다시 저장하면 기존 메모가 수정됩니다.</span></div>
                         <Button type="button" onClick={save} disabled={saves.keys.has(selected.id)} aria-busy={saves.keys.has(selected.id)} className="hidden sm:min-w-28 md:inline-flex">
                           {saves.keys.has(selected.id) ? <><Loader2 className="animate-spin" />저장 중</> : dirtyIds.has(selected.id) ? <><NotebookPen />저장</> : <><Check />저장</>}
                         </Button>

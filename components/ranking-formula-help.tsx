@@ -35,7 +35,7 @@ export function RankingFormulaHelp() {
               <p className="rounded-lg bg-muted/55 px-3 py-2 font-mono text-[11px]">
                 풀이 보너스 = 반올림[200 × (1 − 0.997<sup>총 풀이 수</sup>)]
               </p>
-              <p className="rounded-lg bg-primary/8 px-3 py-2 font-mono text-[11px]">
+              <p className="rounded-lg bg-muted px-3 py-2 font-mono text-[11px]">
                 최종 점수 = 알고리즘 점수 + (SQL 점수 ÷ 2)
               </p>
               <p className="text-[11px] text-muted-foreground">SQL 점수를 나눈 결과의 소수점은 버립니다.</p>

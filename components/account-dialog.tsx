@@ -265,7 +265,7 @@ export function AccountDialog({ user }: { user: AccountUser }) {
 
         <div className="rounded-2xl bg-muted/45 p-4">
           <div className="flex items-center gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
               <NotebookPen className="size-5" />
             </div>
             <div className="min-w-0 flex-1">

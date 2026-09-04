@@ -355,7 +355,7 @@ export function StudyLounge({
   return (
     <Card className="h-fit lg:sticky lg:top-20">
       <CardHeader className="flex-row items-center gap-2">
-        <MessageSquare className="size-4 text-primary" />
+        <MessageSquare className="size-4 text-muted-foreground" />
         <CardTitle className="text-base">스터디 라운지</CardTitle>
         <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground" aria-live="polite">
           {realtimeStatus === "connecting" && <LoaderCircle className="size-3 animate-spin" />}
@@ -406,7 +406,7 @@ export function StudyLounge({
                     </div>
                     <p className={cn(
                       "mt-1 w-fit max-w-full whitespace-pre-wrap break-words rounded-2xl bg-muted px-3 py-2 text-left text-sm",
-                      isCurrentUser ? "ml-auto rounded-tr-sm bg-primary text-primary-foreground" : "rounded-tl-sm",
+                      isCurrentUser ? "ml-auto rounded-tr-sm bg-secondary text-secondary-foreground" : "rounded-tl-sm",
                     )}>{comment.message}</p>
                   </div>
                 </div>

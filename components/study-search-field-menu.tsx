@@ -57,7 +57,7 @@ export function StudySearchFieldMenu({ defaultValue }: { defaultValue: StudySear
                 <DropdownMenuRadioItem
                   key={field.value}
                   value={field.value}
-                  className="min-h-10 rounded-xl px-3 pr-9 data-checked:bg-primary/[0.09]"
+                  className="min-h-10 rounded-xl px-3 pr-9 data-checked:bg-muted"
                 >
                   {field.label}
                 </DropdownMenuRadioItem>

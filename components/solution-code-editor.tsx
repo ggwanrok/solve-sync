@@ -48,7 +48,7 @@ const memoEditorTheme = EditorView.theme({
     color: "var(--muted-foreground)",
   },
   ".cm-lineNumbers .cm-gutterElement": { padding: "0 0.625rem 0 0.75rem" },
-  ".cm-activeLine, .cm-activeLineGutter": { backgroundColor: "color-mix(in oklab, var(--primary) 8%, transparent)" },
+  ".cm-activeLine, .cm-activeLineGutter": { backgroundColor: "color-mix(in oklab, var(--foreground) 5%, transparent)" },
   ".cm-selectionBackground, &.cm-focused .cm-selectionBackground, ::selection": {
     backgroundColor: "color-mix(in oklab, var(--primary) 22%, transparent) !important",
   },

@@ -30,7 +30,7 @@ export function StudyRoomPasswordForm({ studyId, roomName }: { studyId: string; 
       )}
       <Card className="mx-auto w-full max-w-md">
       <CardContent className="flex flex-col items-center p-6 text-center">
-        <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary"><LockKeyhole className="size-5" /></div>
+        <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground"><LockKeyhole className="size-5" /></div>
         <h1 className="text-lg font-semibold">비공개 스터디룸</h1>
         <p className="mt-1 text-sm text-muted-foreground">‘{roomName}’의 상세 정보를 보려면 비밀번호를 입력해주세요.</p>
         <form className="mt-6 flex w-full flex-col gap-3" onSubmit={(event) => {

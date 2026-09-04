@@ -20,8 +20,8 @@ export default async function DashboardPage() {
   ])
   const viewerRanking = rankingResult.ok ? rankingResult.data.viewer : null
   const stats = [
-    { label: "총 푼 문제", value: summary?.totalSolved ?? "—", unit: "문제", icon: CheckCircle2, accent: "text-primary" },
-    { label: "연속 스트릭", value: summary?.currentStreak ?? "—", unit: "일", icon: Flame, accent: "text-warning-foreground" },
+    { label: "총 푼 문제", value: summary?.totalSolved ?? "—", unit: "문제", icon: CheckCircle2, accent: "text-foreground" },
+    { label: "연속 스트릭", value: summary?.currentStreak ?? "—", unit: "일", icon: Flame, accent: "text-foreground" },
   ]
 
   return (

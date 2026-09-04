@@ -53,7 +53,7 @@ export function FriendCard({ friend, contributions }: { friend: FriendCardProfil
         <UserAvatar name={name} imageUrl={friend.avatar_url} className="size-11" />
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-medium">{name}</span>
-          <span className="block truncate text-xs text-primary">@{friend.handle}</span>
+          <span className="block truncate text-xs text-muted-foreground">@{friend.handle}</span>
         </span>
       </MemberProfileDialog>
 

@@ -45,7 +45,7 @@ function PolicySection({
 }) {
   return (
     <section id={id} className="scroll-mt-24 border-t pt-10 first:border-0 first:pt-0">
-      <p className="text-xs font-semibold text-primary">{String(number).padStart(2, "0")}</p>
+      <p className="text-xs font-semibold text-muted-foreground">{String(number).padStart(2, "0")}</p>
       <h2 className="mt-2 text-xl font-bold tracking-tight">{title}</h2>
       <div className="mt-5 space-y-4 text-sm leading-7 text-muted-foreground">{children}</div>
     </section>
@@ -93,7 +93,7 @@ export default function AboutPage() {
         <section className="border-b border-border/55">
           <div className="mx-auto max-w-6xl px-4 py-16 md:px-6 md:py-24">
             <div className="max-w-3xl">
-              <span className="inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+              <span className="inline-flex rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
                 About Solve-Sync
               </span>
               <h1 className="mt-6 text-balance text-4xl font-bold tracking-[-0.05em] md:text-5xl">
@@ -109,17 +109,17 @@ export default function AboutPage() {
 
             <div className="mt-12 grid gap-4 md:grid-cols-3">
               <div className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-foreground/[0.055]">
-                <KeyRound className="size-5 text-primary" />
+                <KeyRound className="size-5 text-muted-foreground" />
                 <p className="mt-4 font-semibold">Google 계정으로 로그인</p>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">Google 계정 비밀번호를 수집하지 않고 인증 세션을 안전하게 관리합니다.</p>
               </div>
               <div className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-foreground/[0.055]">
-                <Database className="size-5 text-primary" />
+                <Database className="size-5 text-muted-foreground" />
                 <p className="mt-4 font-semibold">학습에 필요한 정보만</p>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">풀이 기록과 친구·스터디 활동을 서비스 제공 목적으로만 처리합니다.</p>
               </div>
               <div className="rounded-2xl bg-card p-5 shadow-sm ring-1 ring-foreground/[0.055]">
-                <ShieldCheck className="size-5 text-primary" />
+                <ShieldCheck className="size-5 text-muted-foreground" />
                 <p className="mt-4 font-semibold">언제든 계정 삭제</p>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">마이페이지에서 계정과 연결된 서비스 데이터를 직접 삭제할 수 있습니다.</p>
               </div>
@@ -141,14 +141,14 @@ export default function AboutPage() {
           </aside>
 
           <article className="min-w-0 space-y-12">
-            <div className="rounded-2xl bg-primary/[0.065] p-5 text-sm leading-7">
+            <div className="rounded-2xl bg-muted/60 p-5 text-sm leading-7">
               Solve-Sync 운영자(이하 “운영자”)는 개인정보 보호법 등 관련 법령을 준수하며, 이용자의 개인정보를
               필요한 범위에서 안전하고 투명하게 처리합니다.
             </div>
 
             <PolicySection id="overview" number={1} title="개인정보의 처리 목적">
               <p>운영자는 다음 목적을 위해 개인정보를 처리하며, 목적이 변경되는 경우 필요한 안내와 동의 절차를 거칩니다.</p>
-              <ul className="list-disc space-y-2 pl-5 marker:text-primary">
+              <ul className="list-disc space-y-2 pl-5 marker:text-muted-foreground">
                 <li>Google OAuth를 통한 회원 식별, 로그인 및 인증 세션 관리</li>
                 <li>고유 닉네임, 프로필과 대시보드 제공</li>
                 <li>프로그래머스 풀이 기록 수집 및 학습 통계 제공</li>
@@ -173,7 +173,7 @@ export default function AboutPage() {
             </PolicySection>
 
             <PolicySection id="retention" number={3} title="보유기간 및 파기 방법">
-              <ul className="list-disc space-y-2 pl-5 marker:text-primary">
+              <ul className="list-disc space-y-2 pl-5 marker:text-muted-foreground">
                 <li><strong className="font-medium text-foreground">회원·풀이·친구·스터디 정보:</strong> 회원 탈퇴 시까지</li>
                 <li><strong className="font-medium text-foreground">연동 정보:</strong> 연동 해제, 토큰 재발급 또는 회원 탈퇴 시까지</li>
                 <li><strong className="font-medium text-foreground">푸시 구독·발송 기록:</strong> 구독 만료·알림 해제 또는 회원 탈퇴 시까지. 만료된 구독은 발송 과정에서 확인되는 즉시 삭제</li>
@@ -205,7 +205,7 @@ export default function AboutPage() {
               <p>이용자는 자신의 개인정보에 대해 열람, 정정, 삭제, 처리정지 및 동의 철회를 요구할 수 있습니다. 마이페이지에서 로그아웃과 회원 탈퇴를 직접 처리할 수 있으며, 연동 해제 등 그 밖의 요청은 아래 개인정보 문의 창구로 접수할 수 있습니다.</p>
               <div className="rounded-2xl bg-card p-4 shadow-sm ring-1 ring-foreground/[0.055]">
                 <div className="flex items-start gap-3">
-                  <Users className="mt-0.5 size-5 shrink-0 text-primary" />
+                  <Users className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
                   <div>
                     <p className="font-medium text-foreground">회원 탈퇴 전 확인해 주세요</p>
                     <p className="mt-1 text-sm">탈퇴하면 계정과 연결된 풀이·친구·스터디 데이터가 삭제되며 복구할 수 없습니다.</p>
@@ -215,7 +215,7 @@ export default function AboutPage() {
             </PolicySection>
 
             <PolicySection id="safety" number={6} title="개인정보의 안전성 확보 조치">
-              <ul className="list-disc space-y-2 pl-5 marker:text-primary">
+              <ul className="list-disc space-y-2 pl-5 marker:text-muted-foreground">
                 <li>HTTPS 암호화 통신과 보안 속성이 적용된 인증 쿠키 사용</li>
                 <li>데이터베이스 Row Level Security를 통한 사용자별 접근 제한</li>
                 <li>프로그래머스 기기별 연동 토큰과 비공개방 비밀번호를 원문이 아닌 해시값으로 저장</li>
@@ -225,7 +225,7 @@ export default function AboutPage() {
 
             <PolicySection id="cookies" number={7} title="쿠키 및 자동 수집 장치">
               <div className="flex items-start gap-3 rounded-2xl bg-card p-4 shadow-sm ring-1 ring-foreground/[0.055]">
-                <Cookie className="mt-0.5 size-5 shrink-0 text-primary" />
+                <Cookie className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
                 <p>서비스는 로그인 상태와 보안을 유지하기 위해 필수 인증 쿠키를 사용합니다. 테마 설정은 이용자의 브라우저에 저장될 수 있으며, 현재 자체 광고 목적의 추적 쿠키는 사용하지 않습니다.</p>
               </div>
               <p>브라우저 설정에서 쿠키를 삭제하거나 차단할 수 있지만, 필수 쿠키를 차단하면 로그인과 일부 기능을 이용하지 못할 수 있습니다.</p>
@@ -253,7 +253,7 @@ export default function AboutPage() {
             </PolicySection>
 
             <section className="border-t pt-10">
-              <p className="text-xs font-semibold text-primary">09</p>
+              <p className="text-xs font-semibold text-muted-foreground">09</p>
               <h2 className="mt-2 text-xl font-bold tracking-tight">처리방침의 변경</h2>
               <p className="mt-5 text-sm leading-7 text-muted-foreground">법령, 서비스 또는 개인정보 처리 방식이 변경되면 이 페이지를 통해 변경 내용과 시행일을 안내합니다. 중요한 변경은 시행 전에 서비스 내에서 별도로 알립니다.</p>
               <p className="mt-4 text-sm font-medium">공고 및 시행일: {effectiveDate}</p>

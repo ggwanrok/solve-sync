@@ -46,7 +46,7 @@ export function GettingStartedGuide({ deviceConnected }: { deviceConnected: bool
           {steps.map((item, index) => {
             const active = index === step
             const done = index < step
-            return <div key={item.title} className={`flex gap-3 rounded-2xl p-4 ${active ? "bg-primary/[0.075]" : "bg-muted/45"}`}><div className={`flex size-9 shrink-0 items-center justify-center rounded-xl ${done ? "bg-primary text-primary-foreground" : active ? "bg-primary/10 text-primary" : "bg-card text-muted-foreground"}`}>{done ? <Check className="size-4" /> : <item.icon className="size-4" />}</div><div><p className="text-sm font-medium">{index + 1}. {item.title}</p><p className="mt-1 text-xs leading-relaxed text-muted-foreground">{item.description}</p></div></div>
+            return <div key={item.title} className={`flex gap-3 rounded-2xl p-4 ${active ? "bg-muted" : "bg-muted/45"}`}><div className={`flex size-9 shrink-0 items-center justify-center rounded-xl ${done ? "bg-card text-primary" : active ? "bg-card text-foreground" : "bg-card text-muted-foreground"}`}>{done ? <Check className="size-4" /> : <item.icon className="size-4" />}</div><div><p className="text-sm font-medium">{index + 1}. {item.title}</p><p className="mt-1 text-xs leading-relaxed text-muted-foreground">{item.description}</p></div></div>
           })}
         </div>
         <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">

@@ -47,15 +47,8 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Brand panel */}
-      <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-primary p-12 text-primary-foreground lg:flex">
-        <div className="flex items-center gap-2">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-primary-foreground/15">
-            <svg viewBox="0 0 24 24" fill="none" className="size-5" aria-hidden="true">
-              <path d="M4 12h4l2 5 4-10 2 5h4" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-          <span className="text-lg font-semibold">솔브싱크</span>
-        </div>
+      <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden border-r border-border bg-muted/60 p-12 lg:flex">
+        <Logo />
 
         <div className="max-w-md">
           <h1 className="text-balance text-[2.75rem] font-bold leading-[1.18] tracking-[-0.045em] xl:text-5xl">
@@ -63,16 +56,16 @@ export default function LoginPage() {
             <br />
             알고리즘 스터디 플랫폼
           </h1>
-          <p className="mt-4 text-pretty text-primary-foreground/80 leading-relaxed">
+          <p className="mt-4 text-pretty text-muted-foreground leading-relaxed">
             프로그래머스 풀이 기록을 자동으로 모으고, 친구들과 함께 목표를 향해 달려보세요.
           </p>
           <ul className="mt-8 flex flex-col gap-3">
             {benefits.map((b) => (
               <li key={b} className="flex items-center gap-3">
-                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary-foreground/20">
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-card text-muted-foreground">
                   <Check className="size-3" />
                 </span>
-                <span className="text-sm text-primary-foreground/90">{b}</span>
+                <span className="text-sm text-muted-foreground">{b}</span>
               </li>
             ))}
           </ul>
@@ -88,10 +81,10 @@ export default function LoginPage() {
                   className={cn(
                     "size-3 rounded-[3px]",
                     (col * 5 + row) % 3 === 0
-                      ? "bg-primary-foreground/70"
+                      ? "bg-grass-3"
                       : (col + row) % 4 === 0
-                        ? "bg-primary-foreground/40"
-                        : "bg-primary-foreground/15",
+                        ? "bg-grass-1"
+                        : "bg-grass-0",
                   )}
                 />
               ))}
@@ -121,8 +114,8 @@ export default function LoginPage() {
             </div>
 
             <div className="flex flex-col gap-3">
-              <Button variant="outline" size="lg" className="w-full gap-2" onClick={signInWithGoogle} disabled={pending}>
-                <GoogleIcon className="size-4.5" />
+              <Button size="lg" className="w-full gap-2" onClick={signInWithGoogle} disabled={pending}>
+                <GoogleIcon className="size-5 rounded-full bg-white p-0.5" />
                 {pending ? "Google로 연결 중..." : "Google로 계속하기"}
               </Button>
             </div>

@@ -73,7 +73,7 @@ export function ExtensionConnectCard({ request, signedIn, accountLabel }: { requ
 
   return (
     <div className="w-full max-w-md rounded-3xl bg-card p-7 text-card-foreground shadow-[0_20px_70px_rgba(15,23,42,0.1)] ring-1 ring-foreground/[0.055]">
-      <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+      <div className="flex size-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
         <Chrome className="size-6" />
       </div>
       <h1 className="mt-5 text-xl font-semibold">SolveSync 확장 프로그램 연결</h1>
@@ -85,7 +85,7 @@ export function ExtensionConnectCard({ request, signedIn, accountLabel }: { requ
         <p className="text-xs text-muted-foreground">연결할 기기</p>
         <p className="mt-1 font-medium">{request.deviceName}</p>
         <div className="mt-3 flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
-          <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" />
+          <ShieldCheck className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
           <span>기기마다 별도 키를 발급합니다. 다른 기기의 연결에는 영향을 주지 않으며, 마이페이지에서 개별 해제할 수 있습니다.</span>
         </div>
       </div>

@@ -147,12 +147,12 @@ export function NotificationCenter({ inbox }: { inbox: StudyNotificationInbox })
                   onClick={() => openNotification(item)}
                   className={cn(
                     "items-start gap-3 rounded-xl px-3.5 py-3.5",
-                    !item.readAt && "bg-primary/[0.07] focus:bg-primary/[0.11]",
+                    !item.readAt && "bg-muted/70 focus:bg-muted",
                   )}
                 >
                   <span className={cn(
                     "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full",
-                    item.type === "goal_missed" ? "bg-amber-500/12 text-amber-700 dark:text-amber-300" : "bg-primary/10 text-primary",
+                    item.type === "goal_missed" ? "bg-amber-500/12 text-amber-700 dark:text-amber-300" : "bg-muted text-primary",
                   )}>
                     <Icon className="size-4" />
                   </span>

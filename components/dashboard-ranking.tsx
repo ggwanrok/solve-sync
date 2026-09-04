@@ -94,7 +94,7 @@ export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Trophy className="size-4.5 text-primary" />
+          <Trophy className="size-4.5 text-muted-foreground" />
           나의 랭킹
         </CardTitle>
         <CardAction>
@@ -103,8 +103,8 @@ export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
       </CardHeader>
       <CardContent className="grid gap-7 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
         <div className="grid self-center grid-cols-2 gap-3 lg:grid-cols-1">
-          <div className="flex min-h-28 items-center gap-3 rounded-xl bg-primary/[0.075] p-4 sm:gap-4 sm:p-5">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/12 text-primary">
+          <div className="flex min-h-28 items-center gap-3 rounded-xl bg-muted/75 p-4 sm:gap-4 sm:p-5">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-card text-foreground">
               <Crown className="size-4.5" />
             </div>
             <div className="min-w-0">
@@ -131,7 +131,7 @@ export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
         <div className="flex min-w-0 flex-col justify-center gap-4">
           <div className="flex items-end justify-between gap-3">
             <div>
-              <p className="flex items-center gap-1.5 text-sm font-medium"><BarChart3 className="size-4 text-primary" />단계별 풀이</p>
+              <p className="flex items-center gap-1.5 text-sm font-medium"><BarChart3 className="size-4 text-muted-foreground" />단계별 풀이</p>
               <p className="mt-1 text-xs text-muted-foreground">알고리즘 {formatScore(ranking.algorithmSolved)}문제 · SQL {formatScore(ranking.sqlSolved)}문제</p>
             </div>
             {ranking.unknownSolved > 0 && <span className="text-[11px] text-muted-foreground">난이도 미확인 {ranking.unknownSolved}문제</span>}
@@ -150,7 +150,7 @@ export function LeaderboardCard({ initialResult, viewerId }: { initialResult: Da
   return (
     <Card className="h-full min-w-0" aria-busy={pending}>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2"><Trophy className="size-4.5 text-primary" />전체 랭킹</CardTitle>
+        <CardTitle className="flex items-center gap-2"><Trophy className="size-4.5 text-muted-foreground" />전체 랭킹</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col">
         <div className="flex flex-1 flex-col gap-1">
@@ -170,7 +170,7 @@ export function LeaderboardCard({ initialResult, viewerId }: { initialResult: Da
                 ranking={entry}
                 triggerClassName={cn(
                   "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left outline-none transition-colors hover:bg-muted/65 focus-visible:ring-2 focus-visible:ring-ring",
-                  isViewer && "bg-primary/[0.075]",
+                  isViewer && "bg-muted/75",
                 )}
               >
                 <div className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg text-xs font-bold tabular-nums", rankStyle[entry.rankingPosition] || "text-muted-foreground")}>

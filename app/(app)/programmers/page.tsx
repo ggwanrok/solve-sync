@@ -75,12 +75,12 @@ function StepList({ steps }: { steps: typeof installSteps }) {
     <ol className="grid gap-3 sm:grid-cols-2">
       {steps.map((step, index) => (
         <li key={step.title} className="flex gap-3 rounded-2xl bg-muted/55 p-4">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-sm font-semibold text-primary-foreground">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-card text-sm font-semibold text-foreground">
             {index + 1}
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <step.icon className="size-4 shrink-0 text-primary" aria-hidden="true" />
+              <step.icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
               <p className="font-medium">{step.title}</p>
             </div>
             <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{step.description}</p>
@@ -103,7 +103,7 @@ export default function ProgrammersGuidePage() {
           <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <div className="flex items-center gap-3">
-                <div className="flex size-13 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                <div className="flex size-13 shrink-0 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
                   <Chrome className="size-6" aria-hidden="true" />
                 </div>
                 <h1 className="text-2xl font-bold tracking-[-0.035em] sm:text-3xl">프로그래머스 풀이 자동 기록 연결하기</h1>
@@ -131,13 +131,13 @@ export default function ProgrammersGuidePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Chrome className="size-5 text-primary" />1. Chrome 웹 스토어에서 설치</CardTitle>
+          <CardTitle className="flex items-center gap-2"><Chrome className="size-5 text-muted-foreground" />1. Chrome 웹 스토어에서 설치</CardTitle>
           <CardDescription>개발자 모드나 별도 파일 다운로드 없이 웹 스토어에서 바로 설치합니다.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <StepList steps={installSteps} />
           <div className="flex items-start gap-3 rounded-2xl bg-accent/45 p-4 text-xs leading-relaxed">
-            <CircleAlert className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+            <CircleAlert className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
             <p><strong className="font-medium">이미 설치되어 있다면 다시 설치할 필요가 없습니다.</strong> Chrome 도구 모음에서 SolveSync를 열고 아래 계정 연결 단계부터 진행하세요.</p>
           </div>
         </CardContent>
@@ -145,13 +145,13 @@ export default function ProgrammersGuidePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><KeyRound className="size-5 text-primary" />2. SolveSync 계정 연결</CardTitle>
+          <CardTitle className="flex items-center gap-2"><KeyRound className="size-5 text-muted-foreground" />2. SolveSync 계정 연결</CardTitle>
           <CardDescription>이 Chrome에서 수집한 풀이를 현재 계정으로 보낼 수 있도록 승인합니다.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <StepList steps={connectSteps} />
-          <div className="flex items-start gap-3 rounded-2xl bg-primary/[0.065] p-4 text-xs leading-relaxed text-muted-foreground">
-            <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+          <div className="flex items-start gap-3 rounded-2xl bg-muted/60 p-4 text-xs leading-relaxed text-muted-foreground">
+            <ShieldCheck className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
             <p>기기마다 별도의 연결 키가 발급되며 Google 비밀번호는 확장 프로그램에 전달되지 않습니다. 여러 PC를 사용한다면 각 PC에서 이 과정을 한 번씩 진행하세요.</p>
           </div>
         </CardContent>
@@ -159,14 +159,14 @@ export default function ProgrammersGuidePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><CheckCircle2 className="size-5 text-primary" />3. 첫 풀이로 동작 확인</CardTitle>
+          <CardTitle className="flex items-center gap-2"><CheckCircle2 className="size-5 text-muted-foreground" />3. 첫 풀이로 동작 확인</CardTitle>
           <CardDescription>설치와 연결이 끝났다면 실제 정답 기록이 들어오는지 확인합니다.</CardDescription>
         </CardHeader>
         <CardContent>
           <ol className="space-y-3">
-            <li className="flex gap-3"><span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">1</span><p className="text-sm leading-relaxed">Chrome에서 프로그래머스에 로그인하고 문제를 하나 제출해 <strong className="font-medium">정답</strong> 판정을 받으세요.</p></li>
-            <li className="flex gap-3"><span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">2</span><p className="text-sm leading-relaxed">SolveSync 확장 프로그램을 열어 <strong className="font-medium">동기화 대기 0건</strong>과 마지막 동기화 시각을 확인하세요.</p></li>
-            <li className="flex gap-3"><span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">3</span><p className="text-sm leading-relaxed">SolveSync 대시보드를 새로고침하면 최근 풀이와 잔디에 기록이 반영됩니다.</p></li>
+            <li className="flex gap-3"><span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">1</span><p className="text-sm leading-relaxed">Chrome에서 프로그래머스에 로그인하고 문제를 하나 제출해 <strong className="font-medium">정답</strong> 판정을 받으세요.</p></li>
+            <li className="flex gap-3"><span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">2</span><p className="text-sm leading-relaxed">SolveSync 확장 프로그램을 열어 <strong className="font-medium">동기화 대기 0건</strong>과 마지막 동기화 시각을 확인하세요.</p></li>
+            <li className="flex gap-3"><span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">3</span><p className="text-sm leading-relaxed">SolveSync 대시보드를 새로고침하면 최근 풀이와 잔디에 기록이 반영됩니다.</p></li>
           </ol>
           <Button render={<Link href="/" />} nativeButton={false} variant="outline" className="mt-5">
             대시보드에서 확인하기
@@ -176,7 +176,7 @@ export default function ProgrammersGuidePage() {
 
       <div className="flex flex-col items-start justify-between gap-3 rounded-2xl bg-card p-5 shadow-sm ring-1 ring-foreground/[0.055] sm:flex-row sm:items-center">
         <div className="flex items-start gap-3">
-          <MonitorSmartphone className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
+          <MonitorSmartphone className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
           <div>
             <p className="text-sm font-medium">계정에 등록된 기기는 마이페이지에서 관리할 수 있어요.</p>
             <p className="mt-1 text-xs text-muted-foreground">오른쪽 위 프로필 사진을 누르면 기기별 마지막 동기화 시각을 확인하거나 연결을 해제할 수 있습니다.</p>

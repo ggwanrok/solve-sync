@@ -16,7 +16,7 @@ export function StudyDailyChampionBanner({ champions, className }: { champions: 
   const visibleChampions = champions.slice(0, 2)
 
   return (
-    <div className={cn("flex max-w-md items-center gap-3.5 overflow-hidden rounded-2xl bg-primary/[0.075] px-4 py-3.5", className)}>
+    <div className={cn("flex max-w-md items-center gap-3.5 overflow-hidden rounded-2xl bg-muted/60 px-4 py-3.5", className)}>
       <div className="flex shrink-0 -space-x-2">
         {visibleChampions.map((champion) => (
           <UserAvatar
@@ -37,7 +37,7 @@ export function StudyDailyChampionBanner({ champions, className }: { champions: 
         <p className="mt-1 truncate text-base font-semibold leading-tight tracking-tight">{nameLabel}</p>
       </div>
       <div className="shrink-0 rounded-xl bg-card/80 px-3 py-2 text-center shadow-sm">
-        <p className="text-xl font-bold leading-none tabular-nums text-primary">{primaryChampion.solvedCount}</p>
+        <p className="text-xl font-bold leading-none tabular-nums text-foreground">{primaryChampion.solvedCount}</p>
         <p className="mt-1 text-[9px] font-semibold text-muted-foreground">문제</p>
       </div>
     </div>
