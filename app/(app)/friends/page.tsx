@@ -2,7 +2,8 @@ import { Clock3 } from "lucide-react"
 import { RespondFriendRequestButtons } from "@/components/respond-friend-request-buttons"
 import { CancelFriendRequestButton } from "@/components/cancel-friend-request-button"
 import type { ContributionDay } from "@/components/contribution-graph"
-import { FriendCard, type FriendCardProfile } from "@/components/friend-card"
+import type { FriendCardProfile } from "@/components/friend-card"
+import { FriendList } from "@/components/friend-list"
 import { FriendRequestForm } from "@/components/friend-request-form"
 import { UserAvatar } from "@/components/user-avatar"
 import { Badge } from "@/components/ui/badge"
@@ -26,17 +27,26 @@ export default async function FriendsPage() {
   if (!user) redirect("/login")
   const today = dayKey(new Date())
   const firstDate = addCalendarDays(today, -111)
+  const friendQuery = () => supabase.from("friendships")
+    .select("friend_id, friend:profiles!friendships_friend_id_fkey(id,handle,nickname,bio,avatar_url)")
+    .eq("user_id", user.id)
   const [
-    { data: relations },
+    initialRelations,
     { data: incoming },
     { data: outgoing },
     { data: contributionData, error: contributionError },
   ] = await Promise.all([
-    supabase.from("friendships").select("friend_id, friend:profiles!friendships_friend_id_fkey(id,handle,nickname,bio,avatar_url)").eq("user_id", user.id),
+    friendQuery().order("sort_order", { ascending: true, nullsFirst: false }).order("created_at").order("friend_id"),
     supabase.from("friend_requests").select("id, sender:profiles!friend_requests_sender_id_fkey(id,handle,nickname,avatar_url)").eq("receiver_id", user.id).eq("status", "pending").order("created_at", { ascending: false }),
     supabase.from("friend_requests").select("id, receiver:profiles!friend_requests_receiver_id_fkey(id,handle,nickname,avatar_url)").eq("sender_id", user.id).eq("status", "pending").order("created_at", { ascending: false }),
     supabase.rpc("friend_contribution_events", { first_date: firstDate }),
   ])
+  // Keep existing friends visible while the ordering migration is being applied.
+  const orderAvailable = !(initialRelations.error?.code === "42703" && initialRelations.error.message.includes("sort_order"))
+  const { data: relations, error: relationsError } = orderAvailable
+    ? initialRelations
+    : await friendQuery().order("created_at").order("friend_id")
+  if (relationsError) console.error("friend list lookup failed", relationsError)
   const friends = (relations || []).map((row) => row.friend as unknown as Profile).filter(Boolean)
   const receivedRequests = (incoming || []).map((row) => ({ id: row.id, profile: row.sender as unknown as Profile })).filter((row) => row.profile)
   const sentRequests = (outgoing || []).map((row) => ({ id: row.id, profile: row.receiver as unknown as Profile })).filter((row) => row.profile)
@@ -73,12 +83,12 @@ export default async function FriendsPage() {
     <div className="page-container">
       <FriendRequestForm />
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader className="flex-row items-center justify-between"><CardTitle className="text-base">내 친구</CardTitle><Badge variant="secondary">{friends.length}명</Badge></CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2">
-            {friends.length ? friends.map((friend) => <FriendCard key={friend.id} friend={friend} contributions={contributionsByFriend.get(friend.id) || []} />) : <p className="col-span-full py-12 text-center text-sm text-muted-foreground">아직 친구가 없어요. @아이디로 첫 친구를 추가해보세요.</p>}
-          </CardContent>
-        </Card>
+        <FriendList
+          key={user.id}
+          friends={friends.map((profile) => ({ profile, contributions: contributionsByFriend.get(profile.id) || [] }))}
+          canReorder={orderAvailable && !relationsError}
+          loadError={!!relationsError}
+        />
         <Card className="grid min-h-[26rem] grid-rows-[minmax(0,1fr)_minmax(0,1fr)] gap-0 py-0 lg:min-h-0">
           <section className="flex min-h-0 flex-col gap-5 py-5">
             <CardHeader className="flex-row items-center justify-between">
