@@ -2,7 +2,7 @@
 
 import { LayoutDashboard, Users, BookOpen, BookOpenCheck, Chrome, Menu, RefreshCw, LoaderCircle } from "lucide-react"
 import Link, { useLinkStatus } from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { useState } from "react"
 import { Logo } from "@/components/logo"
 import { ContributionGraph, type ContributionDay } from "@/components/contribution-graph"
@@ -15,7 +15,6 @@ import { NotificationCenter } from "@/components/notification-center"
 import { UserAvatar } from "@/components/user-avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { useActionTransition } from "@/lib/use-pending-action"
 import { cn } from "@/lib/utils"
 import type { StudyNotificationInbox } from "@/lib/study-notification"
 
@@ -114,8 +113,7 @@ function SidebarContent({ user, contributions, onNavigate }: { user: ShellUser; 
 
 export function AppShell({ children, user, contributions, notificationInbox }: { children: React.ReactNode; user: ShellUser; contributions: ContributionDay[]; notificationInbox: StudyNotificationInbox }) {
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [refreshPending, runRefresh] = useActionTransition()
-  const router = useRouter()
+  const [refreshPending, setRefreshPending] = useState(false)
   const pathname = usePathname()
   const refreshLabel = pathname === "/"
     ? "대시보드"
@@ -130,7 +128,10 @@ export function AppShell({ children, user, contributions, notificationInbox }: {
         : null
 
   function refreshCurrentPage() {
-    runRefresh(() => router.refresh())
+    setRefreshPending(true)
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => window.location.reload())
+    })
   }
 
   return (
