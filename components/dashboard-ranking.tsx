@@ -27,6 +27,19 @@ function formatScore(value: number) {
   return new Intl.NumberFormat("ko-KR").format(value)
 }
 
+function PodiumIconGradient({ id }: { id: string }) {
+  return (
+    <defs>
+      <linearGradient id={id} x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stopColor="var(--podium-icon-blue)" />
+        <stop offset="0.34" stopColor="var(--podium-icon-purple)" />
+        <stop offset="0.68" stopColor="var(--podium-icon-pink)" />
+        <stop offset="1" stopColor="var(--podium-icon-mint)" />
+      </linearGradient>
+    </defs>
+  )
+}
+
 function DifficultyDonutChart({ counts }: { counts: ViewerRanking["levelSolved"] }) {
   const total = counts.reduce((sum, count) => sum + count, 0)
   let offset = 0
@@ -100,8 +113,10 @@ export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
       <CardContent className="grid gap-7 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
         <div className="grid self-center grid-cols-2 gap-3 lg:grid-cols-1">
           <div className={cn("flex min-h-28 items-center gap-3 rounded-xl p-4 sm:gap-4 sm:p-5", isPodium ? "podium-surface" : "bg-muted/75")}>
-            <div className={cn("flex size-11 shrink-0 items-center justify-center rounded-lg border border-border/70", isPodium ? "podium-surface-strong text-violet-700 dark:text-violet-300" : "bg-card text-foreground")}>
-              <Crown className="size-4.5" />
+            <div className={cn("flex size-11 shrink-0 items-center justify-center rounded-lg border border-border/70", isPodium ? "border-white/80 bg-white/75 text-foreground dark:border-white/10 dark:bg-white/10" : "bg-card text-foreground")}>
+              <Crown className="size-4.5" color={isPodium ? "url(#podium-rank-icon-gradient)" : undefined}>
+                {isPodium && <PodiumIconGradient id="podium-rank-icon-gradient" />}
+              </Crown>
             </div>
             <div className="min-w-0">
               <p className="text-xs text-muted-foreground">전체 순위</p>
@@ -111,8 +126,10 @@ export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
             </div>
           </div>
           <div className={cn("flex min-h-28 items-center gap-3 rounded-xl p-4 sm:gap-4 sm:p-5", isPodium ? "podium-surface" : "bg-muted/75")}>
-            <div className={cn("flex size-11 shrink-0 items-center justify-center rounded-lg border border-border/70", isPodium ? "podium-surface-strong text-emerald-700 dark:text-emerald-300" : "bg-card text-accent-foreground")}>
-              <Gauge className="size-4.5" />
+            <div className={cn("flex size-11 shrink-0 items-center justify-center rounded-lg border border-border/70", isPodium ? "border-white/80 bg-white/75 text-foreground dark:border-white/10 dark:bg-white/10" : "bg-card text-accent-foreground")}>
+              <Gauge className="size-4.5" color={isPodium ? "url(#podium-score-icon-gradient)" : undefined}>
+                {isPodium && <PodiumIconGradient id="podium-score-icon-gradient" />}
+              </Gauge>
             </div>
             <div className="min-w-0">
               <p className="text-xs text-muted-foreground">랭킹 점수</p>

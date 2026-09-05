@@ -109,6 +109,10 @@
   --grass-6: oklch(0.36 0.14 156);
   --podium-surface: linear-gradient(112deg, #edf6ff 0%, #f1eaff 23%, #ffeaf2 44%, #fff1db 66%, #edffe8 100%);
   --podium-surface-strong: linear-gradient(135deg, #e7f3ff 0%, #eee5ff 24%, #ffe6ef 48%, #fff0d6 72%, #e9ffe4 100%);
+  --podium-icon-blue: #4d8ee8;
+  --podium-icon-purple: #8b5cf6;
+  --podium-icon-pink: #ec6f9f;
+  --podium-icon-mint: #2ba982;
   --radius: 0.875rem;
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.18 0 0);
@@ -164,6 +168,10 @@
   --grass-6: oklch(0.91 0.16 157);
   --podium-surface: linear-gradient(112deg, #1c2937 0%, #2b2338 23%, #39252f 44%, #36301f 66%, #21352b 100%);
   --podium-surface-strong: linear-gradient(135deg, #24384b 0%, #342a48 24%, #472b38 48%, #463a23 72%, #284332 100%);
+  --podium-icon-blue: #8bc2ff;
+  --podium-icon-purple: #c9a0ff;
+  --podium-icon-pink: #ff9fbd;
+  --podium-icon-mint: #84e2c1;
   --sidebar: oklch(0.18 0 0);
   --sidebar-foreground: oklch(0.95 0 0);
   --sidebar-primary: var(--primary);
