@@ -30,7 +30,7 @@ export default async function DashboardPage() {
     <div className="page-container">
       {!profile?.guide_completed_at && <GettingStartedGuide deviceConnected={(extensions?.length ?? 0) > 0} />}
       <div className="grid grid-cols-2 gap-4">
-        {stats.map((stat) => <Card key={stat.label} className="py-0"><CardContent className="flex min-h-28 items-center gap-3 p-4 sm:gap-4 sm:p-5"><div className={cn("flex size-11 shrink-0 items-center justify-center rounded-xl sm:size-12", isPodium ? `podium-surface-strong ${stat.podiumIcon}` : "bg-accent text-foreground")}><stat.icon className="size-5 sm:size-5.5" /></div><div><p className="text-xs font-medium text-muted-foreground">{stat.label}</p><p className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">{stat.value}<span className="ml-1 text-xs font-medium text-muted-foreground">{stat.unit}</span></p></div></CardContent></Card>)}
+        {stats.map((stat) => <Card key={stat.label} className="py-0"><CardContent className="flex min-h-28 items-center gap-3 p-4 sm:gap-4 sm:p-5"><div className={cn("flex size-11 shrink-0 items-center justify-center rounded-xl sm:size-12", isPodium ? `border border-border bg-transparent ${stat.podiumIcon}` : "bg-accent text-foreground")}><stat.icon className="size-5 sm:size-5.5" /></div><div><p className="text-xs font-medium text-muted-foreground">{stat.label}</p><p className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">{stat.value}<span className="ml-1 text-xs font-medium text-muted-foreground">{stat.unit}</span></p></div></CardContent></Card>)}
       </div>
       {!summary && <p role="alert" className="text-sm text-destructive">학습 통계를 불러오지 못했습니다. 잠시 후 새로고침해 주세요.</p>}
       {viewerRanking ? <RankingSummaryCard ranking={viewerRanking} /> : (
