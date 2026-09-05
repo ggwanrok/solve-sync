@@ -6,6 +6,7 @@ import { StudyProgress } from "@/components/study-progress"
 import { JoinStudyRoomButton } from "@/components/join-study-room-button"
 import { StudyRoomPasswordForm } from "@/components/study-room-password-form"
 import { StudyRoomMembershipActions } from "@/components/study-room-membership-actions"
+import { StudyRoomSettingsDialog } from "@/components/study-room-settings-dialog"
 import { StudyRoomMembers, type StudyMemberFriendStatus } from "@/components/study-room-members"
 import { StudyNotificationToggle } from "@/components/study-notification-toggle"
 import { StudyDailyChampionBanner } from "@/components/study-daily-champion"
@@ -119,7 +120,20 @@ export default async function StudyDetailPage({ params }: { params: Promise<{ id
 
   return (
     <div className="page-container">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><Button render={<Link href="/study" />} nativeButton={false} variant="ghost" size="sm" className="-ml-3 w-fit gap-1.5"><ArrowLeft className="size-4" />스터디룸 목록</Button><StudyRoomMembershipActions studyId={id} isOwner={room.ownerId === user?.id} isMember={isMember} /></div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <Button render={<Link href="/study" />} nativeButton={false} variant="ghost" size="sm" className="-ml-3 w-fit gap-1.5"><ArrowLeft className="size-4" />스터디룸 목록</Button>
+        <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-start">
+          {room.ownerId === user?.id && (
+            <StudyRoomSettingsDialog
+              studyId={id}
+              initialName={room.name}
+              initialDescription={room.description}
+              initialIsPrivate={room.isPrivate}
+            />
+          )}
+          <StudyRoomMembershipActions studyId={id} isOwner={room.ownerId === user?.id} isMember={isMember} />
+        </div>
+      </div>
       <Card className="py-0"><CardContent className="p-5 sm:p-6"><div className="flex flex-col gap-5 lg:flex-row lg:items-center"><div className="min-w-0 lg:max-w-[42%]"><div className="flex items-center gap-2"><h1 className="truncate text-2xl font-bold tracking-[-0.035em]">{room.name}</h1>{room.ownerId === user?.id && <Badge variant="secondary" className="gap-1"><Crown className="size-3" />리더</Badge>}</div><p className="mt-2 text-sm leading-6 text-muted-foreground">{room.description}</p><div className="mt-4 flex flex-wrap gap-2 text-sm"><span className="rounded-xl bg-muted px-3 py-1.5 font-semibold text-foreground">{room.goalPeriod === "daily" ? "매일" : "매주"} {room.goalCount}문제</span><span className="rounded-xl bg-muted px-3 py-1.5 font-semibold">Lv.{room.minDifficulty} 이상</span><span className="flex items-center gap-1.5 px-1 text-muted-foreground"><Users className="size-4" />{detail.members.length}명</span></div></div><StudyDailyChampionBanner champions={dailyChampions} className="w-full lg:ml-6 lg:w-80" /><div className="flex shrink-0 flex-col items-start gap-2 lg:ml-auto lg:items-end">{isMember && <StudyNotificationToggle studyId={id} initialEnabled={currentUserNotificationsEnabled} />}{!isMember && <JoinStudyRoomButton studyId={id} />}</div></div></CardContent></Card>
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2"><StudyProgress studyId={id} goalPeriod={room.goalPeriod} goalCount={room.goalCount} currentMembers={currentProgressMembers} currentPeriod={detail.currentPeriod} canViewProgress={isMember} /></div>
