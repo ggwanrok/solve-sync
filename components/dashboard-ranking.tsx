@@ -11,14 +11,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
-import type { DashboardRankingPage, DashboardResult, ViewerRanking } from "@/lib/dashboard"
+import { isPodiumRank, type DashboardRankingPage, type DashboardResult, type ViewerRanking } from "@/lib/dashboard"
 import { useDashboardPage } from "@/lib/use-dashboard-page"
-
-const rankStyle: Record<number, string> = {
-  1: "bg-amber-400/15 text-amber-600 dark:text-amber-300",
-  2: "bg-slate-400/15 text-slate-600 dark:text-slate-300",
-  3: "bg-orange-400/15 text-orange-700 dark:text-orange-300",
-}
 
 const donutStroke = [
   "var(--difficulty-0)",
@@ -90,6 +84,8 @@ function DifficultyDonutChart({ counts }: { counts: ViewerRanking["levelSolved"]
 }
 
 export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
+  const isPodium = isPodiumRank(ranking.rankingPosition)
+
   return (
     <Card>
       <CardHeader>
@@ -103,8 +99,8 @@ export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
       </CardHeader>
       <CardContent className="grid gap-7 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
         <div className="grid self-center grid-cols-2 gap-3 lg:grid-cols-1">
-          <div className="flex min-h-28 items-center gap-3 rounded-xl bg-muted/75 p-4 sm:gap-4 sm:p-5">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-card text-foreground">
+          <div className={cn("flex min-h-28 items-center gap-3 rounded-xl p-4 sm:gap-4 sm:p-5", isPodium ? "podium-surface" : "bg-muted/75")}>
+            <div className={cn("flex size-11 shrink-0 items-center justify-center rounded-lg border border-border/70", isPodium ? "podium-surface-strong text-violet-700 dark:text-violet-300" : "bg-card text-foreground")}>
               <Crown className="size-4.5" />
             </div>
             <div className="min-w-0">
@@ -114,8 +110,8 @@ export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
               </p>
             </div>
           </div>
-          <div className="flex min-h-28 items-center gap-3 rounded-xl bg-muted/75 p-4 sm:gap-4 sm:p-5">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-card text-accent-foreground">
+          <div className={cn("flex min-h-28 items-center gap-3 rounded-xl p-4 sm:gap-4 sm:p-5", isPodium ? "podium-surface" : "bg-muted/75")}>
+            <div className={cn("flex size-11 shrink-0 items-center justify-center rounded-lg border border-border/70", isPodium ? "podium-surface-strong text-emerald-700 dark:text-emerald-300" : "bg-card text-accent-foreground")}>
               <Gauge className="size-4.5" />
             </div>
             <div className="min-w-0">
@@ -170,7 +166,7 @@ export function LeaderboardCard({ initialResult, viewerId }: { initialResult: Da
                   isViewer && "bg-muted/75",
                 )}
               >
-                <div className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg text-xs font-bold tabular-nums", rankStyle[entry.rankingPosition] || "text-muted-foreground")}>
+                <div className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg text-xs font-bold tabular-nums", isPodiumRank(entry.rankingPosition) ? "podium-surface-strong text-foreground" : "text-muted-foreground")}>
                   {entry.rankingPosition}
                 </div>
                 <UserAvatar name={entry.nickname || entry.handle} imageUrl={entry.avatarUrl} className="size-9" />

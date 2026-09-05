@@ -45,6 +45,10 @@ export type DashboardRankingPage = {
 export type DashboardSummary = { totalSolved: number; currentStreak: number }
 export type DashboardResult<T> = { ok: true; data: T } | { ok: false; message: string }
 
+export function isPodiumRank(value: unknown): value is 1 | 2 | 3 {
+  return value === 1 || value === 2 || value === 3
+}
+
 export function dashboardPage(value: unknown): number {
   return typeof value === "number" && Number.isSafeInteger(value) && value > 0
     ? Math.min(value, 2147483647)

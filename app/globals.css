@@ -107,6 +107,8 @@
   --grass-4: oklch(0.48 0.15 156);
   --grass-5: oklch(0.42 0.15 156);
   --grass-6: oklch(0.36 0.14 156);
+  --podium-surface: linear-gradient(112deg, #edf6ff 0%, #f1eaff 23%, #ffeaf2 44%, #fff1db 66%, #edffe8 100%);
+  --podium-surface-strong: linear-gradient(135deg, #e7f3ff 0%, #eee5ff 24%, #ffe6ef 48%, #fff0d6 72%, #e9ffe4 100%);
   --radius: 0.875rem;
   --sidebar: oklch(1 0 0);
   --sidebar-foreground: oklch(0.18 0 0);
@@ -160,6 +162,8 @@
   --grass-4: oklch(0.8 0.17 157);
   --grass-5: oklch(0.86 0.18 157);
   --grass-6: oklch(0.91 0.16 157);
+  --podium-surface: linear-gradient(112deg, #1c2937 0%, #2b2338 23%, #39252f 44%, #36301f 66%, #21352b 100%);
+  --podium-surface-strong: linear-gradient(135deg, #24384b 0%, #342a48 24%, #472b38 48%, #463a23 72%, #284332 100%);
   --sidebar: oklch(0.18 0 0);
   --sidebar-foreground: oklch(0.95 0 0);
   --sidebar-primary: var(--primary);
@@ -208,6 +212,12 @@
   }
   .empty-state {
     @apply rounded-xl border border-border/80 bg-card px-6 py-16 text-center;
+  }
+  .podium-surface {
+    background-image: var(--podium-surface);
+  }
+  .podium-surface-strong {
+    background-image: var(--podium-surface-strong);
   }
 }
 

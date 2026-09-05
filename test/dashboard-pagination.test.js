@@ -4,12 +4,13 @@ import { readFileSync } from "node:fs"
 import { spawnSync } from "node:child_process"
 
 test("대시보드 페이지 입력은 유효한 PostgreSQL 정수 범위로 제한한다", async () => {
-  const { dashboardPage } = await import("../lib/dashboard.ts")
+  const { dashboardPage, isPodiumRank } = await import("../lib/dashboard.ts")
   for (const value of [undefined, null, "2", -1, 0, 1.5, NaN, Infinity]) {
     assert.equal(dashboardPage(value), 1)
   }
   assert.equal(dashboardPage(2), 2)
   assert.equal(dashboardPage(Number.MAX_SAFE_INTEGER), 2147483647)
+  assert.deepEqual([1, 2, 3, 4, null].map(isPodiumRank), [true, true, true, false, false])
 })
 
 // 명시적으로 지정한 테스트 전용 DB에서만 실행하며 모든 변경은 롤백한다.
