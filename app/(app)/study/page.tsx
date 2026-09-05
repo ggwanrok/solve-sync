@@ -1,12 +1,10 @@
-import { ChevronLeft, ChevronRight, Crown, Lock, Search, Users } from "lucide-react"
+import { ChevronLeft, ChevronRight, Search, Users } from "lucide-react"
 import Link from "next/link"
 import { CreateStudyDialog } from "@/components/create-study-dialog"
 import { StudyDifficultyRange } from "@/components/study-difficulty-range"
-import { StudyRoomEntryButton } from "@/components/study-room-entry-button"
+import { StudyRoomGrid, type StudyRoomDirectoryItem } from "@/components/study-room-grid"
 import { StudySearchFieldMenu, type StudySearchField } from "@/components/study-search-field-menu"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { DIFFICULTY_LEVELS, type DifficultyLevel } from "@/lib/difficulty"
 import { parseStudyDirectoryView, type StudyDirectoryView } from "@/lib/study-directory-view"
@@ -20,28 +18,13 @@ type StudySearchParams = {
   minDifficulty?: string
   view?: string
 }
-type StudyRoomDirectoryItem = {
-  id: string
-  owner_id: string
-  name: string
-  description: string
-  goal_period: "daily" | "weekly"
-  goal_count: number
-  min_difficulty: number
-  is_private: boolean
-  created_at: string
-  owner_handle: string
-  owner_nickname: string
-  member_count: number
-  is_joined: boolean
-}
-
 type StudyRoomDirectory = {
   rooms: StudyRoomDirectoryItem[]
   total: number
   page: number
   pageSize: number
 }
+type MembershipOrderRow = { study_id: string; sort_order: number | null; joined_at: string }
 
 const PAGE_SIZE = 12
 
@@ -93,15 +76,40 @@ export default async function StudyListPage({
   const joinedOnly = view === "joined"
   const { supabase, user } = await getViewer()
   if (!user) redirect("/login")
-  const { data, error } = await supabase.rpc("study_room_directory", {
-    directory_field: field,
-    directory_query: query,
-    page_number: page,
-    page_size: PAGE_SIZE,
-    difficulty_levels: difficulties,
-    joined_only: joinedOnly,
-  })
+  const membershipOrderPromise = joinedOnly
+    ? supabase.from("study_members").select("study_id,sort_order,joined_at").eq("user_id", user.id)
+    : Promise.resolve({ data: [] as MembershipOrderRow[], error: null })
+  const [
+    { data, error },
+    { data: membershipOrderData, error: membershipOrderError },
+  ] = await Promise.all([
+    supabase.rpc("study_room_directory", {
+      directory_field: field,
+      directory_query: query,
+      page_number: page,
+      page_size: PAGE_SIZE,
+      difficulty_levels: difficulties,
+      joined_only: joinedOnly,
+    }),
+    membershipOrderPromise,
+  ])
   if (error) throw new Error(`스터디룸 목록을 불러오지 못했습니다: ${error.message}`)
+
+  const membershipRows = (membershipOrderData || []) as MembershipOrderRow[]
+  const compareDefaultOrder = (first: MembershipOrderRow, second: MembershipOrderRow) =>
+    Date.parse(first.joined_at) - Date.parse(second.joined_at) || first.study_id.localeCompare(second.study_id)
+  const defaultJoinedRoomIds = [...membershipRows].sort(compareDefaultOrder).map((membership) => membership.study_id)
+  const joinedRoomIds = [...membershipRows]
+    .sort((first, second) => {
+      const firstOrder = first.sort_order ?? Number.MAX_SAFE_INTEGER
+      const secondOrder = second.sort_order ?? Number.MAX_SAFE_INTEGER
+      return firstOrder - secondOrder || compareDefaultOrder(first, second)
+    })
+    .map((membership) => membership.study_id)
+  const orderAvailable = !membershipOrderError
+  if (membershipOrderError && !(membershipOrderError.code === "42703" && membershipOrderError.message.includes("sort_order"))) {
+    console.error("study room order lookup failed", membershipOrderError)
+  }
 
   const directory = data as unknown as StudyRoomDirectory | null
   const studyRooms = directory?.rooms || []
@@ -168,39 +176,14 @@ export default async function StudyListPage({
 
       {query && <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">‘{query}’</span>에 해당하는 스터디룸입니다.</p>}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {studyRooms.map((room) => {
-          const leader = room.owner_id === user?.id
-          const joined = room.is_joined
-          const ownerName = room.owner_nickname || room.owner_handle || "방장"
-          return (
-            <Card key={room.id} className="group py-0 transition-shadow duration-200 hover:shadow-[0_14px_36px_rgba(15,23,42,0.075)]">
-              <CardContent className="flex h-full flex-col gap-5 p-5 sm:p-6">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h2 className="truncate text-base font-semibold tracking-tight">{room.name}</h2>
-                    {room.is_private && <Lock className="size-3.5 text-muted-foreground" />}
-                    {leader && <Badge variant="secondary" className="gap-1 px-1.5 py-0 text-xs"><Crown className="size-3 text-warning-foreground" />리더</Badge>}
-                    {!leader && joined && <Badge variant="secondary" className="px-1.5 py-0 text-xs">참여 중</Badge>}
-                  </div>
-                  <p className="mt-1 h-10 line-clamp-2 text-sm text-muted-foreground">{room.description || <span className="sr-only">소개 없음</span>}</p>
-                  <p className="mt-2 text-xs text-muted-foreground">방장 · {ownerName}</p>
-                </div>
-                <div className="rounded-xl bg-muted/65 px-3.5 py-3 text-sm">
-                  <span className="text-muted-foreground">규칙 · </span>
-                  <span className="font-medium">{room.goal_period === "daily" ? "매일" : "매주"} {room.goal_count}문제 · Lv.{room.min_difficulty} 이상</span>
-                </div>
-                <div className="mt-auto flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground"><Users className="size-3.5" />{room.member_count}명</span>
-                    <StudyRoomEntryButton studyId={room.id} joined={joined} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
+      <StudyRoomGrid
+        key={`${user.id}-${view}`}
+        rooms={studyRooms}
+        currentUserId={user.id}
+        joinedRoomIds={joinedRoomIds}
+        defaultJoinedRoomIds={defaultJoinedRoomIds}
+        canReorder={joinedOnly && orderAvailable}
+      />
 
       {studyRooms.length === 0 && (
         <div className="empty-state">

@@ -132,6 +132,58 @@ create table if not exists public.study_members (
 alter table public.study_members
   add column if not exists notifications_enabled boolean not null default false;
 
+-- Each user controls the order of only their own joined study rooms.
+alter table public.study_members
+  add column if not exists sort_order integer check (sort_order >= 0);
+create index if not exists study_members_user_order
+  on public.study_members(user_id, sort_order, joined_at, study_id);
+
+create or replace function public.reorder_joined_studies(ordered_study_ids uuid[])
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  current_user_id uuid := auth.uid();
+begin
+  if current_user_id is null then
+    raise exception '로그인이 필요합니다.' using errcode = '42501';
+  end if;
+  if ordered_study_ids is null
+    or coalesce(array_ndims(ordered_study_ids), 1) <> 1
+    or array_position(ordered_study_ids, null) is not null
+    or cardinality(ordered_study_ids) <> (select count(distinct id) from unnest(ordered_study_ids) as ids(id)) then
+    raise exception '스터디룸 배치 정보가 올바르지 않습니다.' using errcode = '22023';
+  end if;
+
+  perform 1 from public.study_members
+  where user_id = current_user_id
+  order by study_id
+  for update;
+
+  if exists (
+    select 1 from unnest(ordered_study_ids) as ids(id)
+    where not exists (
+      select 1 from public.study_members
+      where user_id = current_user_id and study_id = ids.id
+    )
+  ) or exists (
+    select 1 from public.study_members
+    where user_id = current_user_id and not (study_id = any(ordered_study_ids))
+  ) then
+    return false;
+  end if;
+
+  update public.study_members as membership
+  set sort_order = ordered.position::integer
+  from unnest(ordered_study_ids) with ordinality as ordered(study_id, position)
+  where membership.user_id = current_user_id and membership.study_id = ordered.study_id;
+
+  return true;
+end;
+$$;
+
 create table if not exists public.push_subscriptions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id) on delete cascade,
@@ -966,14 +1018,15 @@ begin
       room.is_private,
       room.created_at,
       owner.handle as owner_handle,
-      owner.nickname as owner_nickname
+      owner.nickname as owner_nickname,
+      current_member.sort_order as joined_sort_order,
+      current_member.joined_at as joined_at
     from study_rooms room
     join profiles owner on owner.id = room.owner_id
+    left join study_members current_member
+      on current_member.study_id = room.id and current_member.user_id = current_user_id
     where room.min_difficulty = any(coalesce(difficulty_levels, array[0, 1, 2, 3, 4, 5]))
-      and (not coalesce(joined_only, false) or exists(
-        select 1 from study_members joined_member
-        where joined_member.study_id = room.id and joined_member.user_id = current_user_id
-      ))
+      and (not coalesce(joined_only, false) or current_member.user_id is not null)
       and (normalized_query = '' or case normalized_field
         when 'description' then room.description
         when 'owner' then concat_ws(' ', owner.nickname, owner.handle)
@@ -983,7 +1036,12 @@ begin
   paged_rooms as (
     select *
     from matching_rooms
-    order by created_at desc, id desc
+    order by
+      case when coalesce(joined_only, false) then joined_sort_order end asc nulls last,
+      case when coalesce(joined_only, false) then joined_at end asc nulls last,
+      case when coalesce(joined_only, false) then id end asc,
+      case when not coalesce(joined_only, false) then created_at end desc,
+      case when not coalesce(joined_only, false) then id end desc
     limit safe_page_size
     offset (safe_page - 1) * safe_page_size
   ),
@@ -1002,7 +1060,13 @@ begin
     ) member_stats on true
   )
   select jsonb_build_object(
-    'rooms', coalesce((select jsonb_agg(to_jsonb(directory_rows) order by created_at desc, id desc) from directory_rows), '[]'::jsonb),
+    'rooms', coalesce((select jsonb_agg(to_jsonb(directory_rows) order by
+      case when coalesce(joined_only, false) then joined_sort_order end asc nulls last,
+      case when coalesce(joined_only, false) then joined_at end asc nulls last,
+      case when coalesce(joined_only, false) then id end asc,
+      case when not coalesce(joined_only, false) then created_at end desc,
+      case when not coalesce(joined_only, false) then id end desc
+    ) from directory_rows), '[]'::jsonb),
     'total', (select count(*) from matching_rooms),
     'page', safe_page,
     'pageSize', safe_page_size
@@ -1703,7 +1767,7 @@ grant select on public.friend_requests, public.friendships to authenticated;
 revoke all on public.study_rooms from authenticated;
 grant select(id, owner_id, name, description, emoji, weekly_goal, max_members, is_private, created_at, goal_period, goal_count, min_difficulty) on public.study_rooms to authenticated;
 revoke all on public.study_members from authenticated;
-grant select(study_id, user_id, role, joined_at) on public.study_members to authenticated;
+grant select(study_id, user_id, role, joined_at, sort_order) on public.study_members to authenticated;
 revoke all on public.study_membership_history from anon, authenticated;
 grant select, insert on public.study_comments to authenticated;
 revoke all on public.push_subscriptions from public, anon, authenticated;
@@ -1745,6 +1809,8 @@ revoke execute on function public.study_member_solve_events(uuid) from public, a
 grant execute on function public.study_member_solve_events(uuid) to authenticated;
 revoke execute on function public.study_room_directory(text, text, integer, integer, integer[], boolean) from public, anon;
 grant execute on function public.study_room_directory(text, text, integer, integer, integer[], boolean) to authenticated;
+revoke execute on function public.reorder_joined_studies(uuid[]) from public, anon;
+grant execute on function public.reorder_joined_studies(uuid[]) to authenticated;
 revoke execute on function public.study_room_detail(uuid) from public, anon;
 grant execute on function public.study_room_detail(uuid) to authenticated;
 revoke execute on function public.study_goal_history_page(uuid, integer, integer, text) from public, anon;
