@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState, type PointerEvent } from "react"
+import { useRef, useState, type PointerEvent, type ReactNode } from "react"
 import { ArrowLeft, ArrowRight, Crown, GripVertical, LayoutGrid, LoaderCircle, Lock, RotateCcw, Users } from "lucide-react"
 import { toast } from "sonner"
 import { saveStudyRoomOrder } from "@/app/study-room-order-actions"
@@ -34,12 +34,20 @@ export function StudyRoomGrid({
   joinedRoomIds,
   defaultJoinedRoomIds,
   canReorder = false,
+  toolbarStart,
+  toolbarEnd,
+  directorySummary,
+  children,
 }: {
   rooms: StudyRoomDirectoryItem[]
   currentUserId: string
   joinedRoomIds: string[]
   defaultJoinedRoomIds: string[]
   canReorder?: boolean
+  toolbarStart: ReactNode
+  toolbarEnd: ReactNode
+  directorySummary: string
+  children?: ReactNode
 }) {
   const [editing, setEditing] = useState(false)
   const [savedOrder, setSavedOrder] = useState(joinedRoomIds)
@@ -118,39 +126,45 @@ export function StudyRoomGrid({
   return (
     <>
       <p className="sr-only" role="status">{announcement}</p>
-      {canReorder && rooms.length > 1 && (
-        <div className={cn("flex flex-wrap items-center gap-2", editing ? "justify-between" : "justify-end")}>
-          {editing && (
-            <p id="study-room-order-help" className="mr-auto text-xs leading-5 text-muted-foreground">
-              손잡이를 드래그하거나 화살표로 위치를 바꾸세요. 저장한 배치는 내 계정에만 적용됩니다.
-            </p>
-          )}
-          {editing ? (
-            <>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                disabled={pending || !!draggedId}
-                onClick={() => {
-                  setDraft(reconcileStudyRoomOrder(joinedRoomIds, defaultJoinedRoomIds))
-                  setAnnouncement("스터디룸 배치를 기본 순서로 되돌렸습니다. 저장하면 적용됩니다.")
-                }}
-              >
-                <RotateCcw />초기화
-              </Button>
-              <Button type="button" variant="ghost" size="sm" disabled={pending} onClick={() => { setEditing(false); setAnnouncement("배치 편집을 취소했습니다.") }}>취소</Button>
-              <Button type="button" size="sm" disabled={pending || !changed || !!draggedId} aria-busy={pending} onClick={save}>
-                {pending && <LoaderCircle className="animate-spin" />}
-                {pending ? "저장 중…" : "배치 저장"}
-              </Button>
-            </>
-          ) : (
-            <Button type="button" variant="outline" size="sm" onClick={() => { setDraft(currentOrder); setEditing(true); setAnnouncement("") }}>
-              <LayoutGrid />배치 편집
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        {toolbarStart}
+        <p className="text-sm leading-6 text-muted-foreground">{directorySummary}</p>
+        {canReorder && rooms.length > 1 && (editing ? (
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={pending || !!draggedId}
+              onClick={() => {
+                setDraft(reconcileStudyRoomOrder(joinedRoomIds, defaultJoinedRoomIds))
+                setAnnouncement("스터디룸 배치를 기본 순서로 되돌렸습니다. 저장하면 적용됩니다.")
+              }}
+            >
+              <RotateCcw />초기화
             </Button>
-          )}
+            <Button type="button" variant="ghost" size="sm" disabled={pending} onClick={() => { setEditing(false); setAnnouncement("배치 편집을 취소했습니다.") }}>취소</Button>
+            <Button type="button" size="sm" disabled={pending || !changed || !!draggedId} aria-busy={pending} onClick={save}>
+              {pending && <LoaderCircle className="animate-spin" />}
+              {pending ? "저장 중…" : "배치 저장"}
+            </Button>
+          </div>
+        ) : (
+          <Button type="button" variant="outline" size="sm" onClick={() => { setDraft(currentOrder); setEditing(true); setAnnouncement("") }}>
+            <LayoutGrid />배치 편집
+          </Button>
+        ))}
+        <div className="ml-auto shrink-0">
+          {toolbarEnd}
         </div>
+      </div>
+
+      {children}
+
+      {editing && (
+        <p id="study-room-order-help" className="text-xs leading-5 text-muted-foreground">
+          손잡이를 드래그하거나 화살표로 위치를 바꾸세요. 저장한 배치는 내 계정에만 적용됩니다.
+        </p>
       )}
 
       <div ref={gridRef} className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" aria-label={editing ? "스터디룸 배치 편집" : undefined} aria-describedby={editing ? "study-room-order-help" : undefined} aria-busy={pending}>

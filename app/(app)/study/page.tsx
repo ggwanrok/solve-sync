@@ -147,35 +147,6 @@ export default async function StudyListPage({
         </fieldset>
       </form>
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <nav className="flex w-fit rounded-xl bg-muted/70 p-1" aria-label="스터디룸 보기 방식">
-          <Button
-            render={<Link href={joinedHref} />}
-            nativeButton={false}
-            variant="ghost"
-            className={`h-9 rounded-lg px-4 ${joinedOnly ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
-            aria-current={joinedOnly ? "page" : undefined}
-          >
-            참여 중인 스터디룸
-          </Button>
-          <Button
-            render={<Link href={allHref} />}
-            nativeButton={false}
-            variant="ghost"
-            className={`h-9 rounded-lg px-4 ${!joinedOnly ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
-            aria-current={!joinedOnly ? "page" : undefined}
-          >
-            모두 둘러보기
-          </Button>
-        </nav>
-        <p className="text-sm leading-6 text-muted-foreground">{hasSearchFilters ? `${directoryLabel} 검색 결과 ${total}개` : `${directoryLabel} ${total}개`}</p>
-        <div className="ml-auto shrink-0">
-          <CreateStudyDialog />
-        </div>
-      </div>
-
-      {query && <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">‘{query}’</span>에 해당하는 스터디룸입니다.</p>}
-
       <StudyRoomGrid
         key={`${user.id}-${view}`}
         rooms={studyRooms}
@@ -183,7 +154,33 @@ export default async function StudyListPage({
         joinedRoomIds={joinedRoomIds}
         defaultJoinedRoomIds={defaultJoinedRoomIds}
         canReorder={joinedOnly && orderAvailable}
-      />
+        directorySummary={hasSearchFilters ? `${directoryLabel} 검색 결과 ${total}개` : `${directoryLabel} ${total}개`}
+        toolbarStart={(
+          <nav className="flex w-fit rounded-xl bg-muted/70 p-1" aria-label="스터디룸 보기 방식">
+            <Button
+              render={<Link href={joinedHref} />}
+              nativeButton={false}
+              variant="ghost"
+              className={`h-9 rounded-lg px-4 ${joinedOnly ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
+              aria-current={joinedOnly ? "page" : undefined}
+            >
+              참여 중인 스터디룸
+            </Button>
+            <Button
+              render={<Link href={allHref} />}
+              nativeButton={false}
+              variant="ghost"
+              className={`h-9 rounded-lg px-4 ${!joinedOnly ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
+              aria-current={!joinedOnly ? "page" : undefined}
+            >
+              모두 둘러보기
+            </Button>
+          </nav>
+        )}
+        toolbarEnd={<CreateStudyDialog />}
+      >
+        {query && <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">‘{query}’</span>에 해당하는 스터디룸입니다.</p>}
+      </StudyRoomGrid>
 
       {studyRooms.length === 0 && (
         <div className="empty-state">
