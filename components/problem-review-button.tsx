@@ -15,7 +15,7 @@ export function ProblemReviewButton({ needsReview, title, pending, compact = fal
   return (
     <Button
       type="button"
-      variant={needsReview ? "secondary" : compact ? "ghost" : "outline"}
+      variant={compact ? "ghost" : needsReview ? "secondary" : "outline"}
       size={compact ? "icon" : "default"}
       className={cn(needsReview && "text-primary")}
       disabled={pending}
