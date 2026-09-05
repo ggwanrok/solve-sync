@@ -37,16 +37,16 @@ test("허용하지 않는 문제 ID를 걸러낸다", async () => {
 test("문제 메모 필터와 북마크 목록은 독립적으로 검색하고 분류한다", async () => {
   const { filterProblemNotes, filterBookmarkedProblems, EMPTY_PROBLEM_MEMO } = await import("../lib/problem-memo.ts")
   const problems = [
-    { problemId: "1", title: "문자열", needsReview: true, memo: null },
-    { problemId: "2", title: "정렬", needsReview: false, memo: { ...EMPTY_PROBLEM_MEMO, algorithmTags: "정렬" } },
-    { problemId: "3", title: "최단 경로", needsReview: true, memo: { ...EMPTY_PROBLEM_MEMO, algorithmTags: "BFS" } },
-    { problemId: "4", title: "집계", needsReview: false, memo: null },
+    { problemId: "1", title: "문자열", acceptedAt: "2026-09-01T00:00:00Z", needsReview: true, memo: null },
+    { problemId: "2", title: "정렬", acceptedAt: "2026-09-04T00:00:00Z", needsReview: false, memo: { ...EMPTY_PROBLEM_MEMO, algorithmTags: "정렬" } },
+    { problemId: "3", title: "최단 경로", acceptedAt: "2026-09-02T00:00:00Z", needsReview: true, memo: { ...EMPTY_PROBLEM_MEMO, algorithmTags: "BFS" } },
+    { problemId: "4", title: "집계", acceptedAt: "2026-09-03T00:00:00Z", needsReview: false, memo: null },
   ]
   const ids = (filter, query = "") => filterProblemNotes(problems, filter, query).map((problem) => problem.problemId)
   const bookmarkIds = (query = "") => filterBookmarkedProblems(problems, query).map((problem) => problem.problemId)
-  assert.deepEqual(ids("all"), ["3", "1", "2", "4"])
-  assert.deepEqual(ids("written"), ["3", "2"])
-  assert.deepEqual(ids("empty"), ["1", "4"])
+  assert.deepEqual(ids("all"), ["2", "4", "3", "1"])
+  assert.deepEqual(ids("written"), ["2", "3"])
+  assert.deepEqual(ids("empty"), ["4", "1"])
   assert.deepEqual(bookmarkIds(), ["3", "1"])
   assert.deepEqual(bookmarkIds(" bfs "), ["3"])
   assert.deepEqual(bookmarkIds("문자열"), ["1"])
@@ -54,30 +54,30 @@ test("문제 메모 필터와 북마크 목록은 독립적으로 검색하고 �
 
   problems[0].needsReview = false
   assert.deepEqual(bookmarkIds(), ["3"])
-  assert.deepEqual(ids("empty"), ["1", "4"])
+  assert.deepEqual(ids("empty"), ["4", "1"])
 })
 
-test("북마크와 메모 우선순위가 바뀌어도 그룹 내 최신순과 원본 목록을 유지한다", async () => {
+test("북마크와 메모 여부가 바뀌어도 풀이 인증시간 최신순과 원본 목록을 유지한다", async () => {
   const { filterProblemNotes, EMPTY_PROBLEM_MEMO } = await import("../lib/problem-memo.ts")
   const memo = { ...EMPTY_PROBLEM_MEMO, approach: "풀이 기록" }
   const problems = Object.freeze([
-    { problemId: "1", needsReview: false, memo: null },
-    { problemId: "2", needsReview: false, memo },
-    { problemId: "3", needsReview: true, memo: null },
-    { problemId: "4", needsReview: true, memo },
-    { problemId: "5", needsReview: false, memo: null },
-    { problemId: "6", needsReview: false, memo },
-    { problemId: "7", needsReview: true, memo: null },
-    { problemId: "8", needsReview: true, memo },
+    { problemId: "1", acceptedAt: "2026-09-01T00:00:00Z", needsReview: false, memo: null },
+    { problemId: "2", acceptedAt: "2026-09-08T00:00:00Z", needsReview: false, memo },
+    { problemId: "3", acceptedAt: "2026-09-03T00:00:00Z", needsReview: true, memo: null },
+    { problemId: "4", acceptedAt: "2026-09-06T00:00:00Z", needsReview: true, memo },
+    { problemId: "5", acceptedAt: "2026-09-05T00:00:00Z", needsReview: false, memo: null },
+    { problemId: "6", acceptedAt: "2026-09-02T00:00:00Z", needsReview: false, memo },
+    { problemId: "7", acceptedAt: "2026-09-07T00:00:00Z", needsReview: true, memo: null },
+    { problemId: "8", acceptedAt: "2026-09-04T00:00:00Z", needsReview: true, memo },
   ])
   const ids = () => filterProblemNotes(problems, "all", "").map((problem) => problem.problemId)
-  assert.deepEqual(ids(), ["4", "8", "3", "7", "2", "6", "1", "5"])
+  assert.deepEqual(ids(), ["2", "7", "4", "5", "8", "3", "6", "1"])
   assert.deepEqual(problems.map((problem) => problem.problemId), ["1", "2", "3", "4", "5", "6", "7", "8"])
 
   problems[1].needsReview = true
   problems[2].memo = memo
   problems[3].needsReview = false
-  assert.deepEqual(ids(), ["2", "3", "8", "7", "4", "6", "1", "5"])
+  assert.deepEqual(ids(), ["2", "7", "4", "5", "8", "3", "6", "1"])
 })
 
 test("문제 메모 스키마는 간소화된 다섯 항목만 저장한다", () => {
