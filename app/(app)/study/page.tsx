@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight, Search, Users } from "lucide-react"
 import Link from "next/link"
 import { CreateStudyDialog } from "@/components/create-study-dialog"
-import { StudyDifficultyRange } from "@/components/study-difficulty-range"
+import { StudyDifficultySelect } from "@/components/study-difficulty-select"
 import { StudyRoomGrid, type StudyRoomDirectoryItem } from "@/components/study-room-grid"
 import { StudySearchFieldMenu, type StudySearchField } from "@/components/study-search-field-menu"
 import { Button } from "@/components/ui/button"
@@ -132,19 +132,18 @@ export default async function StudyListPage({
     <div className="page-container">
       <form method="get" className="rounded-2xl bg-card p-4 shadow-sm ring-1 ring-foreground/[0.055] sm:p-5">
         <input type="hidden" name="view" value={view} />
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <StudySearchFieldMenu defaultValue={field} />
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input key={params.query || "empty-query"} name="query" defaultValue={params.query || ""} placeholder="검색어를 입력하세요" className="pl-10" />
+        <div className="grid grid-cols-2 items-center gap-3 md:grid-cols-[11rem_9rem_minmax(0,1fr)_auto]">
+          <StudySearchFieldMenu key={field} defaultValue={field} />
+          <StudyDifficultySelect key={minDifficulty} defaultValue={minDifficulty} />
+          <div className="col-span-2 flex min-w-0 gap-3 md:contents">
+            <div className="relative min-w-0 flex-1 md:col-start-3 md:row-start-1">
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+              <Input key={params.query || "empty-query"} name="query" defaultValue={params.query || ""} placeholder="스터디룸 검색" aria-label="스터디룸 검색" className="border-input pl-10 shadow-none ring-0 focus-visible:ring-2" />
+            </div>
+            <Button type="submit" className="h-11 shrink-0 md:col-start-4 md:row-start-1">검색</Button>
           </div>
-          <Button type="submit">검색</Button>
-          {hasSearchFilters && <Button render={<Link href={resetHref} />} nativeButton={false} type="button" variant="outline">필터 초기화</Button>}
         </div>
-        <fieldset className="mt-3 border-t pt-3">
-          <legend className="px-1 text-xs font-medium text-muted-foreground">포함할 방 난이도</legend>
-          <div className="mt-1"><StudyDifficultyRange key={minDifficulty} defaultValue={minDifficulty} /></div>
-        </fieldset>
+        {hasSearchFilters && <Button render={<Link href={resetHref} />} nativeButton={false} type="button" variant="outline" className="mt-3">필터 초기화</Button>}
       </form>
 
       <StudyRoomGrid

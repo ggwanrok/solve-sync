@@ -24,14 +24,14 @@ export function StudySearchFieldMenu({ defaultValue }: { defaultValue: StudySear
   const selectedField = searchFields.find((field) => field.value === value) || searchFields[0]
 
   return (
-    <div className="sm:w-44">
+    <div className="min-w-0">
       <input key={value} type="hidden" name="field" defaultValue={value} />
       <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger
           render={
             <button
               type="button"
-              className="group/search-field flex h-11 w-full items-center gap-2 rounded-xl bg-muted/65 px-3.5 text-left text-sm font-medium ring-1 ring-foreground/[0.065] transition-colors outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/45"
+              className="group/search-field flex h-11 w-full items-center gap-2 rounded-xl border border-input bg-card px-3.5 text-left text-sm font-medium transition-colors outline-none hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring/45"
               aria-label={`검색 기준: ${selectedField.label}`}
             />
           }
