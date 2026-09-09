@@ -16,10 +16,19 @@ test("잔디 강도에 각 문제의 난이도를 가중치로 반영한다", as
 })
 
 test("스터디 목록은 별도 보기 값이 없으면 참여 중 보기를 사용한다", async () => {
-  const { parseStudyDirectoryView } = await import("../lib/study-directory-view.ts")
+  const { parseStudyDirectoryView, studyDirectoryHref } = await import("../lib/study-directory-view.ts")
 
   assert.equal(parseStudyDirectoryView(undefined), "joined")
   assert.equal(parseStudyDirectoryView("joined"), "joined")
   assert.equal(parseStudyDirectoryView("unknown"), "joined")
   assert.equal(parseStudyDirectoryView("all"), "all")
+
+  assert.equal(
+    studyDirectoryHref({ view: "all", field: "title", query: "", minDifficulty: "0" }),
+    "/study?view=all",
+  )
+  assert.equal(
+    studyDirectoryHref({ view: "all", field: "owner", query: " 홍길동 ", minDifficulty: "2" }),
+    "/study?field=owner&query=%ED%99%8D%EA%B8%B8%EB%8F%99&minDifficulty=2&view=all",
+  )
 })
