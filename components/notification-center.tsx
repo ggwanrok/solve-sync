@@ -2,7 +2,7 @@
 
 import { Bell, BellRing, Check, CircleAlert, Crown, Hand, LoaderCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useOptimistic } from "react"
+import { useOptimistic, useState } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
@@ -51,6 +51,8 @@ async function markRead(id?: string) {
 export function NotificationCenter({ inbox }: { inbox: StudyNotificationInbox }) {
   const router = useRouter()
   const [pending, run] = useActionTransition()
+  const [open, setOpen] = useState(false)
+  const [pendingItemId, setPendingItemId] = useState<string | null>(null)
   const [{ items, unreadCount }, markOptimistically] = useOptimistic(
     inbox,
     (current: StudyNotificationInbox, id: string | null): StudyNotificationInbox => {
@@ -66,17 +68,20 @@ export function NotificationCenter({ inbox }: { inbox: StudyNotificationInbox })
 
   function openNotification(item: StudyNotification) {
     run(async () => {
-      if (!item.readAt) {
-        markOptimistically(item.id)
-        try {
+      setPendingItemId(item.id)
+      try {
+        if (!item.readAt) {
+          markOptimistically(item.id)
           await markRead(item.id)
           router.refresh()
-        } catch (error) {
-          toast.error(error instanceof Error ? error.message : "알림을 읽음 처리하지 못했습니다.")
-          return
         }
+        setOpen(false)
+        router.push(item.url)
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "알림을 읽음 처리하지 못했습니다.")
+      } finally {
+        setPendingItemId(null)
       }
-      router.push(item.url)
     })
   }
 
@@ -94,7 +99,7 @@ export function NotificationCenter({ inbox }: { inbox: StudyNotificationInbox })
   }
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={(nextOpen) => { if (!pending) setOpen(nextOpen) }}>
       <DropdownMenuTrigger
         render={
           <Button
@@ -144,6 +149,7 @@ export function NotificationCenter({ inbox }: { inbox: StudyNotificationInbox })
                 <DropdownMenuItem
                   key={item.id}
                   disabled={pending}
+                  closeOnClick={false}
                   onClick={() => openNotification(item)}
                   className={cn(
                     "items-start gap-3 rounded-xl px-3.5 py-3.5",
@@ -154,7 +160,7 @@ export function NotificationCenter({ inbox }: { inbox: StudyNotificationInbox })
                     "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full",
                     item.type === "goal_missed" ? "bg-amber-500/12 text-amber-700 dark:text-amber-300" : "bg-muted text-primary",
                   )}>
-                    <Icon className="size-4" />
+                    {pendingItemId === item.id ? <LoaderCircle className="size-4 animate-spin" /> : <Icon className="size-4" />}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">

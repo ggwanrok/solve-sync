@@ -3,7 +3,7 @@
 import { useActionTransition } from "@/lib/use-pending-action"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { LogOut, Trash2 } from "lucide-react"
+import { LoaderCircle, LogOut, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { deleteStudyRoom, leaveStudyRoom } from "@/app/actions"
 import { Button } from "@/components/ui/button"
@@ -43,7 +43,10 @@ export function StudyRoomMembershipActions({ studyId, isOwner, isMember }: { stu
       <p className="text-xs leading-relaxed text-destructive">{description}</p>
       <div className="mt-3 flex justify-end gap-2">
         <Button type="button" variant="outline" size="sm" onClick={() => setConfirming(false)} disabled={pending} aria-busy={pending}>취소</Button>
-        <Button type="button" variant="destructive" size="sm" onClick={execute} disabled={pending} aria-busy={pending}>{pending ? "처리 중..." : label}</Button>
+        <Button type="button" variant="destructive" size="sm" onClick={execute} disabled={pending} aria-busy={pending}>
+          {pending && <LoaderCircle className="animate-spin" />}
+          {pending ? "처리 중..." : label}
+        </Button>
       </div>
     </div>
   )

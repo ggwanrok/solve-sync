@@ -1,6 +1,6 @@
 "use client"
 
-import { ExternalLink } from "lucide-react"
+import { ExternalLink, LoaderCircle } from "lucide-react"
 import { loadDashboardSolves } from "@/app/dashboard-actions"
 import { DashboardPagination } from "@/components/dashboard-pagination"
 import { ProblemDifficultyBadge } from "@/components/difficulty-badge"
@@ -57,7 +57,7 @@ export function DashboardSolvesCard({ initialResult }: { initialResult: Dashboar
           {data && !data.entries.length && <p className="py-8 text-center text-sm text-muted-foreground">아직 수집된 풀이가 없습니다.</p>}
         </div>
         {error && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
-        {!data && <Button type="button" variant="outline" className="mt-3 self-center" disabled={pending} onClick={() => loadPage(1)}>다시 시도</Button>}
+        {!data && <Button type="button" variant="outline" className="mt-3 self-center" disabled={pending} aria-busy={pending} onClick={() => loadPage(1)}>{pending && <LoaderCircle className="animate-spin" />}다시 시도</Button>}
         {data && <DashboardPagination page={data.page} totalCount={data.totalCount} pending={busy} label="풀이 기록" onPageChange={loadPage} />}
       </CardContent>
     </Card>

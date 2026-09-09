@@ -102,7 +102,7 @@ export default function OnboardingPage() {
               </div>
               <Button type="button" variant="outline" onClick={checkAvailability} disabled={checking || pending || !handle} aria-busy={checking} className="gap-1.5">
                 {checking ? "확인 중" : "중복 확인"}
-                {!checking && <Search className="size-4" />}
+                {checking ? <LoaderCircle className="size-4 animate-spin" /> : <Search className="size-4" />}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">영문 소문자, 숫자, 밑줄 3~20자</p>
@@ -115,7 +115,7 @@ export default function OnboardingPage() {
           </div>
           <Button type="submit" disabled={pending || !isAvailable} className="gap-2">
             {pending ? "확정 중..." : "아이디 확정"}
-            <ArrowRight className="size-4" />
+            {pending ? <LoaderCircle className="size-4 animate-spin" /> : <ArrowRight className="size-4" />}
           </Button>
         </form>
       </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { BarChart3, Crown, Gauge, Trophy } from "lucide-react"
+import { BarChart3, Crown, Gauge, LoaderCircle, Trophy } from "lucide-react"
 import { loadDashboardRanking } from "@/app/dashboard-actions"
 import { DashboardPagination } from "@/components/dashboard-pagination"
 import { DifficultyBadge } from "@/components/difficulty-badge"
@@ -206,7 +206,7 @@ export function LeaderboardCard({ initialResult, viewerId }: { initialResult: Da
           ) : null}
         </div>
         {error && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
-        {!data && <Button type="button" variant="outline" className="mt-3 self-center" disabled={pending} onClick={() => loadPage(1)}>다시 시도</Button>}
+        {!data && <Button type="button" variant="outline" className="mt-3 self-center" disabled={pending} aria-busy={pending} onClick={() => loadPage(1)}>{pending && <LoaderCircle className="animate-spin" />}다시 시도</Button>}
         {data && <DashboardPagination page={data.page} totalCount={data.totalCount} pending={pending} label="전체 랭킹" onPageChange={loadPage} />}
       </CardContent>
     </Card>

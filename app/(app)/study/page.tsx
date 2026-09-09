@@ -2,6 +2,8 @@ import { ChevronLeft, ChevronRight, Search, Users } from "lucide-react"
 import Link from "next/link"
 import { CreateStudyDialog } from "@/components/create-study-dialog"
 import { StudyDifficultySelect } from "@/components/study-difficulty-select"
+import { StudyDirectoryForm, StudyDirectorySubmitButton } from "@/components/study-directory-form"
+import { StudyDirectoryViewToggle } from "@/components/study-directory-view-toggle"
 import { StudyRoomGrid, type StudyRoomDirectoryItem } from "@/components/study-room-grid"
 import { StudySearchFieldMenu, type StudySearchField } from "@/components/study-search-field-menu"
 import { Button } from "@/components/ui/button"
@@ -130,7 +132,7 @@ export default async function StudyListPage({
 
   return (
     <div className="page-container">
-      <form method="get" className="rounded-2xl bg-card p-4 shadow-sm ring-1 ring-foreground/[0.055] sm:p-5">
+      <StudyDirectoryForm key={`${field}:${query}:${page}:${minDifficulty}:${view}`} className="rounded-2xl bg-card p-4 shadow-sm ring-1 ring-foreground/[0.055] sm:p-5">
         <input type="hidden" name="view" value={view} />
         <div className="grid grid-cols-2 items-center gap-3 md:grid-cols-[11rem_9rem_minmax(0,1fr)_auto]">
           <StudySearchFieldMenu key={field} defaultValue={field} />
@@ -140,11 +142,11 @@ export default async function StudyListPage({
               <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
               <Input key={params.query || "empty-query"} name="query" defaultValue={params.query || ""} placeholder="스터디룸 검색" aria-label="스터디룸 검색" className="border-input pl-10 shadow-none ring-0 focus-visible:ring-2" />
             </div>
-            <Button type="submit" className="h-11 shrink-0 md:col-start-4 md:row-start-1">검색</Button>
+            <StudyDirectorySubmitButton className="h-11 shrink-0 md:col-start-4 md:row-start-1" />
           </div>
         </div>
         {hasSearchFilters && <Button render={<Link href={resetHref} />} nativeButton={false} type="button" variant="outline" className="mt-3">필터 초기화</Button>}
-      </form>
+      </StudyDirectoryForm>
 
       <StudyRoomGrid
         key={`${user.id}-${view}`}
@@ -154,28 +156,7 @@ export default async function StudyListPage({
         defaultJoinedRoomIds={defaultJoinedRoomIds}
         canReorder={joinedOnly && orderAvailable}
         directorySummary={hasSearchFilters ? `${directoryLabel} 검색 결과 ${total}개` : `${directoryLabel} ${total}개`}
-        toolbarStart={(
-          <nav className="flex w-fit rounded-xl bg-muted/70 p-1" aria-label="스터디룸 보기 방식">
-            <Button
-              render={<Link href={joinedHref} />}
-              nativeButton={false}
-              variant="ghost"
-              className={`h-9 rounded-lg px-4 ${joinedOnly ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
-              aria-current={joinedOnly ? "page" : undefined}
-            >
-              참여 중인 스터디룸
-            </Button>
-            <Button
-              render={<Link href={allHref} />}
-              nativeButton={false}
-              variant="ghost"
-              className={`h-9 rounded-lg px-4 ${!joinedOnly ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
-              aria-current={!joinedOnly ? "page" : undefined}
-            >
-              모두 둘러보기
-            </Button>
-          </nav>
-        )}
+        toolbarStart={<StudyDirectoryViewToggle joinedHref={joinedHref} allHref={allHref} joinedOnly={joinedOnly} />}
         toolbarEnd={<CreateStudyDialog />}
       >
         {query && <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">‘{query}’</span>에 해당하는 스터디룸입니다.</p>}

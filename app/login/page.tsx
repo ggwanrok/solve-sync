@@ -1,6 +1,6 @@
 "use client"
 
-import { Check } from "lucide-react"
+import { Check, LoaderCircle } from "lucide-react"
 import Link from "next/link"
 import { usePendingAction } from "@/lib/use-pending-action"
 import { toast } from "sonner"
@@ -114,8 +114,8 @@ export default function LoginPage() {
             </div>
 
             <div className="flex flex-col gap-3">
-              <Button size="lg" className="w-full gap-2" onClick={signInWithGoogle} disabled={pending}>
-                <GoogleIcon className="size-5 rounded-full bg-white p-0.5" />
+              <Button size="lg" className="w-full gap-2" onClick={signInWithGoogle} disabled={pending} aria-busy={pending}>
+                {pending ? <LoaderCircle className="size-5 animate-spin" /> : <GoogleIcon className="size-5 rounded-full bg-white p-0.5" />}
                 {pending ? "Google로 연결 중..." : "Google로 계속하기"}
               </Button>
             </div>

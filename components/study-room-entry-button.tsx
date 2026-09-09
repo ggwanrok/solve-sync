@@ -8,7 +8,7 @@ function EntryLabel({ joined }: { joined: boolean }) {
   const { pending } = useLinkStatus()
   return (
     <span className="inline-flex items-center gap-1.5" aria-busy={pending}>
-      {pending ? "이동 중..." : joined ? "입장" : "둘러보기"}
+      {joined ? "입장" : "둘러보기"}
       {pending
         ? <LoaderCircle className="size-3.5 animate-spin" aria-hidden="true" />
         : <ArrowRight className="size-3.5" aria-hidden="true" />}

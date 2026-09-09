@@ -283,10 +283,17 @@ export function AccountDialog({ user }: { user: AccountUser }) {
                 problemMemoPromptEnabled ? "bg-primary" : "bg-muted-foreground/30",
               )}
             >
-              <span className={cn(
-                "absolute top-1 left-1 size-5 rounded-full bg-white shadow-sm transition-transform",
-                problemMemoPromptEnabled && "translate-x-5",
-              )} />
+              {savingPreferences ? (
+                <LoaderCircle className={cn(
+                  "absolute left-1/2 top-1/2 size-4 -translate-x-1/2 -translate-y-1/2 animate-spin",
+                  problemMemoPromptEnabled ? "text-primary-foreground" : "text-foreground",
+                )} />
+              ) : (
+                <span className={cn(
+                  "absolute top-1 left-1 size-5 rounded-full bg-white shadow-sm transition-transform",
+                  problemMemoPromptEnabled && "translate-x-5",
+                )} />
+              )}
             </button>
           </div>
         </div>
@@ -336,7 +343,7 @@ export function AccountDialog({ user }: { user: AccountUser }) {
         </fieldset>
         <Button type="button" variant="outline" className="w-full" onClick={logout} disabled={actions.keys.size > 0} aria-busy={loggingOut}>{loggingOut ? <LoaderCircle className="size-4 animate-spin" /> : <LogOut className="size-4" />}{loggingOut ? "로그아웃 중" : "로그아웃"}</Button>
         <div className="rounded-2xl bg-destructive/5 p-4 ring-1 ring-destructive/20">
-          {!confirmDelete ? <Button type="button" variant="destructive" className="w-full" onClick={() => setConfirmDelete(true)} disabled={actions.keys.size > 0}><Trash2 className="size-4" />회원 탈퇴</Button> : <div className="space-y-3"><p className="text-sm text-destructive">계정과 모든 풀이·친구·스터디 데이터가 삭제되며 복구할 수 없습니다.</p><div className="flex gap-2"><Button type="button" variant="outline" className="flex-1" onClick={() => setConfirmDelete(false)} disabled={deleting}>취소</Button><Button type="button" variant="destructive" className="flex-1" onClick={deleteAccount} disabled={actions.keys.size > 0} aria-busy={deleting}>{deleting ? "삭제 중..." : "영구 삭제"}</Button></div></div>}
+          {!confirmDelete ? <Button type="button" variant="destructive" className="w-full" onClick={() => setConfirmDelete(true)} disabled={actions.keys.size > 0}><Trash2 className="size-4" />회원 탈퇴</Button> : <div className="space-y-3"><p className="text-sm text-destructive">계정과 모든 풀이·친구·스터디 데이터가 삭제되며 복구할 수 없습니다.</p><div className="flex gap-2"><Button type="button" variant="outline" className="flex-1" onClick={() => setConfirmDelete(false)} disabled={deleting}>취소</Button><Button type="button" variant="destructive" className="flex-1" onClick={deleteAccount} disabled={actions.keys.size > 0} aria-busy={deleting}>{deleting && <LoaderCircle className="animate-spin" />}{deleting ? "삭제 중..." : "영구 삭제"}</Button></div></div>}
         </div>
         {avatarCropFile && <ProfileImageCropDialog file={avatarCropFile} onCancel={closeAvatarCrop} onApply={uploadAvatar} />}
       </DialogContent>
