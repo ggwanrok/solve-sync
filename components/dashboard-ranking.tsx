@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, type ReactNode } from "react"
 import { BarChart3, Crown, Gauge, LoaderCircle, Trophy } from "lucide-react"
 import { loadDashboardRanking } from "@/app/dashboard-actions"
 import { DashboardPagination } from "@/components/dashboard-pagination"
@@ -10,9 +11,10 @@ import { UserAvatar } from "@/components/user-avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
-import { isPodiumRank, type DashboardRankingPage, type DashboardResult, type ViewerRanking } from "@/lib/dashboard"
-import { useDashboardPage } from "@/lib/use-dashboard-page"
+import { DASHBOARD_RANKING_LABELS, dashboardRankingType, isPodiumRank, type DashboardRankingType, type DashboardRankingPage, type DashboardResult, type ViewerRanking } from "@/lib/dashboard"
+import { useActionTransition } from "@/lib/use-pending-action"
 
 const donutStroke = [
   "var(--difficulty-0)",
@@ -96,7 +98,7 @@ function DifficultyDonutChart({ counts }: { counts: ViewerRanking["levelSolved"]
   )
 }
 
-export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
+function RankingSummaryCard({ ranking, rankingType }: { ranking: ViewerRanking; rankingType: DashboardRankingType }) {
   const isPodium = isPodiumRank(ranking.rankingPosition)
 
   return (
@@ -104,7 +106,7 @@ export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Trophy className="size-4.5 text-muted-foreground" />
-          나의 랭킹
+          나의 {DASHBOARD_RANKING_LABELS[rankingType]} 랭킹
         </CardTitle>
         <CardAction>
           <RankingFormulaHelp />
@@ -119,7 +121,7 @@ export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
               </Crown>
             </div>
             <div className="min-w-0">
-              <p className="text-xs text-muted-foreground">전체 순위</p>
+              <p className="text-xs text-muted-foreground">{DASHBOARD_RANKING_LABELS[rankingType]} 순위</p>
               <p className="mt-1 text-3xl font-bold tracking-tight">
                 {ranking.rankingPosition ? `${formatScore(ranking.rankingPosition)}위` : "집계 전"}
               </p>
@@ -142,7 +144,7 @@ export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
           <div className="flex items-end justify-between gap-3">
             <div>
               <p className="flex items-center gap-1.5 text-sm font-medium"><BarChart3 className="size-4 text-muted-foreground" />단계별 풀이</p>
-              <p className="mt-1 text-xs text-muted-foreground">알고리즘 {formatScore(ranking.algorithmSolved)}문제 · SQL {formatScore(ranking.sqlSolved)}문제</p>
+              <p className="mt-1 text-xs text-muted-foreground">{DASHBOARD_RANKING_LABELS[rankingType]} {formatScore(ranking.totalSolved)}문제</p>
             </div>
             {ranking.unknownSolved > 0 && <span className="text-[11px] text-muted-foreground">난이도 미확인 {ranking.unknownSolved}문제</span>}
           </div>
@@ -153,61 +155,120 @@ export function RankingSummaryCard({ ranking }: { ranking: ViewerRanking }) {
   )
 }
 
-export function LeaderboardCard({ initialResult, viewerId }: { initialResult: DashboardResult<DashboardRankingPage>; viewerId: string }) {
-  const { data, error, pending, loadPage } = useDashboardPage(initialResult, loadDashboardRanking)
+export function DashboardRankings({ initialResult, viewerId, children }: {
+  initialResult: DashboardResult<DashboardRankingPage>
+  viewerId: string
+  children: ReactNode
+}) {
+  const [data, setData] = useState(initialResult.ok ? initialResult.data : null)
+  const [error, setError] = useState(initialResult.ok ? null : initialResult.message)
+  const [rankingType, setRankingType] = useState<DashboardRankingType>("algorithm")
+  const [pending, run] = useActionTransition()
+
+  function loadPage(page: number, nextType = rankingType) {
+    run(async () => {
+      setError(null)
+      try {
+        const result = await loadDashboardRanking(page, nextType)
+        if (!result.ok) {
+          setError(result.message)
+          return
+        }
+        setData(result.data)
+        setRankingType(nextType)
+      } catch {
+        setError("랭킹을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.")
+      }
+    })
+  }
+
+  return (
+    <>
+      {data?.viewer ? <RankingSummaryCard ranking={data.viewer} rankingType={rankingType} /> : (
+        <Card><CardContent><p className="text-sm text-muted-foreground">{data ? "아직 내 랭킹이 집계되지 않았습니다." : "내 랭킹을 불러오지 못했습니다. 아래에서 다시 시도해 주세요."}</p></CardContent></Card>
+      )}
+      <div className="grid items-start gap-6 lg:grid-cols-2">
+        <LeaderboardCard data={data} error={error} pending={pending} rankingType={rankingType} viewerId={viewerId} loadPage={loadPage} />
+        {children}
+      </div>
+    </>
+  )
+}
+
+function LeaderboardCard({ data, error, pending, rankingType, viewerId, loadPage }: {
+  data: DashboardRankingPage | null
+  error: string | null
+  pending: boolean
+  rankingType: DashboardRankingType
+  viewerId: string
+  loadPage: (page: number, rankingType?: DashboardRankingType) => void
+}) {
   const entries = data?.entries || []
 
   return (
     <Card className="h-full min-w-0" aria-busy={pending}>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2"><Trophy className="size-4.5 text-muted-foreground" />전체 랭킹</CardTitle>
+        <CardTitle className="flex items-center gap-2"><Trophy className="size-4.5 text-muted-foreground" />랭킹</CardTitle>
+        {pending && <CardAction><LoaderCircle className="size-4 animate-spin text-muted-foreground" aria-label="랭킹 불러오는 중" /></CardAction>}
       </CardHeader>
       <CardContent className="flex flex-1 flex-col">
-        <div className="flex flex-1 flex-col gap-1">
-          {entries.length ? entries.map((entry) => {
-            const isViewer = entry.userId === viewerId
-            return (
-              <MemberProfileDialog
-                key={entry.userId}
-                profile={{
-                  id: entry.userId,
-                  name: entry.nickname || entry.handle,
-                  handle: entry.handle,
-                  bio: entry.bio,
-                  avatarUrl: entry.avatarUrl,
-                }}
-                badgeLabel={isViewer ? "나" : `전체 ${formatScore(entry.rankingPosition)}위`}
-                ranking={entry}
-                triggerClassName={cn(
-                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left outline-none transition-colors hover:bg-muted/65 focus-visible:ring-2 focus-visible:ring-ring",
-                  isViewer && "bg-muted/75",
-                )}
-              >
-                <div className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg text-xs font-bold tabular-nums", isPodiumRank(entry.rankingPosition) ? "podium-surface-strong text-foreground" : "text-muted-foreground")}>
-                  {entry.rankingPosition}
+        <Tabs value={rankingType} onValueChange={(value) => {
+          const nextType = dashboardRankingType(value)
+          if (!pending && nextType !== rankingType) loadPage(1, nextType)
+        }}>
+          <TabsList aria-label="랭킹 유형" className="mb-3 w-full">
+            <TabsTrigger value="algorithm" disabled={pending && rankingType !== "algorithm"}>알고리즘</TabsTrigger>
+            <TabsTrigger value="sql" disabled={pending && rankingType !== "sql"}>SQL</TabsTrigger>
+          </TabsList>
+          <TabsContent value={rankingType}>
+            <div className="flex flex-1 flex-col gap-1">
+              {entries.length ? entries.map((entry) => {
+                const isViewer = entry.userId === viewerId
+                return (
+                  <MemberProfileDialog
+                    key={entry.userId}
+                    profile={{
+                      id: entry.userId,
+                      name: entry.nickname || entry.handle,
+                      handle: entry.handle,
+                      bio: entry.bio,
+                      avatarUrl: entry.avatarUrl,
+                    }}
+                    badgeLabel={`${isViewer ? "나 · " : ""}${DASHBOARD_RANKING_LABELS[rankingType]} ${formatScore(entry.rankingPosition)}위`}
+                    ranking={entry}
+                    rankingType={rankingType}
+                    triggerClassName={cn(
+                      "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left outline-none transition-colors hover:bg-muted/65 focus-visible:ring-2 focus-visible:ring-ring",
+                      isViewer && "bg-muted/75",
+                    )}
+                  >
+                    <div className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg text-xs font-bold tabular-nums", isPodiumRank(entry.rankingPosition) ? "podium-surface-strong text-foreground" : "text-muted-foreground")}>
+                      {entry.rankingPosition}
+                    </div>
+                    <UserAvatar name={entry.nickname || entry.handle} imageUrl={entry.avatarUrl} className="size-9" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <p className="truncate text-sm font-medium">{entry.nickname || entry.handle}</p>
+                        {isViewer && <Badge variant="secondary" className="h-4 shrink-0 px-1.5 text-[9px]">나</Badge>}
+                      </div>
+                      {entry.bio && <p className="truncate text-[11px] text-muted-foreground">{entry.bio}</p>}
+                    </div>
+                    <p className="shrink-0 text-sm font-semibold tabular-nums">{formatScore(entry.rankingScore)}<span className="ml-0.5 text-[10px] font-normal text-muted-foreground">점</span></p>
+                  </MemberProfileDialog>
+                )
+              }) : data ? (
+                <div className="flex min-h-64 flex-col items-center justify-center rounded-xl bg-muted/45 px-6 text-center">
+                  <Trophy className="mb-3 size-8 text-muted-foreground/55" />
+                  <p className="text-sm font-medium">아직 집계된 랭킹이 없습니다.</p>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">첫 풀이가 기록되면 랭킹이 시작돼요.</p>
                 </div>
-                <UserAvatar name={entry.nickname || entry.handle} imageUrl={entry.avatarUrl} className="size-9" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex min-w-0 items-center gap-1.5">
-                    <p className="truncate text-sm font-medium">{entry.nickname || entry.handle}</p>
-                    {isViewer && <Badge variant="secondary" className="h-4 shrink-0 px-1.5 text-[9px]">나</Badge>}
-                  </div>
-                  {entry.bio && <p className="truncate text-[11px] text-muted-foreground">{entry.bio}</p>}
-                </div>
-                <p className="shrink-0 text-sm font-semibold tabular-nums">{formatScore(entry.rankingScore)}<span className="ml-0.5 text-[10px] font-normal text-muted-foreground">점</span></p>
-              </MemberProfileDialog>
-            )
-          }) : data ? (
-            <div className="flex min-h-64 flex-col items-center justify-center rounded-xl bg-muted/45 px-6 text-center">
-              <Trophy className="mb-3 size-8 text-muted-foreground/55" />
-              <p className="text-sm font-medium">아직 집계된 랭킹이 없습니다.</p>
-              <p className="mt-1 text-xs leading-5 text-muted-foreground">첫 풀이가 기록되면 랭킹이 시작돼요.</p>
+              ) : null}
             </div>
-          ) : null}
-        </div>
-        {error && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
-        {!data && <Button type="button" variant="outline" className="mt-3 self-center" disabled={pending} aria-busy={pending} onClick={() => loadPage(1)}>{pending && <LoaderCircle className="animate-spin" />}다시 시도</Button>}
-        {data && <DashboardPagination page={data.page} totalCount={data.totalCount} pending={pending} label="전체 랭킹" onPageChange={loadPage} />}
+            {error && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
+            {!data && <Button type="button" variant="outline" className="mt-3 self-center" disabled={pending} aria-busy={pending} onClick={() => loadPage(1)}>{pending && <LoaderCircle className="animate-spin" />}다시 시도</Button>}
+            {data && <DashboardPagination page={data.page} totalCount={data.totalCount} pending={pending} label={`${DASHBOARD_RANKING_LABELS[rankingType]} 랭킹`} onPageChange={loadPage} />}
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   )

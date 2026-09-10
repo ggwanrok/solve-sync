@@ -19,6 +19,13 @@ export type ViewerRanking = Omit<DashboardRankingEntry, "rankingPosition"> & {
   rankingPosition: number | null
 }
 
+export const DASHBOARD_RANKING_LABELS = { algorithm: "알고리즘", sql: "SQL" } as const
+export type DashboardRankingType = keyof typeof DASHBOARD_RANKING_LABELS
+
+export function dashboardRankingType(value: unknown): DashboardRankingType {
+  return value === "sql" ? "sql" : "algorithm"
+}
+
 export const DASHBOARD_PAGE_SIZE = 10
 export type DashboardSolve = {
   id: string

@@ -1557,160 +1557,6 @@ end;
 $$;
 
 drop function if exists public.dashboard_ranking(integer);
-create function public.dashboard_ranking(top_limit integer default 10)
-returns table(
-  ranking_position bigint,
-  user_id uuid,
-  handle text,
-  nickname text,
-  bio text,
-  avatar_url text,
-  ranking_score bigint,
-  algorithm_score bigint,
-  sql_score bigint,
-  algorithm_solved bigint,
-  sql_solved bigint,
-  total_solved bigint,
-  level_0_solved bigint,
-  level_1_solved bigint,
-  level_2_solved bigint,
-  level_3_solved bigint,
-  level_4_solved bigint,
-  level_5_solved bigint,
-  unknown_solved bigint
-)
-language sql
-stable
-security definer
-set search_path = ''
-as $$
-  with difficulty_ranked as (
-    select
-      event.user_id,
-      event.problem_type,
-      event.difficulty,
-      row_number() over (
-        partition by event.user_id, event.problem_type
-        order by event.difficulty desc nulls last, event.accepted_at asc, event.id asc
-      ) as difficulty_position
-    from public.solve_events event
-    where event.problem_type in ('algorithm', 'sql')
-  ),
-  type_aggregates as (
-    select
-      solve.user_id,
-      solve.problem_type,
-      count(*)::bigint as total_solved,
-      (
-        coalesce(sum(
-          case
-            when solve.difficulty_position <= 100 and solve.difficulty is not null
-              then case solve.difficulty
-                when 0 then 5
-                when 1 then 8
-                when 2 then 13
-                when 3 then 21
-                when 4 then 34
-                when 5 then 55
-                else 0
-              end
-            else 0
-          end
-        ), 0)
-        + round(200 * (1 - power(0.997::numeric, count(*)::numeric)))
-      )::bigint as type_score,
-      count(*) filter (where solve.difficulty = 0)::bigint as level_0_solved,
-      count(*) filter (where solve.difficulty = 1)::bigint as level_1_solved,
-      count(*) filter (where solve.difficulty = 2)::bigint as level_2_solved,
-      count(*) filter (where solve.difficulty = 3)::bigint as level_3_solved,
-      count(*) filter (where solve.difficulty = 4)::bigint as level_4_solved,
-      count(*) filter (where solve.difficulty = 5)::bigint as level_5_solved,
-      count(*) filter (where solve.difficulty is null)::bigint as unknown_solved
-    from difficulty_ranked solve
-    group by solve.user_id, solve.problem_type
-  ),
-  user_aggregates as (
-    select
-      aggregate.user_id,
-      coalesce(max(aggregate.type_score) filter (where aggregate.problem_type = 'algorithm'), 0)::bigint as algorithm_score,
-      coalesce(max(aggregate.type_score) filter (where aggregate.problem_type = 'sql'), 0)::bigint as sql_score,
-      coalesce(max(aggregate.total_solved) filter (where aggregate.problem_type = 'algorithm'), 0)::bigint as algorithm_solved,
-      coalesce(max(aggregate.total_solved) filter (where aggregate.problem_type = 'sql'), 0)::bigint as sql_solved,
-      coalesce(sum(aggregate.total_solved), 0)::bigint as total_solved,
-      coalesce(sum(aggregate.level_0_solved), 0)::bigint as level_0_solved,
-      coalesce(sum(aggregate.level_1_solved), 0)::bigint as level_1_solved,
-      coalesce(sum(aggregate.level_2_solved), 0)::bigint as level_2_solved,
-      coalesce(sum(aggregate.level_3_solved), 0)::bigint as level_3_solved,
-      coalesce(sum(aggregate.level_4_solved), 0)::bigint as level_4_solved,
-      coalesce(sum(aggregate.level_5_solved), 0)::bigint as level_5_solved,
-      coalesce(sum(aggregate.unknown_solved), 0)::bigint as unknown_solved
-    from type_aggregates aggregate
-    group by aggregate.user_id
-  ),
-  scores as (
-    select
-      profile.id as user_id,
-      profile.handle,
-      profile.nickname,
-      profile.bio,
-      profile.avatar_url,
-      (
-        coalesce(aggregate.algorithm_score, 0)
-        + coalesce(aggregate.sql_score, 0) / 2
-      )::bigint as ranking_score,
-      coalesce(aggregate.algorithm_score, 0)::bigint as algorithm_score,
-      coalesce(aggregate.sql_score, 0)::bigint as sql_score,
-      coalesce(aggregate.algorithm_solved, 0)::bigint as algorithm_solved,
-      coalesce(aggregate.sql_solved, 0)::bigint as sql_solved,
-      coalesce(aggregate.total_solved, 0)::bigint as total_solved,
-      coalesce(aggregate.level_0_solved, 0)::bigint as level_0_solved,
-      coalesce(aggregate.level_1_solved, 0)::bigint as level_1_solved,
-      coalesce(aggregate.level_2_solved, 0)::bigint as level_2_solved,
-      coalesce(aggregate.level_3_solved, 0)::bigint as level_3_solved,
-      coalesce(aggregate.level_4_solved, 0)::bigint as level_4_solved,
-      coalesce(aggregate.level_5_solved, 0)::bigint as level_5_solved,
-      coalesce(aggregate.unknown_solved, 0)::bigint as unknown_solved
-    from public.profiles profile
-    left join user_aggregates aggregate on aggregate.user_id = profile.id
-    where profile.handle is not null
-  ),
-  ranked as (
-    select
-      row_number() over (
-        order by score.ranking_score desc, score.algorithm_score desc, score.sql_score desc,
-          score.total_solved desc, score.handle asc
-      ) as ranking_position,
-      score.*
-    from scores score
-  )
-  select
-    ranked.ranking_position,
-    ranked.user_id,
-    ranked.handle,
-    ranked.nickname,
-    ranked.bio,
-    ranked.avatar_url,
-    ranked.ranking_score,
-    ranked.algorithm_score,
-    ranked.sql_score,
-    ranked.algorithm_solved,
-    ranked.sql_solved,
-    ranked.total_solved,
-    ranked.level_0_solved,
-    ranked.level_1_solved,
-    ranked.level_2_solved,
-    ranked.level_3_solved,
-    ranked.level_4_solved,
-    ranked.level_5_solved,
-    ranked.unknown_solved
-  from ranked
-  where (select auth.uid()) is not null
-    and (
-      ranked.ranking_position <= least(greatest(coalesce(top_limit, 10), 1), 100)
-      or ranked.user_id = (select auth.uid())
-    )
-  order by ranked.ranking_position;
-$$;
 
 drop function if exists public.friend_contribution_events(date);
 create function public.friend_contribution_events(first_date date)
@@ -1842,8 +1688,6 @@ revoke execute on function public.exchange_extension_connection_code(text, text,
 grant execute on function public.exchange_extension_connection_code(text, text, uuid, text) to service_role;
 revoke execute on function public.delete_own_account() from public, anon;
 grant execute on function public.delete_own_account() to authenticated;
-revoke execute on function public.dashboard_ranking(integer) from public, anon;
-grant execute on function public.dashboard_ranking(integer) to authenticated;
 revoke execute on function public.friend_contribution_events(date) from public, anon;
 grant execute on function public.friend_contribution_events(date) to authenticated;
 revoke execute on function public.has_study_room_access(uuid), public.verify_study_room_password(uuid, text), public.join_study_room(uuid) from public, anon;
@@ -1972,15 +1816,18 @@ as $$
   );
 $$;
 
--- 기존 랭킹과 동일한 점수 및 동점 정렬을 사용하며 페이지 범위와 내 랭킹을 함께 반환한다.
-create or replace function public.dashboard_ranking_page(page_number integer default 1)
+-- 유형별 점수와 동점 풀이 수로 정렬하며 기본 유형은 알고리즘이다.
+drop function if exists public.dashboard_ranking_page(integer);
+create or replace function public.dashboard_ranking_page(page_number integer default 1, ranking_type text default 'algorithm')
 returns jsonb
 language sql
 stable
 security definer
 set search_path = ''
 as $$
-  with difficulty_ranked as (
+  with selected_type as (
+    select case when ranking_type = 'sql' then 'sql' else 'algorithm' end as problem_type
+  ), difficulty_ranked as (
     select
       event.user_id,
       event.problem_type,
@@ -2031,15 +1878,7 @@ as $$
       coalesce(max(aggregate.type_score) filter (where aggregate.problem_type = 'algorithm'), 0)::bigint as algorithm_score,
       coalesce(max(aggregate.type_score) filter (where aggregate.problem_type = 'sql'), 0)::bigint as sql_score,
       coalesce(max(aggregate.total_solved) filter (where aggregate.problem_type = 'algorithm'), 0)::bigint as algorithm_solved,
-      coalesce(max(aggregate.total_solved) filter (where aggregate.problem_type = 'sql'), 0)::bigint as sql_solved,
-      coalesce(sum(aggregate.total_solved), 0)::bigint as total_solved,
-      coalesce(sum(aggregate.level_0_solved), 0)::bigint as level_0_solved,
-      coalesce(sum(aggregate.level_1_solved), 0)::bigint as level_1_solved,
-      coalesce(sum(aggregate.level_2_solved), 0)::bigint as level_2_solved,
-      coalesce(sum(aggregate.level_3_solved), 0)::bigint as level_3_solved,
-      coalesce(sum(aggregate.level_4_solved), 0)::bigint as level_4_solved,
-      coalesce(sum(aggregate.level_5_solved), 0)::bigint as level_5_solved,
-      coalesce(sum(aggregate.unknown_solved), 0)::bigint as unknown_solved
+      coalesce(max(aggregate.total_solved) filter (where aggregate.problem_type = 'sql'), 0)::bigint as sql_solved
     from type_aggregates aggregate
     group by aggregate.user_id
   ),
@@ -2050,31 +1889,29 @@ as $$
       profile.nickname,
       profile.bio,
       profile.avatar_url,
-      (
-        coalesce(aggregate.algorithm_score, 0)
-        + coalesce(aggregate.sql_score, 0) / 2
-      )::bigint as ranking_score,
+      coalesce(selected.type_score, 0)::bigint as ranking_score,
       coalesce(aggregate.algorithm_score, 0)::bigint as algorithm_score,
       coalesce(aggregate.sql_score, 0)::bigint as sql_score,
       coalesce(aggregate.algorithm_solved, 0)::bigint as algorithm_solved,
       coalesce(aggregate.sql_solved, 0)::bigint as sql_solved,
-      coalesce(aggregate.total_solved, 0)::bigint as total_solved,
-      coalesce(aggregate.level_0_solved, 0)::bigint as level_0_solved,
-      coalesce(aggregate.level_1_solved, 0)::bigint as level_1_solved,
-      coalesce(aggregate.level_2_solved, 0)::bigint as level_2_solved,
-      coalesce(aggregate.level_3_solved, 0)::bigint as level_3_solved,
-      coalesce(aggregate.level_4_solved, 0)::bigint as level_4_solved,
-      coalesce(aggregate.level_5_solved, 0)::bigint as level_5_solved,
-      coalesce(aggregate.unknown_solved, 0)::bigint as unknown_solved
+      coalesce(selected.total_solved, 0)::bigint as total_solved,
+      coalesce(selected.level_0_solved, 0)::bigint as level_0_solved,
+      coalesce(selected.level_1_solved, 0)::bigint as level_1_solved,
+      coalesce(selected.level_2_solved, 0)::bigint as level_2_solved,
+      coalesce(selected.level_3_solved, 0)::bigint as level_3_solved,
+      coalesce(selected.level_4_solved, 0)::bigint as level_4_solved,
+      coalesce(selected.level_5_solved, 0)::bigint as level_5_solved,
+      coalesce(selected.unknown_solved, 0)::bigint as unknown_solved
     from public.profiles profile
     left join user_aggregates aggregate on aggregate.user_id = profile.id
+    left join type_aggregates selected on selected.user_id = profile.id
+      and selected.problem_type = (select problem_type from selected_type)
     where profile.handle is not null
   ),
   ranked as (
     select
       row_number() over (
-        order by score.ranking_score desc, score.algorithm_score desc, score.sql_score desc,
-          score.total_solved desc, score.handle asc
+        order by score.ranking_score desc, score.total_solved desc, score.handle asc
       ) as ranking_position,
       score.*
     from scores score
@@ -2101,9 +1938,9 @@ $$;
 
 revoke execute on function public.dashboard_solves_page(integer) from public, anon;
 revoke execute on function public.dashboard_solve_summary() from public, anon;
-revoke execute on function public.dashboard_ranking_page(integer) from public, anon;
+revoke execute on function public.dashboard_ranking_page(integer, text) from public, anon;
 grant execute on function public.dashboard_solves_page(integer) to authenticated;
 grant execute on function public.dashboard_solve_summary() to authenticated;
-grant execute on function public.dashboard_ranking_page(integer) to authenticated;
+grant execute on function public.dashboard_ranking_page(integer, text) to authenticated;
 
 commit;

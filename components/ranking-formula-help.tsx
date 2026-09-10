@@ -19,7 +19,7 @@ export function RankingFormulaHelp() {
           <Popover.Popup className="w-[min(22rem,calc(100vw-2rem))] origin-(--transform-origin) rounded-2xl bg-popover p-4 text-popover-foreground shadow-[0_16px_48px_rgba(15,23,42,0.16)] ring-1 ring-foreground/[0.065] outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
             <Popover.Title className="text-sm font-semibold">랭킹 점수 산출 방식</Popover.Title>
             <Popover.Description className="mt-1.5 text-xs leading-5 text-muted-foreground">
-              알고리즘과 SQL에 같은 산식을 각각 적용한 뒤 SQL 점수를 2로 정수 나눗셈해 반영합니다.
+              알고리즘과 SQL에 같은 산식을 각각 적용하고, 유형별 점수로 순위를 따로 계산합니다.
             </Popover.Description>
             <div className="my-3 h-px bg-border" />
             <div className="space-y-2 text-xs leading-5">
@@ -36,9 +36,9 @@ export function RankingFormulaHelp() {
                 풀이 보너스 = 반올림[200 × (1 − 0.997<sup>총 풀이 수</sup>)]
               </p>
               <p className="rounded-lg bg-muted px-3 py-2 font-mono text-[11px]">
-                최종 점수 = 알고리즘 점수 + (SQL 점수 ÷ 2)
+                유형별 점수 = 난이도 점수 + 풀이 보너스
               </p>
-              <p className="text-[11px] text-muted-foreground">SQL 점수를 나눈 결과의 소수점은 버립니다.</p>
+              <p className="text-[11px] text-muted-foreground">점수가 같으면 해당 유형의 풀이 수, 핸들 순으로 정렬합니다.</p>
             </div>
           </Popover.Popup>
         </Popover.Positioner>

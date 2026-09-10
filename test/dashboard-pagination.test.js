@@ -3,6 +3,15 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import { spawnSync } from "node:child_process"
 
+test("랭킹 유형은 알고리즘이 기본이며 SQL만 별도로 선택한다", async () => {
+  const { dashboardRankingType, DASHBOARD_RANKING_LABELS } = await import("../lib/dashboard.ts")
+  for (const value of [undefined, null, "all", "invalid", 1, {}, "algorithm"]) {
+    assert.equal(dashboardRankingType(value), "algorithm")
+  }
+  assert.equal(dashboardRankingType("sql"), "sql")
+  assert.deepEqual(Object.keys(DASHBOARD_RANKING_LABELS), ["algorithm", "sql"])
+})
+
 test("대시보드 페이지 입력은 유효한 PostgreSQL 정수 범위로 제한한다", async () => {
   const { dashboardPage, isPodiumRank } = await import("../lib/dashboard.ts")
   for (const value of [undefined, null, "2", -1, 0, 1.5, NaN, Infinity]) {

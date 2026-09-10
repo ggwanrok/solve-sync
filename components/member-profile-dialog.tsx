@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { DASHBOARD_RANKING_LABELS, type DashboardRankingType } from "@/lib/dashboard"
 import { BarChart3, Crown, Sprout, Trophy } from "lucide-react"
 import { ContributionGraph, type ContributionDay } from "@/components/contribution-graph"
 import { DifficultyBadge } from "@/components/difficulty-badge"
@@ -35,6 +36,7 @@ type MemberProfileDialogProps = {
   badgeLabel?: string
   contributions?: ContributionDay[]
   ranking?: MemberRankingSummary
+  rankingType?: DashboardRankingType
   onTriggerClick?: () => void
 }
 
@@ -49,6 +51,7 @@ export function MemberProfileDialog({
   badgeLabel,
   contributions,
   ranking,
+  rankingType = "algorithm",
   onTriggerClick,
 }: MemberProfileDialogProps) {
   const activeDays = contributions?.filter((day) => day.problems.length > 0).length || 0
@@ -95,13 +98,13 @@ export function MemberProfileDialog({
               </span>
               <div>
                 <p className="font-medium">랭킹 현황</p>
-                <p className="text-xs text-muted-foreground">전체 풀이 기록을 바탕으로 한 점수</p>
+                <p className="text-xs text-muted-foreground">{DASHBOARD_RANKING_LABELS[rankingType]} 풀이 기록을 바탕으로 한 점수</p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-xl bg-card p-4 shadow-sm">
-                <p className="flex items-center gap-1.5 text-xs text-muted-foreground"><Crown className="size-3.5" />전체 순위</p>
+                <p className="flex items-center gap-1.5 text-xs text-muted-foreground"><Crown className="size-3.5" />{DASHBOARD_RANKING_LABELS[rankingType]} 순위</p>
                 <p className="mt-1 text-2xl font-bold tracking-tight">
                   {ranking.rankingPosition ? `${formatNumber(ranking.rankingPosition)}위` : "집계 전"}
                 </p>
@@ -131,7 +134,7 @@ export function MemberProfileDialog({
 
             <div className="mt-4 border-t border-border/60 pt-4">
               <div className="mb-3 flex items-center justify-between gap-3">
-                <p className="text-sm font-medium">단계별 풀이</p>
+                <p className="text-sm font-medium">{DASHBOARD_RANKING_LABELS[rankingType]} 단계별 풀이</p>
                 <p className="text-xs text-muted-foreground">총 {formatNumber(ranking.totalSolved)}문제</p>
               </div>
               <div className="grid grid-cols-2 gap-x-5 gap-y-3 sm:grid-cols-3">

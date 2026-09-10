@@ -1,5 +1,5 @@
 import { getViewer } from "@/lib/server/viewer"
-import { dashboardPage, type DashboardRankingEntry, type DashboardRankingPage, type DashboardResult, type DashboardSolvesPage, type DashboardSummary } from "@/lib/dashboard"
+import { dashboardPage, dashboardRankingType, type DashboardRankingType, type DashboardRankingEntry, type DashboardRankingPage, type DashboardResult, type DashboardSolvesPage, type DashboardSummary } from "@/lib/dashboard"
 
 type RankingRow = {
   ranking_position: number; user_id: string; handle: string; nickname: string
@@ -21,11 +21,12 @@ function rankingEntry(row: RankingRow): DashboardRankingEntry {
   }
 }
 
-export async function getDashboardRanking(page = 1): Promise<DashboardResult<DashboardRankingPage>> {
+export async function getDashboardRanking(page = 1, rankingType: DashboardRankingType = "algorithm"): Promise<DashboardResult<DashboardRankingPage>> {
   const { supabase, user } = await getViewer()
   if (!user) return { ok: false, message: "로그인이 필요합니다." }
   const { data, error } = await supabase.rpc("dashboard_ranking_page", {
     page_number: dashboardPage(page),
+    ranking_type: dashboardRankingType(rankingType),
   })
   if (error || !data) {
     console.error("dashboard ranking page failed", error)
