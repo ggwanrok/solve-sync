@@ -506,11 +506,10 @@ export function StudyLounge({
                 ))}
               </div>
             )}
-            <Input ref={messageInputRef} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="스터디원들에게 메시지 보내기" maxLength={500} aria-describedby="study-lounge-mention-help" />
+            <Input ref={messageInputRef} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="스터디원들에게 메시지 보내기" maxLength={500} />
           </div>
           <Button type="submit" size="icon" disabled={pending || !message.trim()} aria-label="메시지 전송">{pending ? <LoaderCircle className="size-4 animate-spin" /> : <Send className="size-4" />}</Button>
         </form>
-        <p id="study-lounge-mention-help" className="mt-2 text-[11px] leading-relaxed text-muted-foreground">@닉네임으로 멘션할 수 있어요. 서로 이 스터디의 알림을 켠 멤버에게만 푸시 알림이 전송됩니다.</p>
       </CardContent>
     </Card>
   )
