@@ -3,6 +3,9 @@
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { getViewer } from "@/lib/server/viewer"
+import { deliverPushToUser } from "@/lib/server/push-delivery"
+import { isWebPushConfigured } from "@/lib/server/web-push"
+import { extractStudyMentionedUserIds, type StudyMentionCandidate } from "@/lib/study-mentions"
 import { createAdminClient } from "@/utils/supabase/admin"
 import { normalizeProblemMemoInput, type ProblemMemoInput } from "@/lib/problem-memo"
 
@@ -128,13 +131,141 @@ export async function createStudyRoom(input: { name: string; description: string
 
 export async function addStudyComment(studyId: string, message: string) {
   const { supabase, user } = await userClient()
+  const normalizedMessage = message.trim()
   const { data, error } = await supabase
     .from("study_comments")
-    .insert({ study_id: studyId, author_id: user.id, message: message.trim() })
+    .insert({ study_id: studyId, author_id: user.id, message: normalizedMessage })
     .select("id,study_id,author_id,message,created_at")
     .single()
   if (error) throw new Error(error.message)
+
+  await notifyStudyCommentMentions({
+    studyId,
+    authorId: user.id,
+    commentId: data.id,
+    message: normalizedMessage,
+  })
+
   return data
+}
+
+type StudyCommentMentionInput = {
+  studyId: string
+  authorId: string
+  commentId: string
+  message: string
+}
+
+async function notifyStudyCommentMentions({ studyId, authorId, commentId, message }: StudyCommentMentionInput) {
+  if (!message.includes("@")) return
+
+  const admin = createAdminClient()
+  if (!admin) {
+    console.error("study comment mention notifications skipped: admin client is unavailable")
+    return
+  }
+
+  const [{ data: members, error: membersError }, { data: room, error: roomError }] = await Promise.all([
+    admin.from("study_members").select("user_id,notifications_enabled").eq("study_id", studyId),
+    admin.from("study_rooms").select("name").eq("id", studyId).maybeSingle(),
+  ])
+  if (membersError || roomError) {
+    console.error("study comment mention recipients lookup failed", {
+      studyId,
+      authorId,
+      membersError: membersError?.message,
+      roomError: roomError?.message,
+    })
+    return
+  }
+
+  const memberIds = (members || []).map((member) => member.user_id)
+  if (memberIds.length === 0) return
+  const { data: profiles, error: profilesError } = await admin
+    .from("profiles")
+    .select("id,nickname")
+    .in("id", memberIds)
+  if (profilesError) {
+    console.error("study comment mention profile lookup failed", { studyId, authorId, message: profilesError.message })
+    return
+  }
+
+  const mentionCandidates: StudyMentionCandidate[] = (profiles || [])
+    .filter((profile) => typeof profile.nickname === "string" && profile.nickname.trim().length > 0)
+    .map((profile) => ({ id: profile.id, nickname: profile.nickname }))
+  const mentionedUserIds = extractStudyMentionedUserIds(message, mentionCandidates)
+    .filter((userId) => userId !== authorId)
+  if (mentionedUserIds.length === 0) return
+
+  const sender = (members || []).find((member) => member.user_id === authorId)
+  if (!sender?.notifications_enabled) return
+
+  const recipientIds = new Set(
+    (members || [])
+      .filter((member) => member.user_id !== authorId && member.notifications_enabled)
+      .map((member) => member.user_id),
+  )
+  if (recipientIds.size === 0) return
+
+  const { data: subscriptions, error: subscriptionsError } = await admin
+    .from("push_subscriptions")
+    .select("user_id")
+    .in("user_id", Array.from(recipientIds))
+  if (subscriptionsError) {
+    console.error("study comment mention push subscription lookup failed", { studyId, authorId, message: subscriptionsError.message })
+    return
+  }
+  const pushReadyRecipientIds = new Set((subscriptions || []).map((subscription) => subscription.user_id))
+  if (pushReadyRecipientIds.size === 0) return
+
+  const preview = message.replace(/\s+/g, " ").slice(0, 180)
+  const senderProfile = (profiles || []).find((profile) => profile.id === authorId)
+  const senderName = senderProfile?.nickname?.trim() || "스터디원"
+  const notificationRows = Array.from(pushReadyRecipientIds).map((recipientId) => ({
+    study_id: studyId,
+    recipient_id: recipientId,
+    sender_id: authorId,
+    type: "mention",
+    title: `${room?.name || "스터디 라운지"} · 멘션`.slice(0, 120),
+    body: `${senderName}님이 채팅에서 멘션했어요: ${preview}`.slice(0, 300),
+    url: `/study/${studyId}?comment=${commentId}`,
+    deduplication_key: `mention:${commentId}:${recipientId}`,
+    push_attempted_at: new Date().toISOString(),
+  }))
+  const { data: notifications, error: notificationError } = await admin
+    .from("study_notifications")
+    .insert(notificationRows)
+    .select("id,recipient_id,url,title,body")
+  if (notificationError) {
+    console.error("study comment mention notifications insert failed", { studyId, commentId, message: notificationError.message })
+    return
+  }
+  if (!isWebPushConfigured()) return
+
+  await Promise.all((notifications || []).map(async (notification) => {
+    try {
+      const delivery = await deliverPushToUser(admin, notification.recipient_id, {
+        title: notification.title,
+        body: notification.body,
+        url: notification.url,
+        tag: `mention-${commentId}-${notification.recipient_id}`,
+        urgency: "high",
+      })
+      if (delivery.sentCount > 0) {
+        const { error: updateError } = await admin
+          .from("study_notifications")
+          .update({ pushed_at: new Date().toISOString() })
+          .eq("id", notification.id)
+        if (updateError) console.error("study comment mention push status update failed", { notificationId: notification.id, message: updateError.message })
+      }
+    } catch (pushError) {
+      console.error("study comment mention push delivery failed", {
+        notificationId: notification.id,
+        recipientId: notification.recipient_id,
+        error: pushError instanceof Error ? pushError.message : "unknown",
+      })
+    }
+  }))
 }
 
 export async function verifyStudyRoomPassword(studyId: string, password: string) {

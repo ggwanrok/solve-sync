@@ -7,7 +7,7 @@ alter table public.study_notifications
   drop constraint if exists study_notifications_type_check;
 alter table public.study_notifications
   add constraint study_notifications_type_check
-  check (type in ('goal_reminder', 'goal_missed', 'weekly_summary', 'poke'));
+  check (type in ('goal_reminder', 'goal_missed', 'weekly_summary', 'period_summary', 'poke', 'mention'));
 
 create index if not exists study_notifications_recipient_unread
   on public.study_notifications(recipient_id, created_at desc)

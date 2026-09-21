@@ -1,4 +1,4 @@
-export type StudyNotificationType = "goal_reminder" | "goal_missed" | "weekly_summary" | "period_summary" | "poke"
+export type StudyNotificationType = "goal_reminder" | "goal_missed" | "weekly_summary" | "period_summary" | "poke" | "mention"
 
 export type StudyNotification = {
   id: string

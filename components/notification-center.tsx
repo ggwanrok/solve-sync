@@ -1,6 +1,6 @@
 "use client"
 
-import { Bell, BellRing, Check, CircleAlert, Crown, Hand, LoaderCircle } from "lucide-react"
+import { Bell, BellRing, Check, CircleAlert, Crown, Hand, LoaderCircle, MessageCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useOptimistic, useState } from "react"
 import { toast } from "sonner"
@@ -22,6 +22,7 @@ const notificationIcon: Record<StudyNotificationType, typeof Bell> = {
   weekly_summary: Crown,
   period_summary: Crown,
   poke: Hand,
+  mention: MessageCircle,
 }
 
 function relativeDate(value: string) {

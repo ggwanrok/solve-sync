@@ -203,7 +203,7 @@ create table if not exists public.study_notifications (
   study_id uuid not null references public.study_rooms(id) on delete cascade,
   recipient_id uuid not null references public.profiles(id) on delete cascade,
   sender_id uuid references public.profiles(id) on delete cascade,
-  type text not null check (type in ('goal_reminder', 'goal_missed', 'weekly_summary', 'period_summary', 'poke')),
+  type text not null check (type in ('goal_reminder', 'goal_missed', 'weekly_summary', 'period_summary', 'poke', 'mention')),
   title text not null check (char_length(title) between 1 and 120),
   body text not null check (char_length(body) between 1 and 300),
   url text not null,

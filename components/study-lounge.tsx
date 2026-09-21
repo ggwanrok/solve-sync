@@ -1,15 +1,17 @@
 "use client"
 
 import { usePendingAction } from "@/lib/use-pending-action"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { RealtimeChannel } from "@supabase/supabase-js"
 import { LoaderCircle, MessageSquare, RefreshCw, Send, WifiOff } from "lucide-react"
+import { useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { addStudyComment } from "@/app/actions"
 import { UserAvatar } from "@/components/user-avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { splitStudyMentionText, studyMentionQuery, type StudyMentionCandidate } from "@/lib/study-mentions"
 import { formatStudyRoomTime } from "@/lib/study-room-time"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/utils/supabase/client"
@@ -46,6 +48,7 @@ function appendComment(comments: LoungeComment[], comment: LoungeComment) {
 
 const COMMENTS_PAGE_SIZE = 50
 const DEGRADED_SYNC_INTERVAL_MS = 5_000
+const COMMENT_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 type RealtimeStatus = "connecting" | "connected" | "degraded"
 type RecentSyncTrigger = "polling" | "realtime-subscribed" | "visibility"
@@ -93,6 +96,7 @@ export function StudyLounge({
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting")
   const [manualReconnectPending, setManualReconnectPending] = useState(false)
   const [channelGeneration, setChannelGeneration] = useState(0)
+  const [highlightedCommentId, setHighlightedCommentId] = useState<string | null>(null)
   const messageInputRef = useRef<HTMLInputElement>(null)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const preserveScrollHeightRef = useRef<number | null>(null)
@@ -100,7 +104,23 @@ export function StudyLounge({
   const realtimeHealthyRef = useRef(false)
   const recentSyncInFlightRef = useRef(false)
   const realtimeChannelRef = useRef<RealtimeChannel | null>(null)
+  const focusedCommentRef = useRef<string | null>(null)
+  const targetFetchAttemptedRef = useRef<string | null>(null)
   const supabaseRef = useRef(createClient())
+  const searchParams = useSearchParams()
+  const targetCommentId = searchParams.get("comment")
+  const mentionCandidates = useMemo<StudyMentionCandidate[]>(() => (
+    Object.entries(memberProfiles)
+      .flatMap(([id, profile]) => profile?.nickname?.trim() ? [{ id, nickname: profile.nickname.trim() }] : [])
+  ), [memberProfiles])
+  const mentionSuggestions = useMemo(() => {
+    const query = studyMentionQuery(message)
+    if (query == null) return []
+    return Object.entries(memberProfiles)
+      .filter(([userId, profile]) => userId !== currentUserId && profile?.nickname?.trim().toLocaleLowerCase().startsWith(query))
+      .sort((first, second) => (first[1]?.nickname || "").localeCompare(second[1]?.nickname || ""))
+      .slice(0, 5)
+  }, [currentUserId, memberProfiles, message])
 
   const fetchCommentPage = useCallback(async (before?: string) => {
     let query = supabaseRef.current
@@ -119,6 +139,17 @@ export function StudyLounge({
       comments: rows.slice(0, COMMENTS_PAGE_SIZE).reverse(),
       hasMore: rows.length > COMMENTS_PAGE_SIZE,
     }
+  }, [studyId])
+
+  const fetchCommentById = useCallback(async (commentId: string) => {
+    const { data, error } = await supabaseRef.current
+      .from("study_comments")
+      .select("id,study_id,author_id,message,created_at,profile:profiles!study_comments_author_id_fkey(handle,nickname,avatar_url)")
+      .eq("id", commentId)
+      .eq("study_id", studyId)
+      .maybeSingle()
+    if (error) throw error
+    return data as unknown as LoungeComment | null
   }, [studyId])
 
   const loadRecentComments = useCallback(async (trigger: RecentSyncTrigger) => {
@@ -269,6 +300,33 @@ export function StudyLounge({
     }
   }, [comments])
 
+  useEffect(() => {
+    if (!targetCommentId || !COMMENT_ID_PATTERN.test(targetCommentId) || focusedCommentRef.current === targetCommentId) return
+
+    const target = comments.find((comment) => comment.id === targetCommentId)
+    if (!target) {
+      if (targetFetchAttemptedRef.current === targetCommentId) return
+      targetFetchAttemptedRef.current = targetCommentId
+      void fetchCommentById(targetCommentId)
+        .then((comment) => {
+          if (comment) setComments((current) => appendComment(current, comment))
+        })
+        .catch((error) => console.error("study lounge target comment lookup failed", { studyId, targetCommentId, error: describeSyncError(error) }))
+      return
+    }
+
+    focusedCommentRef.current = targetCommentId
+    const frame = window.requestAnimationFrame(() => {
+      setHighlightedCommentId(targetCommentId)
+      document.getElementById(`study-comment-${targetCommentId}`)?.scrollIntoView({ behavior: "smooth", block: "center" })
+    })
+    const timeout = window.setTimeout(() => setHighlightedCommentId(null), 4_500)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.clearTimeout(timeout)
+    }
+  }, [comments, fetchCommentById, studyId, targetCommentId])
+
   async function loadOlderComments() {
     const oldest = comments[0]
     if (!oldest || loadingOlderRef.current) return
@@ -352,6 +410,17 @@ export function StudyLounge({
     }
   }
 
+  function selectMention(handle: string) {
+    setMessage((current) => current.replace(/(^|\s)@[a-zA-Z0-9_]*$/i, (_, prefix: string) => `${prefix}@${handle} `))
+    messageInputRef.current?.focus()
+  }
+
+  function renderMessageText(value: string) {
+    return splitStudyMentionText(value, mentionCandidates).map((part, index) => (
+      <span key={`${part.text}-${index}`} className={part.mentionUserId ? "font-semibold text-primary" : undefined}>{part.text}</span>
+    ))
+  }
+
   return (
     <Card className="h-fit lg:sticky lg:top-20">
       <CardHeader className="flex-row items-center gap-2">
@@ -404,10 +473,15 @@ export function StudyLounge({
                       <p className="truncate text-xs font-medium">{isCurrentUser ? "나" : name}</p>
                       <time className="shrink-0 text-[10px] text-muted-foreground" dateTime={comment.created_at}>{formatStudyRoomTime(comment.created_at)}</time>
                     </div>
-                    <p className={cn(
-                      "mt-1 w-fit max-w-full whitespace-pre-wrap break-words rounded-2xl bg-muted px-3 py-2 text-left text-sm",
-                      isCurrentUser ? "ml-auto rounded-tr-sm bg-secondary text-secondary-foreground" : "rounded-tl-sm",
-                    )}>{comment.message}</p>
+                    <p
+                      id={`study-comment-${comment.id}`}
+                      className={cn(
+                        "mt-1 w-fit max-w-full whitespace-pre-wrap break-words rounded-2xl bg-muted px-3 py-2 text-left text-sm transition-shadow duration-500",
+                        isCurrentUser ? "ml-auto rounded-tr-sm bg-secondary text-secondary-foreground" : "rounded-tl-sm",
+                        highlightedCommentId === comment.id && "bg-primary/10 ring-2 ring-primary/70 shadow-lg shadow-primary/10",
+                      )}
+                      aria-current={highlightedCommentId === comment.id ? "true" : undefined}
+                    >{renderMessageText(comment.message)}</p>
                   </div>
                 </div>
               )
@@ -415,9 +489,28 @@ export function StudyLounge({
           </>}
         </div>
         <form className="mt-4 flex gap-2" onSubmit={handleSubmit}>
-          <Input ref={messageInputRef} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="스터디원들에게 메시지 보내기" maxLength={500} />
+          <div className="relative min-w-0 flex-1">
+            {mentionSuggestions.length > 0 && (
+              <div className="absolute bottom-full left-0 right-0 z-10 mb-2 overflow-hidden rounded-xl border bg-popover p-1 shadow-lg" role="listbox" aria-label="멘션할 스터디원">
+                {mentionSuggestions.map(([userId, profile]) => (
+                  <button
+                    key={userId}
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs hover:bg-muted"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => profile?.handle && selectMention(profile.handle)}
+                  >
+                    <span className="font-semibold">@{profile?.nickname}</span>
+                    <span className="truncate text-muted-foreground">@{profile?.handle}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            <Input ref={messageInputRef} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="스터디원들에게 메시지 보내기" maxLength={500} aria-describedby="study-lounge-mention-help" />
+          </div>
           <Button type="submit" size="icon" disabled={pending || !message.trim()} aria-label="메시지 전송">{pending ? <LoaderCircle className="size-4 animate-spin" /> : <Send className="size-4" />}</Button>
         </form>
+        <p id="study-lounge-mention-help" className="mt-2 text-[11px] leading-relaxed text-muted-foreground">@닉네임으로 멘션할 수 있어요. 서로 이 스터디의 알림을 켠 멤버에게만 푸시 알림이 전송됩니다.</p>
       </CardContent>
     </Card>
   )
