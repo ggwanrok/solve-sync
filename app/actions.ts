@@ -5,7 +5,7 @@ import { redirect } from "next/navigation"
 import { getViewer } from "@/lib/server/viewer"
 import { deliverPushToUser } from "@/lib/server/push-delivery"
 import { isWebPushConfigured } from "@/lib/server/web-push"
-import { extractStudyMentionedUserIds, type StudyMentionCandidate } from "@/lib/study-mentions"
+import { findStudyMentionMatches, normalizeStudyMentionNickname, type StudyMentionCandidate } from "@/lib/study-mentions"
 import { createAdminClient } from "@/utils/supabase/admin"
 import { normalizeProblemMemoInput, type ProblemMemoInput } from "@/lib/problem-memo"
 
@@ -129,7 +129,7 @@ export async function createStudyRoom(input: { name: string; description: string
   revalidatePath("/study")
 }
 
-export async function addStudyComment(studyId: string, message: string) {
+export async function addStudyComment(studyId: string, message: string, mentionedUserIds: string[] = []) {
   const { supabase, user } = await userClient()
   const normalizedMessage = message.trim()
   const { data, error } = await supabase
@@ -144,6 +144,7 @@ export async function addStudyComment(studyId: string, message: string) {
     authorId: user.id,
     commentId: data.id,
     message: normalizedMessage,
+    mentionedUserIds,
   })
 
   return data
@@ -154,9 +155,10 @@ type StudyCommentMentionInput = {
   authorId: string
   commentId: string
   message: string
+  mentionedUserIds: string[]
 }
 
-async function notifyStudyCommentMentions({ studyId, authorId, commentId, message }: StudyCommentMentionInput) {
+async function notifyStudyCommentMentions({ studyId, authorId, commentId, message, mentionedUserIds: requestedMentionUserIds }: StudyCommentMentionInput) {
   if (!message.includes("@")) return
 
   const admin = createAdminClient()
@@ -193,16 +195,34 @@ async function notifyStudyCommentMentions({ studyId, authorId, commentId, messag
   const mentionCandidates: StudyMentionCandidate[] = (profiles || [])
     .filter((profile) => typeof profile.nickname === "string" && profile.nickname.trim().length > 0)
     .map((profile) => ({ id: profile.id, nickname: profile.nickname }))
-  const mentionedUserIds = extractStudyMentionedUserIds(message, mentionCandidates)
+  const requestedIds = new Set(requestedMentionUserIds.filter((userId) => typeof userId === "string"))
+  const requestedNicknames = new Set(
+    mentionCandidates
+      .filter((candidate) => requestedIds.has(candidate.id))
+      .map((candidate) => normalizeStudyMentionNickname(candidate.nickname).toLocaleLowerCase()),
+  )
+  const nicknameCounts = new Map<string, number>()
+  for (const candidate of mentionCandidates) {
+    const nickname = normalizeStudyMentionNickname(candidate.nickname).toLocaleLowerCase()
+    nicknameCounts.set(nickname, (nicknameCounts.get(nickname) || 0) + 1)
+  }
+  const mentionedUserIds = findStudyMentionMatches(message, mentionCandidates)
+    .filter((match) => {
+      const nickname = normalizeStudyMentionNickname(match.nickname).toLocaleLowerCase()
+      if (requestedNicknames.has(nickname)) return requestedIds.has(match.userId)
+      return (nicknameCounts.get(nickname) || 0) === 1
+    })
+    .map((match) => match.userId)
     .filter((userId) => userId !== authorId)
-  if (mentionedUserIds.length === 0) return
+  const uniqueMentionedUserIds = Array.from(new Set(mentionedUserIds))
+  if (uniqueMentionedUserIds.length === 0) return
 
   const sender = (members || []).find((member) => member.user_id === authorId)
   if (!sender?.notifications_enabled) return
 
   const recipientIds = new Set(
     (members || [])
-      .filter((member) => member.user_id !== authorId && member.notifications_enabled)
+      .filter((member) => uniqueMentionedUserIds.includes(member.user_id) && member.user_id !== authorId && member.notifications_enabled)
       .map((member) => member.user_id),
   )
   if (recipientIds.size === 0) return

@@ -8,20 +8,27 @@ export type StudyMentionTextPart = {
   mentionUserId?: string
 }
 
+export type StudyMentionMatch = {
+  start: number
+  end: number
+  userId: string
+  nickname: string
+}
+
 const MAX_NICKNAME_LENGTH = 20
 
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 }
 
-function mentionNickname(value: string) {
+export function normalizeStudyMentionNickname(value: string) {
   return Array.from(value.trim().replace(/\s+/gu, " ")).slice(0, MAX_NICKNAME_LENGTH).join("")
 }
 
 function mentionRanges(message: string, candidates: StudyMentionCandidate[]) {
-  const ranges: Array<{ start: number; end: number; userId: string }> = []
+  const ranges: StudyMentionMatch[] = []
   const sortedCandidates = [...candidates]
-    .map((candidate) => ({ ...candidate, nickname: mentionNickname(candidate.nickname) }))
+    .map((candidate) => ({ ...candidate, nickname: normalizeStudyMentionNickname(candidate.nickname) }))
     .filter((candidate) => candidate.nickname.length > 0)
     .sort((first, second) => Array.from(second.nickname).length - Array.from(first.nickname).length)
 
@@ -35,7 +42,7 @@ function mentionRanges(message: string, candidates: StudyMentionCandidate[]) {
       const start = (match.index || 0) + prefixLength
       const end = (match.index || 0) + match[0].length
       if (!ranges.some((range) => start < range.end && end > range.start)) {
-        ranges.push({ start, end, userId: candidate.id })
+        ranges.push({ start, end, userId: candidate.id, nickname: candidate.nickname })
       }
     }
   }
@@ -45,6 +52,10 @@ function mentionRanges(message: string, candidates: StudyMentionCandidate[]) {
 
 export function extractStudyMentionedUserIds(message: string, candidates: StudyMentionCandidate[]) {
   return Array.from(new Set(mentionRanges(message, candidates).map((range) => range.userId)))
+}
+
+export function findStudyMentionMatches(message: string, candidates: StudyMentionCandidate[]) {
+  return mentionRanges(message, candidates)
 }
 
 export function splitStudyMentionText(message: string, candidates: StudyMentionCandidate[]): StudyMentionTextPart[] {

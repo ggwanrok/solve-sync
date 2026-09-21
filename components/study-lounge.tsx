@@ -87,6 +87,8 @@ export function StudyLounge({
 }) {
   const [comments, setComments] = useState<LoungeComment[]>([])
   const [message, setMessage] = useState("")
+  const [selectedMentionIds, setSelectedMentionIds] = useState<string[]>([])
+  const [activeMentionIndex, setActiveMentionIndex] = useState(0)
   const { pending, start: startPending, finish: finishPending } = usePendingAction()
   const [loadingInitial, setLoadingInitial] = useState(true)
   const loadingOlderRef = useRef(false)
@@ -380,6 +382,7 @@ export function StudyLounge({
     if (!nextMessage || !startPending()) return
 
     const optimisticId = `optimistic-${crypto.randomUUID()}`
+    const nextMentionIds = selectedMentionIds
     const optimisticComment: LoungeComment = {
       id: optimisticId,
       study_id: studyId,
@@ -391,9 +394,10 @@ export function StudyLounge({
 
     setComments((current) => [...current, optimisticComment])
     setMessage("")
+    setSelectedMentionIds([])
     messageInputRef.current?.focus()
     try {
-      const inserted = await addStudyComment(studyId, nextMessage)
+      const inserted = await addStudyComment(studyId, nextMessage, nextMentionIds)
       setComments((current) => {
         const withoutOptimistic = current.filter((comment) => comment.id !== optimisticId)
         return appendComment(withoutOptimistic, {
@@ -404,15 +408,43 @@ export function StudyLounge({
     } catch (error) {
       setComments((current) => current.filter((comment) => comment.id !== optimisticId))
       setMessage((current) => current || nextMessage)
+      setSelectedMentionIds((current) => current.length > 0 ? current : nextMentionIds)
       toast.error(error instanceof Error ? error.message : "메시지를 보내지 못했어요.")
     } finally {
       finishPending()
     }
   }
 
-  function selectMention(handle: string) {
-    setMessage((current) => current.replace(/(^|\s)@[a-zA-Z0-9_]*$/i, (_, prefix: string) => `${prefix}@${handle} `))
+  function selectMention(userId: string, nickname: string) {
+    setMessage((current) => current.replace(/(^|\s)@[^\n]{0,20}$/u, (_, prefix: string) => `${prefix}@${nickname} `))
+    setSelectedMentionIds((current) => current.includes(userId) ? current : [...current, userId])
+    setActiveMentionIndex(0)
     messageInputRef.current?.focus()
+  }
+
+  function handleMessageChange(event: React.ChangeEvent<HTMLInputElement>) {
+    setMessage(event.target.value)
+    setActiveMentionIndex(0)
+  }
+
+  function handleMessageKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (mentionSuggestions.length === 0) return
+    if (event.key === "ArrowDown") {
+      event.preventDefault()
+      setActiveMentionIndex((current) => (current + 1) % mentionSuggestions.length)
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault()
+      setActiveMentionIndex((current) => (current - 1 + mentionSuggestions.length) % mentionSuggestions.length)
+    } else if (event.key === "Enter") {
+      const [userId, profile] = mentionSuggestions[activeMentionIndex] || []
+      if (!userId || !profile?.nickname) return
+      event.preventDefault()
+      selectMention(userId, profile.nickname)
+    } else if (event.key === "Escape") {
+      event.preventDefault()
+      setMessage((current) => current.replace(/(^|\s)@[^\n]{0,20}$/u, "$1"))
+      setActiveMentionIndex(0)
+    }
   }
 
   function renderMessageText(value: string) {
@@ -492,13 +524,19 @@ export function StudyLounge({
           <div className="relative min-w-0 flex-1">
             {mentionSuggestions.length > 0 && (
               <div className="absolute bottom-full left-0 right-0 z-10 mb-2 overflow-hidden rounded-xl border bg-popover p-1 shadow-lg" role="listbox" aria-label="멘션할 스터디원">
-                {mentionSuggestions.map(([userId, profile]) => (
+                {mentionSuggestions.map(([userId, profile], index) => (
                   <button
                     key={userId}
                     type="button"
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs hover:bg-muted"
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs hover:bg-muted",
+                      index === activeMentionIndex && "bg-muted",
+                    )}
+                    role="option"
+                    aria-selected={index === activeMentionIndex}
                     onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => profile?.handle && selectMention(profile.handle)}
+                    onMouseEnter={() => setActiveMentionIndex(index)}
+                    onClick={() => profile?.nickname && selectMention(userId, profile.nickname)}
                   >
                     <span className="font-semibold">@{profile?.nickname}</span>
                     <span className="truncate text-muted-foreground">@{profile?.handle}</span>
@@ -506,7 +544,7 @@ export function StudyLounge({
                 ))}
               </div>
             )}
-            <Input ref={messageInputRef} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="스터디원들에게 메시지 보내기" maxLength={500} />
+            <Input ref={messageInputRef} value={message} onChange={handleMessageChange} onKeyDown={handleMessageKeyDown} placeholder="스터디원들에게 메시지 보내기" maxLength={500} />
           </div>
           <Button type="submit" size="icon" disabled={pending || !message.trim()} aria-label="메시지 전송">{pending ? <LoaderCircle className="size-4 animate-spin" /> : <Send className="size-4" />}</Button>
         </form>
