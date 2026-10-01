@@ -9,7 +9,7 @@ import { ContributionGraph, type ContributionDay } from "@/components/contributi
 import { MemberProfileDialog } from "@/components/member-profile-dialog"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { AccountDialog, type AccountUser } from "@/components/account-dialog"
-import { ExtensionBrowserHeader, ExtensionConnectionProvider } from "@/components/extension-browser-connection"
+import { ExtensionBrowserIndicator, ExtensionConnectionProvider } from "@/components/extension-browser-connection"
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { NotificationCenter } from "@/components/notification-center"
 import { UserAvatar } from "@/components/user-avatar"
@@ -79,14 +79,17 @@ function SidebarContent({ user, contributions, onNavigate }: { user: ShellUser; 
       <NavLinks pendingFriendRequestCount={user.pendingFriendRequestCount} onNavigate={onNavigate} />
 
       <div className="mt-auto flex flex-col gap-4">
-        <Link
-          href="/programmers"
-          onClick={onNavigate}
-          className="flex h-10 items-center justify-center gap-2 rounded-lg border border-sidebar-border/80 bg-card px-3 text-xs font-semibold text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
-        >
-          <Chrome className="size-3.5 text-muted-foreground" aria-hidden="true" />
-          프로그래머스 연동방법
-        </Link>
+        <div className="space-y-2">
+          <ExtensionBrowserIndicator />
+          <Link
+            href="/programmers"
+            onClick={onNavigate}
+            className="flex h-10 items-center justify-center gap-2 rounded-lg border border-sidebar-border/80 bg-card px-3 text-xs font-semibold text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
+          >
+            <Chrome className="size-3.5 text-muted-foreground" aria-hidden="true" />
+            프로그래머스 연동방법
+          </Link>
+        </div>
         <div className="rounded-xl border border-sidebar-border/80 bg-card px-3 py-4">
           <div className="mb-2 flex items-center justify-between text-[11px] text-muted-foreground">
             <span className="font-medium text-sidebar-foreground">나의 잔디</span>
@@ -183,7 +186,6 @@ export function AppShell({ children, user, contributions, notificationInbox }: {
                 <span className="hidden sm:inline">새로고침</span>
               </Button>
             )}
-            <ExtensionBrowserHeader className="hidden md:flex" />
             <NotificationCenter inbox={notificationInbox} />
             <ThemeToggle />
             <AccountDialog user={user} />

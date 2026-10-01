@@ -2,6 +2,7 @@ import { createHash } from "node:crypto"
 import { createClient } from "@supabase/supabase-js"
 import { NextResponse } from "next/server"
 import { isProblemType, problemTypeFromLanguage } from "@/lib/problem-type"
+import { normalizeProgrammersLanguage } from "@/lib/programmers-language"
 
 export const runtime = "nodejs"
 
@@ -23,7 +24,8 @@ export async function POST(request: Request) {
   if (!/^https:\/\/(school\.)?programmers\.co\.kr\//.test(String(input.url || ""))) return NextResponse.json({ error: "프로그래머스 URL만 허용됩니다." }, { status: 400 })
 
   const title = String(input.title || "").trim().slice(0, 200)
-  const language = input.language == null ? null : String(input.language).trim().slice(0, 50)
+  // Preserve the solve even if an older extension sends a problem/tab title as its language.
+  const language = normalizeProgrammersLanguage(input.language)
   const submittedProblemType = input.problemType == null ? null : String(input.problemType).trim().toLowerCase()
   if (submittedProblemType != null && !isProblemType(submittedProblemType)) {
     return NextResponse.json({ error: "유효한 문제 유형이 필요합니다." }, { status: 400 })

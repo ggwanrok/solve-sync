@@ -5,12 +5,31 @@ const vm = require('node:vm');
 
 const contentScript = readFileSync(new URL('../extension/content.js', `file://${__filename}`), 'utf8');
 
-async function captureAttempt(challengeLevel, selectedLanguage = 'JavaScript', acceptedResponse = { ok: true }) {
+async function captureAttempt(challengeLevel, selectedLanguage = 'JavaScript', acceptedResponse = { ok: true }, languageOptions = {}) {
   const session = new Map();
   const sentMessages = [];
   const difficultyNodes = challengeLevel == null
     ? []
     : [{ dataset: { challengeLevel, lessonId: '12948' } }];
+  // querySelector returns the first matching node in DOM order, regardless of selector-list order.
+  const languageNodes = [
+    { innerText: languageOptions.selectedTab || '핸드폰 번호 가리기', selectors: ['[aria-selected="true"]'] },
+    { value: 'recent', selectors: ['select'] },
+  ];
+  if (selectedLanguage != null) {
+    const control = languageOptions.control || 'dropdown';
+    const selectors = {
+      dropdown: ['.dropdown-language .dropdown-toggle', '.dropdown-language [data-toggle="dropdown"]'],
+      selected: ['.language-selector .selected'],
+      aria: ['.language-selector [aria-selected="true"]', '[aria-selected="true"]'],
+      select: ['.language-selector select', 'select'],
+    };
+    languageNodes.push({
+      innerText: control === 'select' ? 'JavaScript Python3 MySQL' : selectedLanguage,
+      value: control === 'select' ? selectedLanguage : '',
+      selectors: selectors[control],
+    });
+  }
   const context = vm.createContext({
     chrome: {
       runtime: {
@@ -31,8 +50,8 @@ async function captureAttempt(challengeLevel, selectedLanguage = 'JavaScript', a
       title: '코딩테스트 연습 - 핸드폰 번호 가리기 | 프로그래머스 스쿨',
       querySelector(selector) {
         if (selector === '.breadcrumb li.active, .breadcrumb .active') return { innerText: '핸드폰 번호 가리기' };
-        if (selector.startsWith('.dropdown-language .dropdown-toggle')) return { innerText: selectedLanguage };
-        return null;
+        const selectors = selector.split(',').map((item) => item.trim());
+        return languageNodes.find((node) => node.selectors.some((item) => selectors.includes(item))) || null;
       },
       querySelectorAll(selector) {
         if (selector === '[data-challenge-level]') return difficultyNodes;
@@ -78,6 +97,27 @@ test('난이도 메타데이터가 없으면 null을 전송한다', async () => 
 test('현재 프로그래머스 언어 드롭다운의 선택값을 전송한다', async () => {
   const event = await captureEvent('2', 'MySQL');
   assert.equal(event.language, 'MySQL');
+});
+
+test('제출 내역에서 문제 탭으로 돌아와도 문제 제목 대신 언어를 전송한다', async () => {
+  for (const selectedTab of ['조이스틱', '여행경로', '제출 내역']) {
+    const { event } = await captureAttempt('2', 'C++', { ok: true }, { selectedTab });
+    assert.equal(event.language, 'C++');
+    assert.equal(event.problemType, 'algorithm');
+  }
+});
+
+test('언어 선택창의 다른 형태에서도 선택된 언어만 전송한다', async () => {
+  for (const control of ['selected', 'aria', 'select']) {
+    const { event } = await captureAttempt('2', 'MySQL', { ok: true }, { control });
+    assert.equal(event.language, 'MySQL');
+    assert.equal(event.problemType, 'sql');
+  }
+});
+
+test('언어 선택창이 없으면 문제 탭이나 관계없는 select 값을 사용하지 않는다', async () => {
+  const { event } = await captureAttempt('2', null);
+  assert.equal(event.language, null);
 });
 
 test('일반 프로그래밍 언어는 알고리즘 풀이로 전송한다', async () => {

@@ -104,23 +104,23 @@ export function RegisteredExtensionDevicesBadge() {
   return <Badge variant="secondary">{registeredExtensionDevicesLabel(devices?.length ?? null)}</Badge>
 }
 
-export function ExtensionBrowserBadge({ status, showScope = true }: { status: ExtensionBrowserStatus; showScope?: boolean }) {
+export function ExtensionBrowserBadge({ status, showScope = true, className }: { status: ExtensionBrowserStatus; showScope?: boolean; className?: string }) {
   const copy = extensionBrowserStatusCopy[status]
   const Icon = status === "checking" ? LoaderCircle : status === "unavailable" || status === "timeout" ? CircleAlert : Puzzle
 
   return (
-    <Badge variant="outline" className="gap-1.5" title={copy.description}>
-      <Icon className={cn("size-3.5", status === "checking" && "animate-spin", status === "connected" ? "text-primary" : "text-muted-foreground")} />
+    <Badge variant="outline" className={cn("gap-1.5", className)} title={copy.description}>
+      <Icon className={cn("size-3.5 shrink-0", status === "checking" && "animate-spin", status === "connected" ? "text-primary" : "text-muted-foreground")} />
       {showScope ? `현재 브라우저: ${copy.label}` : copy.label}
     </Badge>
   )
 }
 
-export function ExtensionBrowserHeader({ className }: { className?: string }) {
+export function ExtensionBrowserIndicator({ className }: { className?: string }) {
   const { status } = useExtensionConnection()
   return (
-    <span role="status" className={className}>
-      <ExtensionBrowserBadge status={status} />
+    <span role="status" className={cn("flex justify-center", className)}>
+      <ExtensionBrowserBadge status={status} className="h-auto max-w-full whitespace-normal text-center" />
     </span>
   )
 }
