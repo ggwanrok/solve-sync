@@ -118,9 +118,13 @@ export function ExtensionBrowserBadge({ status, showScope = true, className }: {
 
 export function ExtensionBrowserIndicator({ className }: { className?: string }) {
   const { status } = useExtensionConnection()
+  const copy = extensionBrowserStatusCopy[status]
+  const connected = status === "connected"
   return (
-    <span role="status" className={cn("flex justify-center", className)}>
-      <ExtensionBrowserBadge status={status} className="h-auto max-w-full whitespace-normal text-center" />
+    <span role="status" className={cn("flex flex-wrap items-center gap-1.5 px-1 text-xs text-muted-foreground", className)} title={copy.description}>
+      <span aria-hidden="true" className={cn("size-1.5 shrink-0 rounded-full", connected ? "bg-primary" : "bg-muted-foreground", status === "checking" && "animate-pulse")} />
+      <span>현재 브라우저</span>
+      <span className={cn("font-medium", connected && "text-primary")}>{copy.label}</span>
     </span>
   )
 }

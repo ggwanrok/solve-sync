@@ -1,6 +1,6 @@
 "use client"
 
-import { LayoutDashboard, Users, BookOpen, BookOpenCheck, Chrome, Menu, RefreshCw, LoaderCircle } from "lucide-react"
+import { LayoutDashboard, Users, BookOpen, BookOpenCheck, Chrome, ArrowRight, Menu, RefreshCw, LoaderCircle } from "lucide-react"
 import Link, { useLinkStatus } from "next/link"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
@@ -84,10 +84,11 @@ function SidebarContent({ user, contributions, onNavigate }: { user: ShellUser; 
           <Link
             href="/programmers"
             onClick={onNavigate}
-            className="flex h-10 items-center justify-center gap-2 rounded-lg border border-sidebar-border/80 bg-card px-3 text-xs font-semibold text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
+            className="flex h-10 items-center gap-2 rounded-lg border border-sidebar-border/80 bg-card px-3 text-xs font-semibold text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
           >
             <Chrome className="size-3.5 text-muted-foreground" aria-hidden="true" />
             프로그래머스 연동방법
+            <ArrowRight className="ml-auto size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
           </Link>
         </div>
         <div className="rounded-xl border border-sidebar-border/80 bg-card px-3 py-4">
