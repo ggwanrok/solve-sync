@@ -2,7 +2,7 @@
 
 import { usePendingAction } from "@/lib/use-pending-action"
 import { Plus, Minus, LoaderCircle } from "lucide-react"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { toast } from "sonner"
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
@@ -28,15 +28,21 @@ export function CreateStudyDialog() {
   const [description, setDescription] = useState("")
   const [isPrivate, setIsPrivate] = useState(false)
   const [password, setPassword] = useState("")
+  const [passwordTouched, setPasswordTouched] = useState(false)
+  const passwordInputRef = useRef<HTMLInputElement>(null)
+  const passwordLength = Array.from(password).length
+  const passwordInvalid = isPrivate && (passwordLength < 8 || passwordLength > 50)
+  const showPasswordError = passwordTouched && passwordInvalid
   const { pending, start: startPending, finish: finishPending } = usePendingAction()
 
   const handleCreate = async () => {
+    if (isPrivate) setPasswordTouched(true)
     if (!name.trim()) {
       toast.error("스터디룸 이름을 입력해주세요.")
       return
     }
-    if (isPrivate && password.length < 8) {
-      toast.error("비공개방 비밀번호는 8자 이상 입력해주세요.")
+    if (passwordInvalid) {
+      passwordInputRef.current?.focus()
       return
     }
     if (!startPending()) return
@@ -50,19 +56,19 @@ export function CreateStudyDialog() {
         password: isPrivate ? password : null,
       })
       toast.success(`'${name.trim()}' 스터디룸을 만들었어요!`)
-      setOpen(false); setName(""); setDescription(""); setCount(5); setMinDifficulty(0); setUnit("주"); setIsPrivate(false); setPassword("")
+      setOpen(false); setName(""); setDescription(""); setCount(5); setMinDifficulty(0); setUnit("주"); setIsPrivate(false); setPassword(""); setPasswordTouched(false)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "스터디룸을 만들지 못했어요.")
     } finally { finishPending() }
   }
 
   return (
-    <Dialog open={open} onOpenChange={(value) => { if (!pending) setOpen(value) }}>
+    <Dialog open={open} onOpenChange={(value) => { if (!pending) { setOpen(value); setPasswordTouched(false) } }}>
       <DialogTrigger className={buttonVariants({ className: "gap-2" })}>
         <Plus className="size-4" />
         스터디룸 만들기
       </DialogTrigger>
-      <DialogContent showCloseButton={!pending} className="sm:max-w-lg">
+      <DialogContent showCloseButton={!pending} className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>새 스터디룸 만들기</DialogTitle>
         </DialogHeader>
@@ -143,11 +149,31 @@ export function CreateStudyDialog() {
 
           <div className="flex flex-col gap-2">
             <Label>공개 설정</Label>
-            <button type="button" onClick={() => { setIsPrivate((value) => !value); setPassword("") }} className="flex items-center justify-between rounded-2xl bg-muted/55 p-4 text-left transition-colors hover:bg-muted">
+            <button type="button" onClick={() => { setIsPrivate((value) => !value); setPassword(""); setPasswordTouched(false) }} className="flex items-center justify-between rounded-2xl bg-muted/55 p-4 text-left transition-colors hover:bg-muted">
               <div><p className="text-sm font-medium">비공개 스터디룸</p><p className="text-xs text-muted-foreground">참여할 때 비밀번호가 필요합니다.</p></div>
               <span className={`relative h-6 w-11 rounded-full transition-colors ${isPrivate ? "bg-primary" : "bg-muted"}`}><span className={`absolute top-1 size-4 rounded-full bg-white transition-transform ${isPrivate ? "translate-x-6" : "translate-x-1"}`} /></span>
             </button>
-            {isPrivate && <Input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="비밀번호 8자 이상" minLength={8} maxLength={50} autoComplete="new-password" />}
+            {isPrivate && (
+              <div className="mt-1 flex flex-col gap-2">
+                <Label htmlFor="create-study-password">입장 비밀번호</Label>
+                <Input
+                  ref={passwordInputRef}
+                  id="create-study-password"
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  onBlur={() => setPasswordTouched(true)}
+                  aria-invalid={showPasswordError || undefined}
+                  aria-describedby={showPasswordError ? "create-study-password-error" : undefined}
+                  className="aria-invalid:border-destructive"
+                  placeholder="8~50자"
+                  minLength={8}
+                  maxLength={50}
+                  autoComplete="new-password"
+                />
+                {showPasswordError && <p id="create-study-password-error" role="alert" className="text-xs text-destructive">비밀번호는 8~50자로 입력해 주세요.</p>}
+              </div>
+            )}
           </div>
         </fieldset>
 

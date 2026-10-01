@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { Globe2, LoaderCircle, LockKeyhole, Settings2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -35,11 +35,16 @@ export function StudyRoomSettingsDialog({
   const [description, setDescription] = useState(initialDescription)
   const [isPrivate, setIsPrivate] = useState(initialIsPrivate)
   const [password, setPassword] = useState("")
+  const [passwordTouched, setPasswordTouched] = useState(false)
+  const passwordInputRef = useRef<HTMLInputElement>(null)
   const [pending, runSave] = useActionTransition()
   const router = useRouter()
   const trimmedName = name.trim()
   const trimmedDescription = description.trim()
   const requiresPassword = !initialIsPrivate && isPrivate
+  const passwordLength = Array.from(password).length
+  const passwordInvalid = requiresPassword && (passwordLength < 8 || passwordLength > 50)
+  const showPasswordError = passwordTouched && passwordInvalid
   const changed = trimmedName !== initialName || trimmedDescription !== initialDescription || isPrivate !== initialIsPrivate
 
   function resetForm() {
@@ -47,9 +52,11 @@ export function StudyRoomSettingsDialog({
     setDescription(initialDescription)
     setIsPrivate(initialIsPrivate)
     setPassword("")
+    setPasswordTouched(false)
   }
 
   function save() {
+    if (requiresPassword) setPasswordTouched(true)
     if (!trimmedName) {
       toast.error("스터디룸 이름을 입력해 주세요.")
       return
@@ -62,8 +69,8 @@ export function StudyRoomSettingsDialog({
       toast.error("소개는 100자 이하로 입력해 주세요.")
       return
     }
-    if (requiresPassword && (password.length < 8 || password.length > 50)) {
-      toast.error("비공개방 비밀번호는 8~50자로 입력해 주세요.")
+    if (passwordInvalid) {
+      passwordInputRef.current?.focus()
       return
     }
 
@@ -83,6 +90,7 @@ export function StudyRoomSettingsDialog({
         toast.success("스터디룸 설정을 저장했습니다.")
         setOpen(false)
         setPassword("")
+        setPasswordTouched(false)
         router.refresh()
       } catch {
         toast.error("스터디룸 설정을 저장하지 못했습니다. 다시 시도해 주세요.")
@@ -102,7 +110,7 @@ export function StudyRoomSettingsDialog({
       <DialogTrigger className={buttonVariants({ variant: "outline", size: "sm", className: "gap-1.5" })}>
         <Settings2 className="size-4" />방 설정
       </DialogTrigger>
-      <DialogContent showCloseButton={!pending} className="sm:max-w-lg">
+      <DialogContent showCloseButton={!pending} className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>스터디룸 설정</DialogTitle>
           <DialogDescription>방 이름과 소개, 공개 여부만 변경할 수 있습니다. 목표와 난이도는 기존 기록을 위해 유지됩니다.</DialogDescription>
@@ -134,6 +142,7 @@ export function StudyRoomSettingsDialog({
               onClick={() => {
                 setIsPrivate((value) => !value)
                 setPassword("")
+                setPasswordTouched(false)
               }}
               className="flex items-center justify-between gap-4 rounded-2xl bg-muted/55 p-4 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
@@ -154,7 +163,22 @@ export function StudyRoomSettingsDialog({
             {requiresPassword && (
               <div className="mt-1 flex flex-col gap-2">
                 <Label htmlFor="study-room-settings-password">입장 비밀번호</Label>
-                <Input id="study-room-settings-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={8} maxLength={50} autoComplete="new-password" placeholder="8~50자" />
+                <Input
+                  ref={passwordInputRef}
+                  id="study-room-settings-password"
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  onBlur={() => setPasswordTouched(true)}
+                  aria-invalid={showPasswordError || undefined}
+                  aria-describedby={showPasswordError ? "study-room-settings-password-error" : undefined}
+                  className="aria-invalid:border-destructive"
+                  minLength={8}
+                  maxLength={50}
+                  autoComplete="new-password"
+                  placeholder="8~50자"
+                />
+                {showPasswordError && <p id="study-room-settings-password-error" role="alert" className="text-xs text-destructive">비밀번호는 8~50자로 입력해 주세요.</p>}
               </div>
             )}
             {initialIsPrivate && isPrivate && <p className="text-xs text-muted-foreground">기존 입장 비밀번호는 그대로 유지됩니다.</p>}
@@ -164,7 +188,7 @@ export function StudyRoomSettingsDialog({
 
         <DialogFooter>
           <Button type="button" variant="outline" disabled={pending} onClick={() => setOpen(false)}>취소</Button>
-          <Button type="button" disabled={pending || !changed || (requiresPassword && password.length < 8)} aria-busy={pending} onClick={save}>
+          <Button type="button" disabled={pending || !changed} aria-busy={pending} onClick={save}>
             {pending && <LoaderCircle className="animate-spin" />}
             {pending ? "저장 중…" : "변경사항 저장"}
           </Button>
