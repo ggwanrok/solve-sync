@@ -242,8 +242,10 @@ function LeaderboardCard({ data, error, pending, rankingType, viewerId, loadPage
                       isViewer && "bg-muted/75",
                     )}
                   >
-                    <div className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg text-xs font-bold tabular-nums", isPodiumRank(entry.rankingPosition) ? "podium-surface-strong text-foreground" : "text-muted-foreground")}>
-                      {entry.rankingPosition}
+                    <div className="flex size-9 shrink-0 items-center justify-center font-bold tabular-nums">
+                      <span className={cn(isPodiumRank(entry.rankingPosition) ? "podium-rank-ink text-base" : "text-xs text-muted-foreground")}>
+                        {entry.rankingPosition}
+                      </span>
                     </div>
                     <UserAvatar name={entry.nickname || entry.handle} imageUrl={entry.avatarUrl} className="size-9" />
                     <div className="min-w-0 flex-1">
