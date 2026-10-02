@@ -10,7 +10,7 @@ import { ExtensionBrowserStatusPanel, useExtensionConnection } from "@/component
 import { ProfileImageCropDialog } from "@/components/profile-image-crop-dialog"
 import { UserAvatar } from "@/components/user-avatar"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { MAX_EXTENSION_CONNECTIONS } from "@/lib/extension-connect"
@@ -33,7 +33,7 @@ function formatDate(value: string) {
   return new Date(value).toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" })
 }
 
-export function AccountDialog({ user }: { user: AccountUser }) {
+export function AccountDialog({ user, open, onOpenChange }: { user: AccountUser; open: boolean; onOpenChange: (open: boolean) => void }) {
   const router = useRouter()
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const { devices, recheck } = useExtensionConnection()
@@ -190,10 +190,7 @@ export function AccountDialog({ user }: { user: AccountUser }) {
   const visibleDevices = devices?.filter((device) => revokedDevices[device.installationId] !== device.connectedAt) ?? null
 
   return (
-    <Dialog>
-      <DialogTrigger render={<button type="button" className="rounded-full outline-none ring-ring focus-visible:ring-2" aria-label="마이페이지 열기" />}>
-        <UserAvatar name={nickname} imageUrl={avatarUrl} className="size-10" />
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
         <DialogHeader><DialogTitle>마이페이지</DialogTitle></DialogHeader>
 

@@ -1,6 +1,8 @@
 "use client"
 
-import { CircleAlert, LoaderCircle, Puzzle, RefreshCw } from "lucide-react"
+import { ArrowRight, CircleAlert, Chrome, LoaderCircle, Puzzle, RefreshCw } from "lucide-react"
+import { Popover } from "@base-ui/react/popover"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react"
 import { Badge } from "@/components/ui/badge"
@@ -126,6 +128,45 @@ export function ExtensionBrowserIndicator({ className }: { className?: string })
       <span>현재 브라우저</span>
       <span className={cn("font-medium", connected && "text-primary")}>{copy.label}</span>
     </span>
+  )
+}
+
+export function ExtensionConnectionMenu() {
+  const { status } = useExtensionConnection()
+  const [open, setOpen] = useState(false)
+  const label = status === "checking"
+    ? "현재 브라우저 연결 중"
+    : status === "connected"
+      ? "현재 브라우저 연결됨"
+      : "현재 브라우저 연결 안 됨"
+  const dotClass = status === "checking" ? "bg-amber-500 animate-pulse" : status === "connected" ? "bg-primary" : "bg-destructive"
+
+  return (
+    <Popover.Root open={open} onOpenChange={setOpen}>
+      <Popover.Trigger className="inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border border-border/85 bg-card px-2.5 text-xs font-medium text-foreground outline-none transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/35 sm:px-3">
+        <span aria-hidden="true" className={cn("size-1.5 shrink-0 rounded-full", dotClass)} />
+        <span role="status" aria-live="polite">{label}</span>
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Positioner align="end" sideOffset={8} className="z-50">
+          <Popover.Popup className="w-[min(18rem,calc(100vw-2rem))] rounded-2xl bg-popover p-3 text-popover-foreground shadow-[0_16px_48px_rgba(15,23,42,0.16)] ring-1 ring-foreground/[0.065] outline-none">
+            <Popover.Title className="sr-only">브라우저 연결 상태</Popover.Title>
+            <div className="flex items-center gap-2 px-1 py-1 text-sm font-semibold">
+              <span aria-hidden="true" className={cn("size-2 shrink-0 rounded-full", dotClass)} />
+              {label}
+            </div>
+            <Popover.Description className="px-1 py-1 text-xs leading-relaxed text-muted-foreground">
+              {extensionBrowserStatusCopy[status].description}
+            </Popover.Description>
+            <Link href="/programmers" onClick={() => setOpen(false)} className="mt-2 flex min-h-9 items-center gap-2 rounded-lg border-t border-border px-1 pt-2 text-xs font-medium transition-colors hover:text-primary">
+              <Chrome className="size-4 text-muted-foreground" aria-hidden="true" />
+              프로그래머스 연동방법
+              <ArrowRight className="ml-auto size-4 text-muted-foreground" aria-hidden="true" />
+            </Link>
+          </Popover.Popup>
+        </Popover.Positioner>
+      </Popover.Portal>
+    </Popover.Root>
   )
 }
 
