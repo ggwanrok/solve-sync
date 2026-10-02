@@ -149,7 +149,7 @@ export function AppShell({ children, user, contributions, notificationInbox }: {
   return (
     <ExtensionConnectionProvider accountId={user.id} devices={user.extensionDevices}>
       <div className="flex min-h-screen flex-col bg-background">
-        <header className="sticky top-0 z-30 border-b border-border/55 bg-background/88 backdrop-blur-xl">
+        <header className="sticky top-0 z-30 border-b border-border/55 bg-card">
           <div className="flex h-16 items-center gap-2 px-3 sm:gap-4 sm:px-4 md:px-6 lg:px-8">
             <Link href="/" aria-label="솔브싱크 대시보드" className="shrink-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <Logo showText={false} className="sm:hidden" />
