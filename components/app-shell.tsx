@@ -159,22 +159,24 @@ export function AppShell({ children, user, contributions, notificationInbox }: {
               <NavLinks pendingFriendRequestCount={user.pendingFriendRequestCount} />
             </div>
             <div className="ml-auto flex min-w-0 items-center gap-1 sm:gap-2">
-              <ExtensionConnectionMenu />
-              {refreshLabel && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="hidden gap-1.5 sm:inline-flex"
-                  onClick={refreshCurrentPage}
-                  disabled={refreshPending}
-                  aria-busy={refreshPending}
-                  aria-label={`${refreshLabel} 새로고침`}
-                >
-                  <RefreshCw className={refreshPending ? "animate-spin" : undefined} />
-                  새로고침
-                </Button>
-              )}
+              <div className="flex items-end gap-1 sm:gap-2">
+                <ExtensionConnectionMenu />
+                {refreshLabel && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="hidden gap-1.5 sm:inline-flex"
+                    onClick={refreshCurrentPage}
+                    disabled={refreshPending}
+                    aria-busy={refreshPending}
+                    aria-label={`${refreshLabel} 새로고침`}
+                  >
+                    <RefreshCw className={refreshPending ? "animate-spin" : undefined} />
+                    새로고침
+                  </Button>
+                )}
+              </div>
               <NotificationCenter inbox={notificationInbox} />
               <div className="hidden sm:block"><ThemeToggle /></div>
               <ProfileMenu user={user} contributions={contributions} refreshLabel={refreshLabel} refreshPending={refreshPending} onRefresh={refreshCurrentPage} />
