@@ -48,7 +48,7 @@ function DifficultyDonutChart({ counts }: { counts: ViewerRanking["levelSolved"]
   const gap = counts.filter(Boolean).length > 1 ? 1.2 : 0
 
   return (
-    <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-5 sm:justify-start">
+    <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-5 sm:justify-between">
       <div className="relative size-32 shrink-0">
         <svg
           viewBox="0 0 120 120"
@@ -87,7 +87,7 @@ function DifficultyDonutChart({ counts }: { counts: ViewerRanking["levelSolved"]
           <p className="text-[11px] text-muted-foreground">문제</p>
         </div>
       </div>
-      <div className="grid grid-cols-[repeat(2,8rem)] gap-x-6 gap-y-3">
+      <div className="grid max-w-[36rem] min-w-[17.5rem] flex-1 grid-cols-[repeat(auto-fit,minmax(8rem,1fr))] gap-x-6 gap-y-3 sm:gap-x-10">
         {counts.map((count, level) => (
           <div key={level} className="flex items-center justify-between gap-2">
             <DifficultyBadge level={`Lv.${level}` as `Lv.${0 | 1 | 2 | 3 | 4 | 5}`} />
@@ -113,7 +113,7 @@ function RankingSummaryCard({ ranking, rankingType }: { ranking: ViewerRanking; 
           <RankingFormulaHelp />
         </CardAction>
       </CardHeader>
-      <CardContent className="grid gap-7 lg:grid-cols-[minmax(18rem,1fr)_minmax(0,auto)]">
+      <CardContent className="grid gap-7 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
         <div className="grid self-center grid-cols-2 gap-3 lg:grid-cols-1">
           <div className={cn("flex min-h-28 items-center gap-3 rounded-xl p-4 sm:gap-4 sm:p-5", isPodium ? "podium-surface" : "bg-muted/75")}>
             <div className={cn("flex size-11 shrink-0 items-center justify-center rounded-lg border border-border/70", isPodium ? "border-white/80 bg-white/75 text-foreground dark:border-white/10 dark:bg-white/10" : "bg-card text-foreground")}>
