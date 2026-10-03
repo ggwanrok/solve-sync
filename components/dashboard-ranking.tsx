@@ -44,11 +44,12 @@ function PodiumIconGradient({ id }: { id: string }) {
 
 function DifficultyDonutChart({ counts }: { counts: ViewerRanking["levelSolved"] }) {
   const total = counts.reduce((sum, count) => sum + count, 0)
-  let offset = 0
+  // 조각 사이 간격. 조각이 하나뿐이면 끊김 없이 닫힌 링으로 그린다.
+  const gap = counts.filter(Boolean).length > 1 ? 1.2 : 0
 
   return (
-    <div className="grid items-center gap-5 sm:grid-cols-[9rem_minmax(0,1fr)]">
-      <div className="relative mx-auto size-36">
+    <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-5 sm:justify-start">
+      <div className="relative size-32 shrink-0">
         <svg
           viewBox="0 0 120 120"
           className="size-full"
@@ -57,24 +58,24 @@ function DifficultyDonutChart({ counts }: { counts: ViewerRanking["levelSolved"]
         >
           <title>단계별 풀이 분포</title>
           <desc>Lv.0부터 Lv.5까지 해결한 문제 수의 비율</desc>
-          <circle cx="60" cy="60" r="44" fill="none" stroke="var(--muted)" strokeWidth="14" />
-          {total > 0 && counts.map((count, level) => {
-            const percentage = count / total * 100
-            const dashOffset = -offset
-            offset += percentage
+          {total === 0 && <circle cx="60" cy="60" r="50" fill="none" stroke="var(--muted)" strokeWidth="8" />}
+          {counts.map((count, level) => {
             if (!count) return null
+            const percentage = count / total * 100
+            const dashOffset = -counts.slice(0, level).reduce((sum, n) => sum + n, 0) / total * 100
+            const dash = Math.max(percentage - gap, 0.5)
 
             return (
               <circle
                 key={level}
                 cx="60"
                 cy="60"
-                r="44"
+                r="50"
                 pathLength="100"
                 fill="none"
                 stroke={donutStroke[level]}
-                strokeWidth="14"
-                strokeDasharray={`${percentage} ${100 - percentage}`}
+                strokeWidth="8"
+                strokeDasharray={`${dash} ${100 - dash}`}
                 strokeDashoffset={dashOffset}
                 transform="rotate(-90 60 60)"
               />
@@ -86,11 +87,11 @@ function DifficultyDonutChart({ counts }: { counts: ViewerRanking["levelSolved"]
           <p className="text-[11px] text-muted-foreground">문제</p>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+      <div className="grid grid-cols-[repeat(2,8rem)] gap-x-6 gap-y-3">
         {counts.map((count, level) => (
           <div key={level} className="flex items-center justify-between gap-2">
             <DifficultyBadge level={`Lv.${level}` as `Lv.${0 | 1 | 2 | 3 | 4 | 5}`} />
-            <p className="font-semibold tabular-nums">{formatScore(count)}<span className="ml-0.5 text-[10px] font-normal text-muted-foreground">문제</span></p>
+            <p className={cn("font-semibold tabular-nums", !count && "text-muted-foreground")}>{formatScore(count)}<span className="ml-0.5 text-[10px] font-normal text-muted-foreground">문제</span></p>
           </div>
         ))}
       </div>
@@ -144,7 +145,7 @@ function RankingSummaryCard({ ranking, rankingType }: { ranking: ViewerRanking; 
           <div className="flex items-end justify-between gap-3">
             <div>
               <p className="flex items-center gap-1.5 text-sm font-medium"><BarChart3 className="size-4 text-muted-foreground" />단계별 풀이</p>
-              <p className="mt-1 text-xs text-muted-foreground">{DASHBOARD_RANKING_LABELS[rankingType]} {formatScore(ranking.totalSolved)}문제</p>
+              <p className="mt-1 text-xs text-muted-foreground">{DASHBOARD_RANKING_LABELS[rankingType]}</p>
             </div>
             {ranking.unknownSolved > 0 && <span className="text-[11px] text-muted-foreground">난이도 미확인 {ranking.unknownSolved}문제</span>}
           </div>
