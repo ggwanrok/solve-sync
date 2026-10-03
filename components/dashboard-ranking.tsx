@@ -113,7 +113,7 @@ function RankingSummaryCard({ ranking, rankingType }: { ranking: ViewerRanking; 
           <RankingFormulaHelp />
         </CardAction>
       </CardHeader>
-      <CardContent className="grid gap-7 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+      <CardContent className="grid gap-7 lg:grid-cols-[minmax(18rem,1fr)_minmax(0,auto)]">
         <div className="grid self-center grid-cols-2 gap-3 lg:grid-cols-1">
           <div className={cn("flex min-h-28 items-center gap-3 rounded-xl p-4 sm:gap-4 sm:p-5", isPodium ? "podium-surface" : "bg-muted/75")}>
             <div className={cn("flex size-11 shrink-0 items-center justify-center rounded-lg border border-border/70", isPodium ? "border-white/80 bg-white/75 text-foreground dark:border-white/10 dark:bg-white/10" : "bg-card text-foreground")}>
